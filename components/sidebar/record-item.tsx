@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react"
 import Link from "next/link"
 import {
   ChevronDown,
@@ -8,6 +8,7 @@ import {
   Copy,
   FilePlus,
   FileText,
+  FolderPlus,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -30,7 +31,10 @@ interface RecordItemProps {
   expanded?: boolean
   onToggle?: () => void
   addChildHref?: string
+  onAddSubgroup?: () => void
   deleteNote?: string
+  rowProps?: HTMLAttributes<HTMLDivElement>
+  rowClassName?: string
   children?: ReactNode
 }
 
@@ -43,7 +47,10 @@ export function RecordItem({
   expanded,
   onToggle,
   addChildHref,
+  onAddSubgroup,
   deleteNote,
+  rowProps,
+  rowClassName = "",
   children,
 }: RecordItemProps) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -111,9 +118,10 @@ export function RecordItem({
         </div>
       ) : (
         <div
-          className={`flex items-center rounded-md transition-colors hover:bg-accent ${
+          {...rowProps}
+          className={`relative flex items-center rounded-md transition-colors hover:bg-accent ${
             active || menuOpen ? "bg-accent" : ""
-          }`}
+          } ${rowClassName}`}
         >
           {onToggle && (
             <button
@@ -128,6 +136,7 @@ export function RecordItem({
           )}
           <Link
             href={`/record/${record.id}`}
+            draggable={false}
             aria-current={active ? "page" : undefined}
             className={`flex min-w-0 flex-1 items-center gap-2 py-1.5 pr-2 text-sm transition-colors hover:text-foreground ${
               onToggle ? "pl-0.5" : "pl-2"
@@ -204,6 +213,20 @@ export function RecordItem({
               <FilePlus className="size-4 text-muted-foreground" />
               하위 페이지 추가
             </Link>
+          )}
+          {onAddSubgroup && (
+            <button
+              role="menuitem"
+              type="button"
+              className={`${menuItemClass} text-foreground`}
+              onClick={() => {
+                setMenuOpen(false)
+                onAddSubgroup()
+              }}
+            >
+              <FolderPlus className="size-4 text-muted-foreground" />
+              하위 그룹 추가
+            </button>
           )}
           <div role="separator" className="my-1 border-t border-border" />
           <button
