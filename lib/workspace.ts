@@ -16,6 +16,8 @@ export interface WorkspaceGroup {
 export interface WorkspaceState {
   groups: WorkspaceGroup[]
   pages: StudyPage[]
+  // Sibling order for groups and pages alike; ids missing here sort after listed ones.
+  order: string[]
 }
 
 const seedGroups: WorkspaceGroup[] = studyTree.flatMap((group) => [
@@ -23,7 +25,11 @@ const seedGroups: WorkspaceGroup[] = studyTree.flatMap((group) => [
   ...group.subjects.map((s) => ({ id: s.id, name: s.name, parentId: group.id, kind: "subject" as const })),
 ])
 
-const store = createStore<WorkspaceState>({ groups: seedGroups, pages: studyPages })
+const store = createStore<WorkspaceState>({
+  groups: seedGroups,
+  pages: studyPages,
+  order: flattenTree({ groups: seedGroups, pages: studyPages }).map((e) => e.node.id),
+})
 
 export const useWorkspace = store.useStore
 
@@ -74,10 +80,45 @@ export function duplicatePage(id: string) {
   })
 }
 
+// Removes the page and everything nested under it, including groups.
 export function deletePage(id: string) {
   store.set((s) => {
-    const removed = new Set([id, ...descendantPages(s, id).map((p) => p.id)])
-    return { ...s, pages: s.pages.filter((p) => !removed.has(p.id)) }
+    const isUnder = (parentId: string | null) => nodePath(s, parentId).some((n) => n.id === id)
+    return {
+      ...s,
+      pages: s.pages.filter((p) => p.id !== id && !isUnder(p.parentId)),
+      groups: s.groups.filter((g) => !isUnder(g.parentId)),
+    }
+  })
+}
+
+export type DropPosition = "before" | "after" | "inside"
+
+// A node can't move into itself or its own subtree.
+export function canMoveNode(tree: TreeSource, dragId: string, targetId: string | null, position: DropPosition) {
+  if (dragId === targetId) return false
+  const newParentId = position === "inside" || !targetId ? targetId : (findNode(tree, targetId)?.parentId ?? null)
+  return !nodePath(tree, newParentId).some((n) => n.id === dragId)
+}
+
+// targetId null drops the node at the end of the top level.
+export function moveNode(dragId: string, targetId: string | null, position: DropPosition) {
+  store.set((s) => {
+    if (!findNode(s, dragId) || (targetId && !findNode(s, targetId))) return s
+    if (!canMoveNode(s, dragId, targetId, position)) return s
+
+    const newParentId = position === "inside" || !targetId ? targetId : (findNode(s, targetId)?.parentId ?? null)
+    const order = flattenTree(s).map((e) => e.node.id).filter((id) => id !== dragId)
+    const targetIndex = targetId ? order.indexOf(targetId) : -1
+    const insertAt =
+      !targetId || position === "inside" ? order.length : position === "before" ? targetIndex : targetIndex + 1
+    order.splice(insertAt, 0, dragId)
+
+    return {
+      order,
+      groups: s.groups.map((g) => (g.id === dragId ? { ...g, parentId: newParentId } : g)),
+      pages: s.pages.map((p) => (p.id === dragId ? { ...p, parentId: newParentId } : p)),
+    }
   })
 }
 
@@ -97,7 +138,23 @@ export interface TreeNode {
   kind: NodeKind
 }
 
-type TreeSource = Pick<WorkspaceState, "groups" | "pages">
+type TreeSource = Pick<WorkspaceState, "groups" | "pages"> & { order?: string[] }
+
+export type ChildNode = { type: "group"; group: WorkspaceGroup } | { type: "page"; page: StudyPage }
+
+// Direct children of a node (groups and pages mixed), in the user's order.
+export function childNodes(tree: TreeSource, parentId: string | null): ChildNode[] {
+  const rank = new Map((tree.order ?? []).map((id, i) => [id, i]))
+  const children: ChildNode[] = [
+    ...tree.groups.filter((g) => g.parentId === parentId).map((group) => ({ type: "group" as const, group })),
+    ...tree.pages.filter((p) => p.parentId === parentId).map((page) => ({ type: "page" as const, page })),
+  ]
+  const idOf = (c: ChildNode) => (c.type === "group" ? c.group.id : c.page.id)
+  return children
+    .map((child, i) => ({ child, key: rank.get(idOf(child)) ?? rank.size + i }))
+    .sort((a, b) => a.key - b.key)
+    .map((e) => e.child)
+}
 
 function findNode({ groups, pages }: TreeSource, id: string | null) {
   if (!id) return null
@@ -138,11 +195,12 @@ export function descendantPages(tree: TreeSource, ancestorId: string) {
 // Depth-first list of every possible parent (groups and pages) for location pickers.
 export function flattenTree(tree: TreeSource, parentId: string | null = null, depth = 0) {
   const result: { node: TreeNode; depth: number }[] = []
-  for (const group of tree.groups.filter((g) => g.parentId === parentId)) {
-    result.push({ node: { id: group.id, name: group.name, kind: group.kind }, depth }, ...flattenTree(tree, group.id, depth + 1))
-  }
-  for (const page of tree.pages.filter((p) => p.parentId === parentId)) {
-    result.push({ node: { id: page.id, name: page.title || "제목 없음", kind: "page" }, depth }, ...flattenTree(tree, page.id, depth + 1))
+  for (const child of childNodes(tree, parentId)) {
+    const node: TreeNode =
+      child.type === "group"
+        ? { id: child.group.id, name: child.group.name, kind: child.group.kind }
+        : { id: child.page.id, name: child.page.title || "제목 없음", kind: "page" }
+    result.push({ node, depth }, ...flattenTree(tree, node.id, depth + 1))
   }
   return result
 }

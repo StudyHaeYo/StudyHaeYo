@@ -18,14 +18,16 @@ import type { Category } from "@/lib/types"
 import type { StudyPage } from "@/lib/study-pages"
 import {
   addGroup,
+  childNodes,
   deletePage,
-  descendantPages,
   duplicatePage,
+  flattenTree,
   renamePage,
   useWorkspace,
   type WorkspaceGroup,
 } from "@/lib/workspace"
 import { RecordItem } from "@/components/sidebar/record-item"
+import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
 
 const mainNav = [
   { href: "/", label: "홈", icon: Home },
@@ -41,6 +43,7 @@ interface SidebarProps {
 interface TreeContext {
   groups: WorkspaceGroup[]
   pages: StudyPage[]
+  order: string[]
   pathname: string
   onDeletePage: (id: string) => void
 }
@@ -51,7 +54,7 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { groups, pages } = useWorkspace()
+  const { groups, pages, order } = useWorkspace()
   const [addingGroup, setAddingGroup] = useState(false)
   const homeActive = pathname === "/"
   const settingsActive = pathname.startsWith("/settings")
@@ -59,6 +62,7 @@ export function Sidebar({
   const ctx: TreeContext = {
     groups,
     pages,
+    order,
     pathname,
     onDeletePage: (id) => {
       deletePage(id)
@@ -129,10 +133,13 @@ export function Sidebar({
           </div>
         </div>
 
-        <ul className="mt-1 flex flex-col gap-0.5">
-          <TreeChildren parentId={null} ctx={ctx} />
-          {addingGroup && <NewGroupInput onDone={() => setAddingGroup(false)} />}
-        </ul>
+        <TreeDndProvider>
+          <ul className="mt-1 flex flex-col gap-0.5">
+            <TreeChildren parentId={null} ctx={ctx} />
+            {addingGroup && <NewGroupInput onDone={() => setAddingGroup(false)} />}
+            <RootDropZone />
+          </ul>
+        </TreeDndProvider>
       </nav>
 
       {/* User / settings / logout */}
@@ -173,25 +180,26 @@ export function Sidebar({
 }
 
 function TreeChildren({ parentId, ctx }: { parentId: string | null; ctx: TreeContext }) {
-  const childGroups = ctx.groups.filter((g) => g.parentId === parentId)
-  const childPages = ctx.pages.filter((p) => p.parentId === parentId)
-
   return (
     <>
-      {childGroups.map((group) => (
-        <GroupNode key={group.id} group={group} ctx={ctx} />
-      ))}
-      {childPages.map((page) => (
-        <PageNode key={page.id} page={page} ctx={ctx} />
-      ))}
+      {childNodes(ctx, parentId).map((child) =>
+        child.type === "group" ? (
+          <GroupNode key={child.group.id} group={child.group} ctx={ctx} />
+        ) : (
+          <PageNode key={child.page.id} page={child.page} ctx={ctx} />
+        ),
+      )}
     </>
   )
 }
 
 function PageNode({ page, ctx }: { page: StudyPage; ctx: TreeContext }) {
   const [open, setOpen] = useState(true)
-  const descendants = descendantPages(ctx, page.id).length
-  const hasChildren = descendants > 0
+  const [addingSubgroup, setAddingSubgroup] = useState(false)
+  const nested = flattenTree(ctx, page.id).length
+  const hasChildren = nested > 0
+  const showChildren = (hasChildren && open) || addingSubgroup
+  const { rowProps, indicator, isDragging } = useTreeDrag(page.id, { allowAfter: !showChildren })
 
   return (
     <RecordItem
@@ -200,14 +208,21 @@ function PageNode({ page, ctx }: { page: StudyPage; ctx: TreeContext }) {
       onRename={(title) => renamePage(page.id, title)}
       onDuplicate={() => duplicatePage(page.id)}
       onDelete={() => ctx.onDeletePage(page.id)}
+      onAddSubgroup={() => {
+        setOpen(true)
+        setAddingSubgroup(true)
+      }}
       addChildHref={`/new?parent=${page.id}`}
       expanded={hasChildren ? open : undefined}
       onToggle={hasChildren ? () => setOpen((v) => !v) : undefined}
-      deleteNote={hasChildren ? `하위 페이지 ${descendants}개도 함께 삭제됩니다.` : undefined}
+      deleteNote={hasChildren ? `하위 항목 ${nested}개도 함께 삭제됩니다.` : undefined}
+      rowProps={rowProps}
+      rowClassName={`${dropIndicatorClass(indicator)} ${isDragging ? "opacity-40" : ""}`}
     >
-      {hasChildren && open && (
+      {showChildren && (
         <ul className="mt-0.5 flex flex-col gap-0.5 pl-4">
           <TreeChildren parentId={page.id} ctx={ctx} />
+          {addingSubgroup && <NewGroupInput parentId={page.id} onDone={() => setAddingSubgroup(false)} />}
         </ul>
       )}
     </RecordItem>
@@ -222,6 +237,8 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
   const isSubject = group.kind === "subject"
   const active = isSubject && ctx.pathname === `/subject/${group.id}`
   const Chevron = open ? ChevronDown : ChevronRight
+  const { rowProps, indicator, isDragging } = useTreeDrag(group.id, { allowAfter: !open })
+  const dragClass = `relative ${dropIndicatorClass(indicator)} ${isDragging ? "opacity-40" : ""}`
   const hoverAction =
     "flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100"
 
@@ -254,9 +271,10 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
     <li>
       {isSubject ? (
         <div
+          {...rowProps}
           className={`group/row flex items-center rounded-md transition-colors hover:bg-accent ${
             active ? "bg-accent" : ""
-          }`}
+          } ${dragClass}`}
         >
           <button
             onClick={() => setOpen((v) => !v)}
@@ -268,6 +286,7 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
           </button>
           <Link
             href={`/subject/${group.id}`}
+            draggable={false}
             aria-current={active ? "page" : undefined}
             className={`flex-1 truncate py-1.5 pr-2 text-sm text-foreground ${active ? "font-medium" : ""}`}
           >
@@ -276,7 +295,7 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
           {addButton}
         </div>
       ) : (
-        <div className="group/row flex items-center rounded-md transition-colors hover:bg-accent">
+        <div {...rowProps} className={`group/row flex items-center rounded-md transition-colors hover:bg-accent ${dragClass}`}>
           <button
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
