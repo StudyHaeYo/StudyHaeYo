@@ -12,7 +12,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react"
-import { formatDate, formatDuration, type PageStats, type PageStatus } from "@/lib/study-pages"
+import { formatDate, formatDuration, pageStatuses, type PageStats, type PageStatus } from "@/lib/study-pages"
 
 const statusStyles: Record<PageStatus, string> = {
   "시작 전": "bg-muted text-muted-foreground",
@@ -27,9 +27,19 @@ interface PagePropertiesProps {
   recordCount: number
   tags: string[]
   onChangeTags: (tags: string[]) => void
+  onChangeStatus: (status: PageStatus | null) => void
+  onChangeUnderstanding: (understanding: number | null) => void
 }
 
-export function PageProperties({ subjectName, stats, recordCount, tags, onChangeTags }: PagePropertiesProps) {
+export function PageProperties({
+  subjectName,
+  stats,
+  recordCount,
+  tags,
+  onChangeTags,
+  onChangeStatus,
+  onChangeUnderstanding,
+}: PagePropertiesProps) {
   const [draft, setDraft] = useState("")
   const empty = <span className="text-muted-foreground/70">비어 있음</span>
 
@@ -46,26 +56,63 @@ export function PageProperties({ subjectName, stats, recordCount, tags, onChange
           {subjectName}
         </Row>
         <Row icon={CircleDot} label="상태">
-          <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${statusStyles[stats.status]}`}>
-            {stats.status}
+          <span className="inline-flex items-center gap-2">
+            <span className="relative inline-flex">
+              <span
+                className={`pointer-events-none rounded px-1.5 py-0.5 text-xs font-medium ${statusStyles[stats.status]}`}
+              >
+                {stats.status}
+              </span>
+              <select
+                aria-label="학습 상태 변경"
+                value={stats.statusIsManual ? stats.status : ""}
+                onChange={(e) => onChangeStatus((e.target.value || null) as PageStatus | null)}
+                className="absolute inset-0 cursor-pointer opacity-0"
+              >
+                <option value="">자동 (학습 기록 기준)</option>
+                {pageStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </span>
+            {!stats.statusIsManual && <span className="text-xs text-muted-foreground/70">자동</span>}
           </span>
         </Row>
         <Row icon={Gauge} label="이해도">
-          {stats.understanding === null ? (
-            empty
-          ) : (
-            <span className="inline-flex items-center gap-2">
-              <span className="flex gap-0.5" aria-hidden="true">
-                {[1, 2, 3, 4, 5].map((n) => (
+          <span className="inline-flex items-center gap-2">
+            <span role="group" aria-label="이해도 선택" className="flex">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => onChangeUnderstanding(n)}
+                  aria-label={`이해도 ${n}`}
+                  aria-pressed={stats.understanding === n}
+                  className="group/bar flex h-6 items-center px-px"
+                >
                   <span
-                    key={n}
-                    className={`h-1.5 w-3 rounded-full ${n <= (stats.understanding ?? 0) ? "bg-indigo-600" : "bg-border"}`}
+                    className={`h-1.5 w-3 rounded-full transition-colors ${
+                      n <= (stats.understanding ?? 0)
+                        ? "bg-indigo-600 group-hover/bar:bg-indigo-500"
+                        : "bg-border group-hover/bar:bg-indigo-200"
+                    }`}
                   />
-                ))}
-              </span>
-              {stats.understanding} / 5
+                </button>
+              ))}
             </span>
-          )}
+            {stats.understanding === null ? empty : `${stats.understanding} / 5`}
+            {stats.understandingIsManual && (
+              <button
+                type="button"
+                onClick={() => onChangeUnderstanding(null)}
+                className="rounded px-1 text-xs text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
+              >
+                기록 기준으로
+              </button>
+            )}
+          </span>
         </Row>
         <Row icon={Clock} label="학습 시간">
           {stats.totalDurationMinutes > 0 ? formatDuration(stats.totalDurationMinutes) : empty}
@@ -120,8 +167,8 @@ export function PageProperties({ subjectName, stats, recordCount, tags, onChange
       </dl>
       <p className="pl-2 pt-1 text-xs text-muted-foreground/80">
         {recordCount > 0
-          ? `학습 기록 ${recordCount}개를 바탕으로 계산된 현재 상태예요`
-          : "학습 기록을 추가하면 이해도와 복습 일정이 채워져요"}
+          ? `상태와 이해도는 직접 바꿀 수 있고, 새 학습 기록을 추가하면 기록 기준으로 다시 맞춰져요 (기록 ${recordCount}개)`
+          : "상태와 이해도를 직접 고르거나, 학습 기록을 추가해 복습 일정까지 채워 보세요"}
       </p>
     </section>
   )

@@ -34,9 +34,9 @@ export const templates: Record<TemplateId, PageTemplate> = {
   blank: {
     id: "blank",
     label: "빈 페이지",
-    description: "본문만 있는 페이지예요. 나중에 템플릿을 적용할 수 있어요.",
+    description: "정해진 내용 없이 자유롭게 시작해요. 학습 상태와 학습 기록은 그대로 쓸 수 있어요.",
     icon: FilePlus,
-    sections: { properties: false, studyHistory: false, aiTools: false },
+    sections: { properties: true, studyHistory: true, aiTools: true },
     createBlocks: () => [{ id: newBlockId(), type: "p", text: "" }],
   },
 }
