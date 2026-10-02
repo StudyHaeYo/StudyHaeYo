@@ -40,6 +40,20 @@ export function StudyPageView({ pageId }: { pageId: string }) {
     }))
   }
 
+  const handleUpdateRecord = (record: PageStudyRecord) => {
+    updatePage(page.id, (p) => ({
+      ...p,
+      studyRecords: p.studyRecords.map((r) => (r.id === record.id ? record : r)),
+    }))
+  }
+
+  const handleDeleteRecord = (recordId: string) => {
+    updatePage(page.id, (p) => ({
+      ...p,
+      studyRecords: p.studyRecords.filter((r) => r.id !== recordId),
+    }))
+  }
+
   return (
     <div className="flex flex-col">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
@@ -121,7 +135,13 @@ export function StudyPageView({ pageId }: { pageId: string }) {
             <hr className="mb-8 mt-16 border-border" />
             <div className="flex flex-col gap-12">
               {template.sections.studyHistory && (
-                <StudyHistory pageId={page.id} records={page.studyRecords} onAdd={handleAddRecord} />
+                <StudyHistory
+                  pageId={page.id}
+                  records={page.studyRecords}
+                  onAdd={handleAddRecord}
+                  onUpdate={handleUpdateRecord}
+                  onDelete={handleDeleteRecord}
+                />
               )}
               {template.sections.aiTools && <AiToolsSection />}
             </div>

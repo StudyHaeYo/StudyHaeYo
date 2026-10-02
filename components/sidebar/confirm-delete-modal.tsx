@@ -8,11 +8,19 @@ interface ConfirmDeleteModalProps {
   open: boolean
   title: string
   note?: string
+  targetLabel?: string
   onCancel: () => void
   onConfirm: () => void
 }
 
-export function ConfirmDeleteModal({ open, title, note, onCancel, onConfirm }: ConfirmDeleteModalProps) {
+export function ConfirmDeleteModal({
+  open,
+  title,
+  note,
+  targetLabel = "페이지",
+  onCancel,
+  onConfirm,
+}: ConfirmDeleteModalProps) {
   const cancelRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -48,7 +56,7 @@ export function ConfirmDeleteModal({ open, title, note, onCancel, onConfirm }: C
           정말 삭제하시겠어요?
         </h2>
         <p id="delete-modal-desc" className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-          <span className="font-medium text-foreground">{`"${title}"`}</span> 페이지를 삭제합니다.
+          <span className="font-medium text-foreground">{`"${title}"`}</span> {targetLabel}을(를) 삭제합니다.
           이 작업은 되돌릴 수 없습니다.
         </p>
         {note && <p className="mt-2 text-sm leading-relaxed text-destructive">{note}</p>}

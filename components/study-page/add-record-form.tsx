@@ -6,6 +6,8 @@ import { formatDate, todayISO, type PageStudyRecord } from "@/lib/study-pages"
 
 interface AddRecordFormProps {
   pageId: string
+  // When provided, the form edits this record instead of creating a new one.
+  initial?: PageStudyRecord
   onSubmit: (record: PageStudyRecord) => void
   onCancel: () => void
 }
@@ -13,13 +15,15 @@ interface AddRecordFormProps {
 const fieldClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/30"
 
-export function AddRecordForm({ pageId, onSubmit, onCancel }: AddRecordFormProps) {
-  const [date] = useState(todayISO)
-  const [duration, setDuration] = useState("")
-  const [understanding, setUnderstanding] = useState<number | null>(null)
-  const [difficulties, setDifficulties] = useState("")
-  const [nextSteps, setNextSteps] = useState("")
-  const [tags, setTags] = useState("")
+export function AddRecordForm({ pageId, initial, onSubmit, onCancel }: AddRecordFormProps) {
+  const isEdit = initial !== undefined
+  const [date] = useState(() => initial?.date ?? todayISO())
+  const [duration, setDuration] = useState(initial ? String(initial.durationMinutes) : "")
+  const [understanding, setUnderstanding] = useState<number | null>(initial?.understanding ?? null)
+  const [studyContent, setStudyContent] = useState(initial?.studyContent ?? "")
+  const [difficulties, setDifficulties] = useState(initial?.difficulties ?? "")
+  const [nextSteps, setNextSteps] = useState(initial?.nextSteps ?? "")
+  const [tags, setTags] = useState(initial ? initial.tags.join(", ") : "")
 
   const minutes = Number.parseInt(duration, 10)
   const canSubmit = Number.isFinite(minutes) && minutes > 0 && understanding !== null
@@ -28,11 +32,12 @@ export function AddRecordForm({ pageId, onSubmit, onCancel }: AddRecordFormProps
     e.preventDefault()
     if (!canSubmit || understanding === null) return
     onSubmit({
-      id: `${pageId}-r-${Date.now()}`,
+      id: initial?.id ?? `${pageId}-r-${Date.now()}`,
       pageId,
       date,
       durationMinutes: minutes,
       understanding,
+      studyContent: studyContent.trim(),
       difficulties: difficulties.trim(),
       nextSteps: nextSteps.trim(),
       tags: tags
@@ -45,11 +50,11 @@ export function AddRecordForm({ pageId, onSubmit, onCancel }: AddRecordFormProps
   return (
     <form
       onSubmit={handleSubmit}
-      aria-label="학습 기록 추가"
+      aria-label={isEdit ? "학습 기록 수정" : "학습 기록 추가"}
       className="flex flex-col gap-4 rounded-xl border border-indigo-200 bg-card p-5 shadow-sm"
     >
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-card-foreground">새 학습 기록</p>
+        <p className="text-sm font-semibold text-card-foreground">{isEdit ? "학습 기록 수정" : "새 학습 기록"}</p>
         <p className="text-xs text-muted-foreground">{formatDate(date)}</p>
       </div>
 
@@ -68,6 +73,20 @@ export function AddRecordForm({ pageId, onSubmit, onCancel }: AddRecordFormProps
       </label>
 
       <UnderstandingRating value={understanding} onChange={setUnderstanding} />
+
+      <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
+        오늘 공부한 내용
+        <span className="text-xs font-normal text-muted-foreground">
+          이번 학습에서 실제로 한 활동을 남겨요. 페이지 본문과는 별도로 저장돼요.
+        </span>
+        <textarea
+          value={studyContent}
+          onChange={(e) => setStudyContent(e.target.value)}
+          rows={4}
+          placeholder="예: 강의 3강 수강, 체이닝 직접 구현, 예제 5문제 풀이"
+          className={`${fieldClass} resize-y`}
+        />
+      </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
@@ -115,7 +134,7 @@ export function AddRecordForm({ pageId, onSubmit, onCancel }: AddRecordFormProps
           disabled={!canSubmit}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          기록 추가
+          {isEdit ? "수정 저장" : "기록 추가"}
         </button>
       </div>
     </form>

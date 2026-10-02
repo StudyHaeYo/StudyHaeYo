@@ -16,6 +16,8 @@ export interface PageStudyRecord {
   date: string
   durationMinutes: number
   understanding: number
+  // What was actually done in this session (activity log), distinct from the page body's "오늘 배운 내용".
+  studyContent: string
   difficulties: string
   nextSteps: string
   tags: string[]
@@ -142,9 +144,9 @@ export const studyPages: StudyPage[] = [
       b("ds1-13", "p", "저장된 개수 / 테이블 크기. 보통 0.75를 넘으면 테이블을 두 배로 늘리고 리해싱한다."),
     ],
     studyRecords: [
-      { id: "ds1-r1", pageId: "ds-1", date: "2026-09-25", durationMinutes: 40, understanding: 2, difficulties: "해시 함수가 인덱스를 만드는 과정", nextSteps: "체이닝 직접 구현해보기", tags: ["해시"] },
-      { id: "ds1-r2", pageId: "ds-1", date: "2026-09-27", durationMinutes: 50, understanding: 3, difficulties: "Open Addressing의 탐색 과정", nextSteps: "탐사 방식별 차이 정리", tags: ["해시"] },
-      { id: "ds1-r3", pageId: "ds-1", date: "2026-09-28", durationMinutes: 60, understanding: 4, difficulties: "Open Addressing의 충돌 처리 방식", nextSteps: "충돌 처리 방법 다시 복습하기", tags: ["해시", "충돌"] },
+      { id: "ds1-r1", pageId: "ds-1", date: "2026-09-25", durationMinutes: 40, understanding: 2, studyContent: "강의 영상으로 해시 함수와 해시 테이블의 기본 구조를 공부함", difficulties: "해시 함수가 인덱스를 만드는 과정", nextSteps: "체이닝 직접 구현해보기", tags: ["해시"] },
+      { id: "ds1-r2", pageId: "ds-1", date: "2026-09-27", durationMinutes: 50, understanding: 3, studyContent: "체이닝을 직접 구현하고 Open Addressing 개념을 읽음", difficulties: "Open Addressing의 탐색 과정", nextSteps: "탐사 방식별 차이 정리", tags: ["해시"] },
+      { id: "ds1-r3", pageId: "ds-1", date: "2026-09-28", durationMinutes: 60, understanding: 4, studyContent: "선형·이차 탐사, 이중 해싱을 비교 정리하고 로드 팩터 예제를 풀어봄", difficulties: "Open Addressing의 충돌 처리 방식", nextSteps: "충돌 처리 방법 다시 복습하기", tags: ["해시", "충돌"] },
     ],
   },
   {
@@ -165,7 +167,7 @@ export const studyPages: StudyPage[] = [
       b("ds2-7", "li", "제자리 정렬, 불안정 정렬"),
     ],
     studyRecords: [
-      { id: "ds2-r1", pageId: "ds-2", date: "2026-09-24", durationMinutes: 60, understanding: 3, difficulties: "힙 정렬의 heapify 인덱스 계산", nextSteps: "안정 정렬 여부 표로 정리", tags: ["정렬"] },
+      { id: "ds2-r1", pageId: "ds-2", date: "2026-09-24", durationMinutes: 60, understanding: 3, studyContent: "퀵·병합·힙 정렬의 동작 과정을 손으로 따라가며 복습함", difficulties: "힙 정렬의 heapify 인덱스 계산", nextSteps: "안정 정렬 여부 표로 정리", tags: ["정렬"] },
     ],
   },
   {
@@ -183,7 +185,7 @@ export const studyPages: StudyPage[] = [
       b("ds3-4", "li", "후위 순회: 왼쪽 → 오른쪽 → 루트"),
     ],
     studyRecords: [
-      { id: "ds3-r1", pageId: "ds-3", date: "2026-09-21", durationMinutes: 45, understanding: 5, difficulties: "", nextSteps: "레벨 순회(BFS)까지 확장", tags: ["트리"] },
+      { id: "ds3-r1", pageId: "ds-3", date: "2026-09-21", durationMinutes: 45, understanding: 5, studyContent: "트리 순회 강의를 듣고 전위·중위·후위 순회를 코드로 작성함", difficulties: "", nextSteps: "레벨 순회(BFS)까지 확장", tags: ["트리"] },
     ],
   },
   {
@@ -203,7 +205,7 @@ export const studyPages: StudyPage[] = [
       b("os1-6", "p", "스레드 전환은 메모리 공간을 바꾸지 않아 프로세스 전환보다 비용이 적다."),
     ],
     studyRecords: [
-      { id: "os1-r1", pageId: "os-1", date: "2026-09-26", durationMinutes: 35, understanding: 2, difficulties: "스레드가 공유하는 영역과 공유하지 않는 영역", nextSteps: "메모리 구조 그림으로 다시 그려보기", tags: ["프로세스"] },
+      { id: "os1-r1", pageId: "os-1", date: "2026-09-26", durationMinutes: 35, understanding: 2, studyContent: "교재 3장을 읽고 프로세스와 스레드의 차이를 정리함", difficulties: "스레드가 공유하는 영역과 공유하지 않는 영역", nextSteps: "메모리 구조 그림으로 다시 그려보기", tags: ["프로세스"] },
     ],
   },
   {
@@ -221,8 +223,8 @@ export const studyPages: StudyPage[] = [
       b("eng1-4", "code", "SELECT dept, COUNT(*)\nFROM emp\nGROUP BY dept\nHAVING COUNT(*) > 3;"),
     ],
     studyRecords: [
-      { id: "eng1-r1", pageId: "eng-1", date: "2026-09-23", durationMinutes: 90, understanding: 2, difficulties: "SQL 집계 함수 문제", nextSteps: "SQL 파트 오답 다시 풀기", tags: ["SQL"] },
-      { id: "eng1-r2", pageId: "eng-1", date: "2026-09-25", durationMinutes: 80, understanding: 3, difficulties: "정규화 단계 구분", nextSteps: "BCNF 예제 3개 풀기", tags: ["정규화"] },
+      { id: "eng1-r1", pageId: "eng-1", date: "2026-09-23", durationMinutes: 90, understanding: 2, studyContent: "실기 기출 1회분을 시간 재고 풀고 채점함", difficulties: "SQL 집계 함수 문제", nextSteps: "SQL 파트 오답 다시 풀기", tags: ["SQL"] },
+      { id: "eng1-r2", pageId: "eng-1", date: "2026-09-25", durationMinutes: 80, understanding: 3, studyContent: "기출 2회분을 풀고 SQL 오답을 다시 풀어봄", difficulties: "정규화 단계 구분", nextSteps: "BCNF 예제 3개 풀기", tags: ["정규화"] },
     ],
   },
 ]
