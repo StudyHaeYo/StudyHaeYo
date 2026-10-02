@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react"
 import Link from "next/link"
-import { Check, ChevronRight, FileQuestion, NotebookPen, Save } from "lucide-react"
+import { Check, ChevronRight, FileQuestion, Save } from "lucide-react"
 import { computePageStats, type PageStudyRecord } from "@/lib/study-pages"
 import { templates } from "@/lib/templates"
 import { nearestSubject, nodePath, updatePage, useWorkspace } from "@/lib/workspace"
@@ -33,7 +33,11 @@ export function StudyPageView({ pageId }: { pageId: string }) {
   }
 
   const handleAddRecord = (record: PageStudyRecord) => {
-    updatePage(page.id, (p) => ({ ...p, studyRecords: [...p.studyRecords, record] }))
+    // A new record reflects the latest study session, so it takes over from manually picked values.
+    updatePage(page.id, ({ status: _s, understanding: _u, ...p }) => ({
+      ...p,
+      studyRecords: [...p.studyRecords, record],
+    }))
   }
 
   return (
@@ -83,7 +87,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {template.sections.properties ? (
+        {template.sections.properties && (
           <div className="mt-4">
             <PageProperties
               subjectName={subject?.name ?? path.at(-1)?.name ?? "내 페이지"}
@@ -91,21 +95,15 @@ export function StudyPageView({ pageId }: { pageId: string }) {
               recordCount={page.studyRecords.length}
               tags={page.tags}
               onChangeTags={(tags) => updatePage(page.id, (p) => ({ ...p, tags }))}
+              onChangeStatus={(status) =>
+                updatePage(page.id, ({ status: _prev, ...rest }) => (status ? { ...rest, status } : rest))
+              }
+              onChangeUnderstanding={(understanding) =>
+                updatePage(page.id, ({ understanding: _prev, ...rest }) =>
+                  understanding ? { ...rest, understanding } : rest,
+                )
+              }
             />
-          </div>
-        ) : (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-card/50 px-4 py-3">
-            <p className="text-sm text-muted-foreground">
-              {template.label}예요. 학습 노트 템플릿을 적용하면 페이지 속성과 학습 기록을 쓸 수 있어요.
-            </p>
-            <button
-              type="button"
-              onClick={() => updatePage(page.id, (p) => ({ ...p, templateId: "study-note" }))}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-indigo-300 hover:text-indigo-700"
-            >
-              <NotebookPen className="size-4" />
-              학습 노트 템플릿 적용
-            </button>
           </div>
         )}
 

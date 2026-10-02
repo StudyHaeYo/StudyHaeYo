@@ -33,9 +33,13 @@ export interface StudyPage {
   blocks: Block[]
   tags: string[]
   studyRecords: PageStudyRecord[]
+  // Values the user picked directly on the page. When unset, they are derived from the latest study record.
+  status?: PageStatus
+  understanding?: number
 }
 
-export type PageStatus = "시작 전" | "학습 중" | "복습 필요" | "완료"
+export const pageStatuses = ["시작 전", "학습 중", "복습 필요", "완료"] as const
+export type PageStatus = (typeof pageStatuses)[number]
 
 export interface PageStats {
   status: PageStatus
@@ -43,6 +47,8 @@ export interface PageStats {
   totalDurationMinutes: number
   lastStudiedAt: string | null
   nextReviewAt: string | null
+  statusIsManual: boolean
+  understandingIsManual: boolean
 }
 
 export function toISODate(date: Date) {
@@ -71,20 +77,22 @@ export function sortRecordsNewestFirst(records: PageStudyRecord[]) {
 export function computePageStats(page: StudyPage, today: string | null): PageStats {
   const records = sortRecordsNewestFirst(page.studyRecords)
   const latest = records[0]
-  if (!latest) {
-    return { status: "시작 전", understanding: null, totalDurationMinutes: 0, lastStudiedAt: null, nextReviewAt: null }
+  const understanding = page.understanding ?? latest?.understanding ?? null
+  const nextReviewAt = latest ? addDays(latest.date, reviewOffsetDays[understanding ?? latest.understanding] ?? 4) : null
+
+  let derivedStatus: PageStatus = "시작 전"
+  if (latest) {
+    derivedStatus = today && nextReviewAt && nextReviewAt <= today ? "복습 필요" : understanding === 5 ? "완료" : "학습 중"
   }
 
-  const nextReviewAt = addDays(latest.date, reviewOffsetDays[latest.understanding] ?? 4)
-  const status: PageStatus =
-    today && nextReviewAt <= today ? "복습 필요" : latest.understanding === 5 ? "완료" : "학습 중"
-
   return {
-    status,
-    understanding: latest.understanding,
+    status: page.status ?? derivedStatus,
+    understanding,
     totalDurationMinutes: records.reduce((sum, r) => sum + r.durationMinutes, 0),
-    lastStudiedAt: latest.date,
+    lastStudiedAt: latest?.date ?? null,
     nextReviewAt,
+    statusIsManual: page.status !== undefined,
+    understandingIsManual: page.understanding !== undefined,
   }
 }
 
@@ -190,7 +198,7 @@ export const studyPages: StudyPage[] = [
       b("os1-1", "h2", "프로세스"),
       b("os1-2", "p", "실행 중인 프로그램. 독립된 메모리 공간(코드, 데이터, 힙, 스택)을 가진다."),
       b("os1-3", "h2", "스레드"),
-      b("os1-4", "p", "프로세스 안의 실행 흐름. 스택만 따로 갖고 코드, 데이터, 힙은 공유한다."),
+      b("os1-4", "p", "프로세스 안의 실행 흐름. 스택만 따로 갖고 ��드, 데이터, 힙은 공유한다."),
       b("os1-5", "h2", "컨텍스트 스위칭"),
       b("os1-6", "p", "스레드 전환은 메모리 공간을 바꾸지 않아 프로세스 전환보다 비용이 적다."),
     ],
