@@ -38,6 +38,8 @@ export interface StudyPage {
   // Values the user picked directly on the page. When unset, they are derived from the latest study record.
   status?: PageStatus
   understanding?: number
+  // Set when the user turns on study features for a page whose template doesn't include them (e.g. 빈 페이지).
+  studyEnabled?: boolean
 }
 
 export const pageStatuses = ["시작 전", "학습 중", "복습 필요", "완료"] as const

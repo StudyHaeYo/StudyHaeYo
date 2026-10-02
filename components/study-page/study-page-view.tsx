@@ -2,9 +2,9 @@
 
 import { Fragment, useState } from "react"
 import Link from "next/link"
-import { Check, ChevronRight, FileQuestion, Save } from "lucide-react"
+import { Check, ChevronRight, FileQuestion, Plus, Save } from "lucide-react"
 import { computePageStats, type PageStudyRecord } from "@/lib/study-pages"
-import { templates } from "@/lib/templates"
+import { hasStudyFeatures, templates } from "@/lib/templates"
 import { nearestSubject, nodePath, updatePage, useWorkspace } from "@/lib/workspace"
 import { useTodayISO } from "@/hooks/use-today"
 import { BlockEditor } from "@/components/study-page/block-editor"
@@ -22,7 +22,10 @@ export function StudyPageView({ pageId }: { pageId: string }) {
 
   if (!page) return <MissingPage />
 
-  const template = templates[page.templateId]
+  const studyOn = hasStudyFeatures(page)
+  const sections = studyOn
+    ? { properties: true, studyHistory: true, aiTools: true }
+    : templates[page.templateId].sections
   const path = nodePath({ groups, pages }, page.parentId)
   const subject = nearestSubject({ groups, pages }, page.parentId)
   const stats = computePageStats(page, today)
@@ -101,7 +104,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {template.sections.properties && (
+        {sections.properties && (
           <div className="mt-4">
             <PageProperties
               subjectName={subject?.name ?? path.at(-1)?.name ?? "내 페이지"}
@@ -130,11 +133,27 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           />
         </div>
 
-        {(template.sections.studyHistory || template.sections.aiTools) && (
+        {!studyOn && (
+          <div className="mt-10">
+            <button
+              type="button"
+              onClick={() => updatePage(page.id, (p) => ({ ...p, studyEnabled: true }))}
+              className="inline-flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+            >
+              <Plus className="size-4" />
+              학습 기능 추가
+            </button>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              학습 상태 · 이해도 · 태그 · 학습 기록 · AI 학습 도구를 이 페이지에 추가해요.
+            </p>
+          </div>
+        )}
+
+        {(sections.studyHistory || sections.aiTools) && (
           <>
             <hr className="mb-8 mt-16 border-border" />
             <div className="flex flex-col gap-12">
-              {template.sections.studyHistory && (
+              {sections.studyHistory && (
                 <StudyHistory
                   pageId={page.id}
                   records={page.studyRecords}
@@ -143,7 +162,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
                   onDelete={handleDeleteRecord}
                 />
               )}
-              {template.sections.aiTools && <AiToolsSection />}
+              {sections.aiTools && <AiToolsSection />}
             </div>
           </>
         )}
