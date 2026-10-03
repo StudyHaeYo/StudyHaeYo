@@ -120,7 +120,7 @@ export function PageProperties({
         <Row icon={CalendarCheck} label="마지막 학습">
           {stats.lastStudiedAt ? formatDate(stats.lastStudiedAt) : empty}
         </Row>
-        <Row icon={CalendarClock} label="다음 복습">
+        <Row icon={CalendarClock} label="다음 학습">
           {stats.nextReviewAt ? (
             <span className={stats.status === "복습 필요" ? "font-medium text-amber-700" : undefined}>
               {formatDate(stats.nextReviewAt)}
