@@ -2,9 +2,9 @@
 
 import { Fragment, useState } from "react"
 import Link from "next/link"
-import { Check, ChevronRight, FileQuestion, Save } from "lucide-react"
+import { Check, ChevronRight, FileQuestion, MoreHorizontal, NotebookPen, Plus, PowerOff, Save } from "lucide-react"
 import { computePageStats, type PageStudyRecord } from "@/lib/study-pages"
-import { templates } from "@/lib/templates"
+import { canToggleStudy, hasStudyFeatures, templates } from "@/lib/templates"
 import { nearestSubject, nodePath, updatePage, useWorkspace } from "@/lib/workspace"
 import { useTodayISO } from "@/hooks/use-today"
 import { BlockEditor } from "@/components/study-page/block-editor"
@@ -22,7 +22,14 @@ export function StudyPageView({ pageId }: { pageId: string }) {
 
   if (!page) return <MissingPage />
 
-  const template = templates[page.templateId]
+  const studyOn = hasStudyFeatures(page)
+  const toggleable = canToggleStudy(page)
+  const isStudyNote = page.templateId === "study-note"
+  const setStudyEnabled = (studyEnabled: boolean) => updatePage(page.id, (p) => ({ ...p, studyEnabled }))
+  // Free pages never get the top properties panel; study features attach only at the bottom.
+  const sections = toggleable
+    ? { properties: false, studyHistory: studyOn, aiTools: studyOn }
+    : templates[page.templateId].sections
   const path = nodePath({ groups, pages }, page.parentId)
   const subject = nearestSubject({ groups, pages }, page.parentId)
   const stats = computePageStats(page, today)
@@ -37,6 +44,20 @@ export function StudyPageView({ pageId }: { pageId: string }) {
     updatePage(page.id, ({ status: _s, understanding: _u, ...p }) => ({
       ...p,
       studyRecords: [...p.studyRecords, record],
+    }))
+  }
+
+  const handleUpdateRecord = (record: PageStudyRecord) => {
+    updatePage(page.id, (p) => ({
+      ...p,
+      studyRecords: p.studyRecords.map((r) => (r.id === record.id ? record : r)),
+    }))
+  }
+
+  const handleDeleteRecord = (recordId: string) => {
+    updatePage(page.id, (p) => ({
+      ...p,
+      studyRecords: p.studyRecords.filter((r) => r.id !== recordId),
     }))
   }
 
@@ -87,7 +108,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {template.sections.properties && (
+        {sections.properties && (
           <div className="mt-4">
             <PageProperties
               subjectName={subject?.name ?? path.at(-1)?.name ?? "내 페이지"}
@@ -109,25 +130,142 @@ export function StudyPageView({ pageId }: { pageId: string }) {
 
         <hr className="my-6 border-border" />
 
-        <div className="min-h-64">
-          <BlockEditor
-            blocks={page.blocks}
-            onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
-          />
-        </div>
+        {isStudyNote ? (
+          <section
+            aria-labelledby="study-note-body-heading"
+            className="rounded-xl border border-indigo-100 bg-indigo-50/30"
+          >
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-indigo-100 px-5 py-3">
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-700">
+                <NotebookPen className="size-4" aria-hidden="true" />
+                <span id="study-note-body-heading">학습 노트</span>
+              </span>
+              <span className="text-xs text-muted-foreground">오늘 배운 내용 · 핵심 개념 · 헷갈린 점</span>
+            </div>
+            <div className="min-h-64 px-5 py-4">
+              <BlockEditor
+                blocks={page.blocks}
+                onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
+              />
+            </div>
+          </section>
+        ) : (
+          <div className="min-h-64">
+            <BlockEditor
+              blocks={page.blocks}
+              onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
+            />
+          </div>
+        )}
 
-        {(template.sections.studyHistory || template.sections.aiTools) && (
+        {toggleable && !studyOn && (
           <>
             <hr className="mb-8 mt-16 border-border" />
+            <section
+              aria-labelledby="study-features-heading"
+              className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-border px-5 py-5"
+            >
+              <div className="flex flex-col gap-1">
+                <h2 id="study-features-heading" className="text-base font-semibold text-foreground">
+                  학습 기능
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  학습 기록과 AI 학습 도구를 사용할 수 있습니다.
+                </p>
+                {page.studyRecords.length > 0 && (
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {`보관 중인 학습 기록 ${page.studyRecords.length}개가 있어요. 다시 추가하면 그대로 표시돼요.`}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setStudyEnabled(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+              >
+                <Plus className="size-4" />
+                학습 기능 추가
+              </button>
+            </section>
+          </>
+        )}
+
+        {(sections.studyHistory || sections.aiTools) && (
+          <>
+            {toggleable ? (
+              <div className="mb-8 mt-16 flex items-center gap-3">
+                <hr className="flex-1 border-border" />
+                <StudyFeaturesMenu onDisable={() => setStudyEnabled(false)} />
+              </div>
+            ) : (
+              <hr className="mb-8 mt-16 border-border" />
+            )}
             <div className="flex flex-col gap-12">
-              {template.sections.studyHistory && (
-                <StudyHistory pageId={page.id} records={page.studyRecords} onAdd={handleAddRecord} />
+              {sections.studyHistory && (
+                <StudyHistory
+                  pageId={page.id}
+                  records={page.studyRecords}
+                  onAdd={handleAddRecord}
+                  onUpdate={handleUpdateRecord}
+                  onDelete={handleDeleteRecord}
+                />
               )}
-              {template.sections.aiTools && <AiToolsSection />}
+              {sections.aiTools && <AiToolsSection />}
             </div>
           </>
         )}
       </article>
+    </div>
+  )
+}
+
+function StudyFeaturesMenu({ onDisable }: { onDisable: () => void }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div
+      className="relative"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setOpen(false)
+      }}
+    >
+      <button
+        type="button"
+        aria-label="학습 기능 메뉴"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        학습 기능
+        <MoreHorizontal className="size-4" aria-hidden="true" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" aria-hidden="true" onClick={() => setOpen(false)} />
+          <div
+            role="menu"
+            className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-border bg-background p-1 shadow-lg"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              autoFocus
+              onClick={() => {
+                setOpen(false)
+                onDisable()
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
+            >
+              <PowerOff className="size-4 text-muted-foreground" aria-hidden="true" />
+              학습 기능 끄기
+            </button>
+            <p className="px-2.5 pb-1.5 text-xs leading-relaxed text-muted-foreground">
+              본문과 학습 기록은 삭제되지 않아요.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   )
 }

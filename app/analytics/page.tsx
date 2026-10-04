@@ -5,23 +5,23 @@ import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { Sidebar } from "@/components/sidebar"
 import { SubjectMastery } from "@/components/learning-os/subject-mastery"
-import {
-  analyticsSummary,
-  recentActivity,
-  reviewQueue,
-  upcomingReviews,
-} from "@/lib/learning-os"
-
-const totalHours = Math.floor(analyticsSummary.totalMinutes / 60)
-const remainingMinutes = analyticsSummary.totalMinutes % 60
-
-const summaryCards: { label: string; value: string; hint: string; icon: LucideIcon }[] = [
-  { label: "총 학습 시간", value: `${totalHours}시간 ${remainingMinutes}분`, hint: "이번 달 누적", icon: Clock },
-  { label: "학습 기록 수", value: `${analyticsSummary.recordCount}개`, hint: "이번 달 작성", icon: FileText },
-  { label: "평균 이해도", value: `${analyticsSummary.averageUnderstanding} / 5`, hint: "전체 기록 기준", icon: Gauge },
-]
+import { recentActivity, reviewQueue, upcomingReviews } from "@/lib/learning-os"
+import { formatDuration } from "@/lib/study-pages"
+import { useWorkspace } from "@/lib/workspace"
 
 export default function AnalyticsPage() {
+  const { pages } = useWorkspace()
+  const records = pages.flatMap((p) => p.studyRecords)
+  const totalMinutes = records.reduce((sum, r) => sum + r.durationMinutes, 0)
+  const averageUnderstanding =
+    records.length > 0 ? (records.reduce((sum, r) => sum + r.understanding, 0) / records.length).toFixed(1) : "-"
+
+  const summaryCards: { label: string; value: string; hint: string; icon: LucideIcon }[] = [
+    { label: "총 학습 시간", value: formatDuration(totalMinutes), hint: "학습 기록의 학습 시간 합계", icon: Clock },
+    { label: "학습 기록 수", value: `${records.length}개`, hint: "전체 페이지 기준", icon: FileText },
+    { label: "평균 이해도", value: `${averageUnderstanding} / 5`, hint: "전체 기록 기준", icon: Gauge },
+  ]
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar onLogout={() => console.log("[v0] logout")} />
