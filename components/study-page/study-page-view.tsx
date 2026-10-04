@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from "react"
 import Link from "next/link"
-import { Check, ChevronRight, FileQuestion, NotebookPen, Plus, Save } from "lucide-react"
+import { Check, ChevronRight, FileQuestion, MoreHorizontal, NotebookPen, Plus, PowerOff, Save } from "lucide-react"
 import { computePageStats, type PageStudyRecord } from "@/lib/study-pages"
 import { canToggleStudy, hasStudyFeatures, templates } from "@/lib/templates"
 import { nearestSubject, nodePath, updatePage, useWorkspace } from "@/lib/workspace"
@@ -26,8 +26,9 @@ export function StudyPageView({ pageId }: { pageId: string }) {
   const toggleable = canToggleStudy(page)
   const isStudyNote = page.templateId === "study-note"
   const setStudyEnabled = (studyEnabled: boolean) => updatePage(page.id, (p) => ({ ...p, studyEnabled }))
-  const sections = studyOn
-    ? { properties: true, studyHistory: true, aiTools: true }
+  // Free pages never get the top properties panel; study features attach only at the bottom.
+  const sections = toggleable
+    ? { properties: false, studyHistory: studyOn, aiTools: studyOn }
     : templates[page.templateId].sections
   const path = nodePath({ groups, pages }, page.parentId)
   const subject = nearestSubject({ groups, pages }, page.parentId)
@@ -107,15 +108,8 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {toggleable && studyOn && (
-          <div className="mt-4 flex items-center justify-between gap-3 rounded-md px-2 text-xs text-muted-foreground">
-            <span>자유 페이지 · 학습 기능 사용 중</span>
-            <StudyToggle checked onChange={setStudyEnabled} />
-          </div>
-        )}
-
         {sections.properties && (
-          <div className={toggleable ? "mt-1" : "mt-4"}>
+          <div className="mt-4">
             <PageProperties
               subjectName={subject?.name ?? path.at(-1)?.name ?? "내 페이지"}
               stats={stats}
@@ -165,26 +159,47 @@ export function StudyPageView({ pageId }: { pageId: string }) {
         )}
 
         {toggleable && !studyOn && (
-          <div className="mt-10">
-            <button
-              type="button"
-              onClick={() => setStudyEnabled(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+          <>
+            <hr className="mb-8 mt-16 border-border" />
+            <section
+              aria-labelledby="study-features-heading"
+              className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-border px-5 py-5"
             >
-              <Plus className="size-4" />
-              학습 기능 추가
-            </button>
-            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              {page.studyRecords.length > 0
-                ? `보관 중인 학습 기록 ${page.studyRecords.length}개가 있어요. 다시 켜면 그대로 사용할 수 있어요.`
-                : "본문은 그대로 두고 학습 상태 · 이해도 · 태그 · 학습 기록 · AI 학습 도구만 추가해요."}
-            </p>
-          </div>
+              <div className="flex flex-col gap-1">
+                <h2 id="study-features-heading" className="text-base font-semibold text-foreground">
+                  학습 기능
+                </h2>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  학습 기록과 AI 학습 도구를 사용할 수 있습니다.
+                </p>
+                {page.studyRecords.length > 0 && (
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {`보관 중인 학습 기록 ${page.studyRecords.length}개가 있어요. 다시 추가하면 그대로 표시돼요.`}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setStudyEnabled(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+              >
+                <Plus className="size-4" />
+                학습 기능 추가
+              </button>
+            </section>
+          </>
         )}
 
         {(sections.studyHistory || sections.aiTools) && (
           <>
-            <hr className="mb-8 mt-16 border-border" />
+            {toggleable ? (
+              <div className="mb-8 mt-16 flex items-center gap-3">
+                <hr className="flex-1 border-border" />
+                <StudyFeaturesMenu onDisable={() => setStudyEnabled(false)} />
+              </div>
+            ) : (
+              <hr className="mb-8 mt-16 border-border" />
+            )}
             <div className="flex flex-col gap-12">
               {sections.studyHistory && (
                 <StudyHistory
@@ -204,29 +219,54 @@ export function StudyPageView({ pageId }: { pageId: string }) {
   )
 }
 
-function StudyToggle({ checked, onChange }: { checked: boolean; onChange: (next: boolean) => void }) {
+function StudyFeaturesMenu({ onDisable }: { onDisable: () => void }) {
+  const [open, setOpen] = useState(false)
+
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="inline-flex items-center gap-2 rounded px-1.5 py-1 transition-colors hover:bg-muted hover:text-foreground"
+    <div
+      className="relative"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setOpen(false)
+      }}
     >
-      학습 기능
-      <span
-        className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
-          checked ? "bg-indigo-600" : "bg-border"
-        }`}
+      <button
+        type="button"
+        aria-label="학습 기능 메뉴"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
-        <span
-          className={`size-3 rounded-full bg-background shadow-sm transition-transform ${
-            checked ? "translate-x-3.5" : "translate-x-0.5"
-          }`}
-        />
-      </span>
-      <span className="sr-only">{checked ? "끄기" : "켜기"}</span>
-    </button>
+        학습 기능
+        <MoreHorizontal className="size-4" aria-hidden="true" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" aria-hidden="true" onClick={() => setOpen(false)} />
+          <div
+            role="menu"
+            className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-border bg-background p-1 shadow-lg"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              autoFocus
+              onClick={() => {
+                setOpen(false)
+                onDisable()
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
+            >
+              <PowerOff className="size-4 text-muted-foreground" aria-hidden="true" />
+              학습 기능 끄기
+            </button>
+            <p className="px-2.5 pb-1.5 text-xs leading-relaxed text-muted-foreground">
+              본문과 학습 기록은 삭제되지 않아요.
+            </p>
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 
