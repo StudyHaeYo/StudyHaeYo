@@ -8,11 +8,6 @@ import { createPage, flattenTree, nodeExists, nodePath, useWorkspace } from "@/l
 
 const ROOT = "__root__"
 
-const templateCopy: Record<TemplateId, string> = {
-  "study-note": "학습 내용과 학습 기록을 관리합니다.",
-  blank: "자유롭게 내용을 작성합니다.",
-}
-
 export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
   const router = useRouter()
   const workspace = useWorkspace()
@@ -56,7 +51,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
       <fieldset className="flex flex-col">
         <legend className="mb-3 text-sm font-medium text-foreground">페이지 유형</legend>
         <div className="grid gap-4 sm:grid-cols-2">
-          {templateList.map(({ id, label, icon: Icon }) => {
+          {templateList.map(({ id, label, tagline, icon: Icon }) => {
             const selected = templateId === id
             return (
               <label
@@ -82,7 +77,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
                 </span>
                 <span className="text-sm font-semibold text-card-foreground">{label}</span>
                 <span className="text-pretty text-sm leading-relaxed text-muted-foreground">
-                  {templateCopy[id]}
+                  {tagline}
                 </span>
                 {selected && (
                   <span className="absolute right-4 top-4 flex size-5 items-center justify-center rounded-full bg-indigo-600 text-white">

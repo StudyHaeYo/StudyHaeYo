@@ -27,6 +27,7 @@ import {
   type WorkspaceGroup,
 } from "@/lib/workspace"
 import { RecordItem } from "@/components/sidebar/record-item"
+import { resolveTreeAppearance } from "@/lib/templates"
 import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
 
 const mainNav = [
@@ -203,7 +204,7 @@ function PageNode({ page, ctx }: { page: StudyPage; ctx: TreeContext }) {
 
   return (
     <RecordItem
-      record={{ id: page.id, title: page.title || "제목 없음" }}
+      record={{ id: page.id, title: page.title || "제목 없음", ...resolveTreeAppearance(page) }}
       active={ctx.pathname === `/record/${page.id}`}
       onRename={(title) => renamePage(page.id, title)}
       onDuplicate={() => duplicatePage(page.id)}
