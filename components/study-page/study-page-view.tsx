@@ -4,7 +4,7 @@ import { Fragment, useState } from "react"
 import Link from "next/link"
 import { Check, ChevronRight, FileQuestion, MoreHorizontal, NotebookPen, Plus, PowerOff, Save } from "lucide-react"
 import { computePageStats, type PageStudyRecord } from "@/lib/study-pages"
-import { canToggleStudy, hasStudyFeatures, templates } from "@/lib/templates"
+import { resolvePageLayout } from "@/lib/templates"
 import { nearestSubject, nodePath, updatePage, useWorkspace } from "@/lib/workspace"
 import { useTodayISO } from "@/hooks/use-today"
 import { BlockEditor } from "@/components/study-page/block-editor"
@@ -13,7 +13,7 @@ import { StudyHistory } from "@/components/study-page/study-history"
 import { AiToolsSection } from "@/components/record/ai-tools-section"
 
 // The single page UI: seeded pages and user-created pages both render here.
-// Which sections appear is decided by the page's template.
+// What renders is decided by the page type (template) via resolvePageLayout.
 export function StudyPageView({ pageId }: { pageId: string }) {
   const { groups, pages } = useWorkspace()
   const today = useTodayISO()
@@ -22,14 +22,10 @@ export function StudyPageView({ pageId }: { pageId: string }) {
 
   if (!page) return <MissingPage />
 
-  const studyOn = hasStudyFeatures(page)
-  const toggleable = canToggleStudy(page)
-  const isStudyNote = page.templateId === "study-note"
+  // 학습 노트: [학습 속성] → [학습 노트 본문] → [학습 기록] → [AI 학습 도구]
+  // 빈 페이지: [자유 본문] → ([학습 기능 추가] | [학습 기록] → [AI 학습 도구])
+  const layout = resolvePageLayout(page)
   const setStudyEnabled = (studyEnabled: boolean) => updatePage(page.id, (p) => ({ ...p, studyEnabled }))
-  // Free pages never get the top properties panel; study features attach only at the bottom.
-  const sections = toggleable
-    ? { properties: false, studyHistory: studyOn, aiTools: studyOn }
-    : templates[page.templateId].sections
   const path = nodePath({ groups, pages }, page.parentId)
   const subject = nearestSubject({ groups, pages }, page.parentId)
   const stats = computePageStats(page, today)
@@ -108,7 +104,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {sections.properties && (
+        {layout.propertiesPanel && (
           <div className="mt-4">
             <PageProperties
               subjectName={subject?.name ?? path.at(-1)?.name ?? "내 페이지"}
@@ -130,7 +126,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
 
         <hr className="my-6 border-border" />
 
-        {isStudyNote ? (
+        {layout.body === "study-note" ? (
           <section
             aria-labelledby="study-note-body-heading"
             className="rounded-xl border border-indigo-100 bg-indigo-50/30"
@@ -158,7 +154,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           </div>
         )}
 
-        {toggleable && !studyOn && (
+        {layout.bottom === "offer" && (
           <>
             <hr className="mb-8 mt-16 border-border" />
             <section
@@ -174,7 +170,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
                 </p>
                 {page.studyRecords.length > 0 && (
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    {`보관 중인 학습 기록 ${page.studyRecords.length}개가 있어요. 다시 추가하면 그대로 표시돼요.`}
+                    {`보관 중인 ��습 기록 ${page.studyRecords.length}개가 있어요. 다시 추가하면 그대로 표시돼요.`}
                   </p>
                 )}
               </div>
@@ -190,9 +186,9 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           </>
         )}
 
-        {(sections.studyHistory || sections.aiTools) && (
+        {layout.bottom === "tools" && (
           <>
-            {toggleable ? (
+            {layout.canDisableStudy ? (
               <div className="mb-8 mt-16 flex items-center gap-3">
                 <hr className="flex-1 border-border" />
                 <StudyFeaturesMenu onDisable={() => setStudyEnabled(false)} />
@@ -201,16 +197,14 @@ export function StudyPageView({ pageId }: { pageId: string }) {
               <hr className="mb-8 mt-16 border-border" />
             )}
             <div className="flex flex-col gap-12">
-              {sections.studyHistory && (
-                <StudyHistory
-                  pageId={page.id}
-                  records={page.studyRecords}
-                  onAdd={handleAddRecord}
-                  onUpdate={handleUpdateRecord}
-                  onDelete={handleDeleteRecord}
-                />
-              )}
-              {sections.aiTools && <AiToolsSection />}
+              <StudyHistory
+                pageId={page.id}
+                records={page.studyRecords}
+                onAdd={handleAddRecord}
+                onUpdate={handleUpdateRecord}
+                onDelete={handleDeleteRecord}
+              />
+              <AiToolsSection />
             </div>
           </>
         )}
