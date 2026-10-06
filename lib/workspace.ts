@@ -1,7 +1,7 @@
 import { createStore } from "@/lib/create-store"
 import { studyTree } from "@/lib/study-tree"
 import { studyPages, todayISO, type StudyPage } from "@/lib/study-pages"
-import { templates, type TemplateId } from "@/lib/templates"
+import { getTemplate, type TemplateId } from "@/lib/templates"
 
 // A folder groups pages or other groups; a subject is a group that plans and analytics can target.
 export type GroupKind = "folder" | "subject"
@@ -48,7 +48,7 @@ export function createPage(input: { title: string; templateId: TemplateId; paren
     parentId: input.parentId,
     templateId: input.templateId,
     createdAt: todayISO(),
-    blocks: templates[input.templateId].createBlocks(),
+    blocks: getTemplate(input.templateId).createBlocks(),
     tags: [],
     studyRecords: [],
   }

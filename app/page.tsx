@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { NotebookPen } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { TopBar } from "@/components/top-bar"
+import { SessionTimerCard } from "@/components/study-session/session-timer"
 import { RecordCard } from "@/components/record-card"
 import { ChecklistWidget } from "@/components/checklist-widget"
 import { StatsWidget } from "@/components/stats-widget"
@@ -48,6 +49,7 @@ export default function DashboardPage() {
       <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-10">
         <div className="mx-auto max-w-2xl">
           <TopBar date={todayLabel} />
+          <SessionTimerCard />
 
           <section aria-label="오늘의 학습" className="mb-8 flex flex-col gap-4">
             <TodayPriority />

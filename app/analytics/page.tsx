@@ -8,16 +8,24 @@ import { SubjectMastery } from "@/components/learning-os/subject-mastery"
 import { recentActivity, reviewQueue, upcomingReviews } from "@/lib/learning-os"
 import { formatDuration } from "@/lib/study-pages"
 import { useWorkspace } from "@/lib/workspace"
+import { unrecordedSessionMinutes, useStudySession } from "@/lib/study-session"
 
 export default function AnalyticsPage() {
   const { pages } = useWorkspace()
   const records = pages.flatMap((p) => p.studyRecords)
-  const totalMinutes = records.reduce((sum, r) => sum + r.durationMinutes, 0)
+  const { log } = useStudySession()
+  const sessionMinutes = unrecordedSessionMinutes(log)
+  const totalMinutes = records.reduce((sum, r) => sum + r.durationMinutes, 0) + sessionMinutes
   const averageUnderstanding =
     records.length > 0 ? (records.reduce((sum, r) => sum + r.understanding, 0) / records.length).toFixed(1) : "-"
 
   const summaryCards: { label: string; value: string; hint: string; icon: LucideIcon }[] = [
-    { label: "총 학습 시간", value: formatDuration(totalMinutes), hint: "학습 기록의 학습 시간 합계", icon: Clock },
+    { label: "총 학습 시간", value: formatDuration(totalMinutes), hint:
+        sessionMinutes > 0
+          ? `학습 기록 + 기록 전 타이머 세션 ${formatDuration(sessionMinutes)}`
+          : "학습 기록의 학습 시간 합계",
+      icon: Clock,
+    },
     { label: "학습 기록 수", value: `${records.length}개`, hint: "전체 페이지 기준", icon: FileText },
     { label: "평균 이해도", value: `${averageUnderstanding} / 5`, hint: "전체 기록 기준", icon: Gauge },
   ]

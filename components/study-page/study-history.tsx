@@ -12,16 +12,41 @@ interface StudyHistoryProps {
   onAdd: (record: PageStudyRecord) => void
   onUpdate: (record: PageStudyRecord) => void
   onDelete: (recordId: string) => void
+  // Opens the add form with the study time pre-filled (from a finished timer session).
+  prefill?: { minutes: number; token: number } | null
+  onPrefillDone?: (recorded: boolean) => void
 }
 
 type Notice = { recordId: string | null; message: string }
 
-export function StudyHistory({ pageId, records, onAdd, onUpdate, onDelete }: StudyHistoryProps) {
-  const [adding, setAdding] = useState(false)
+export function StudyHistory({
+  pageId,
+  records,
+  onAdd,
+  onUpdate,
+  onDelete,
+  prefill,
+  onPrefillDone,
+}: StudyHistoryProps) {
+  const [adding, setAdding] = useState(Boolean(prefill))
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<PageStudyRecord | null>(null)
   const [notice, setNotice] = useState<Notice | null>(null)
+  const [seenPrefillToken, setSeenPrefillToken] = useState(prefill?.token ?? null)
   const sorted = sortRecordsNewestFirst(records)
+
+  // A new prefill can arrive while this page is already open.
+  if (prefill && prefill.token !== seenPrefillToken) {
+    setSeenPrefillToken(prefill.token)
+    setAdding(true)
+    setEditingId(null)
+    setNotice(null)
+  }
+
+  const closeAddForm = (recorded = false) => {
+    setAdding(false)
+    if (prefill) onPrefillDone?.(recorded)
+  }
 
   return (
     <section aria-labelledby="study-history-heading" className="flex flex-col gap-4">
@@ -53,11 +78,13 @@ export function StudyHistory({ pageId, records, onAdd, onUpdate, onDelete }: Stu
 
       {adding && (
         <AddRecordForm
+          key={prefill?.token ?? "manual"}
           pageId={pageId}
-          onCancel={() => setAdding(false)}
+          initialMinutes={prefill?.minutes}
+          onCancel={() => closeAddForm()}
           onSubmit={(record) => {
             onAdd(record)
-            setAdding(false)
+            closeAddForm(true)
             setNotice({
               recordId: record.id,
               message: "학습 기록이 추가되어 페이지 속성의 이해도와 복습 일정이 업데이트되었어요.",

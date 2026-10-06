@@ -1,5 +1,5 @@
 import { addDays, computePageStats, type PageStatus } from "@/lib/study-pages"
-import { isStudyNotePage } from "@/lib/templates"
+import { isReviewCandidate } from "@/lib/templates"
 import { nearestSubject, type WorkspaceState } from "@/lib/workspace"
 
 export interface StudyCandidate {
@@ -27,12 +27,12 @@ function relativeDay(iso: string | null, today: string) {
   return `${diff}일 전`
 }
 
-// Pages due for review today or tomorrow. Only 학습 노트 pages are candidates;
-// free pages (even with study features on) are left out of these Home widgets.
+// Pages due for review today or tomorrow. Only pages whose template is studyMode "locked-on"
+// are candidates; "optional" pages (even with study on) are left out of these Home widgets.
 export function reviewCandidates(workspace: WorkspaceState, today: string): StudyCandidate[] {
   const tomorrow = addDays(today, 1)
   return workspace.pages
-    .filter(isStudyNotePage)
+    .filter(isReviewCandidate)
     .map((page) => ({ page, stats: computePageStats(page, today) }))
     .filter(({ stats }) => {
       if (stats.status === "완료") return false

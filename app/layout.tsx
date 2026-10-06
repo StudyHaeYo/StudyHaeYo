@@ -1,5 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
+import { SessionTracker } from '@/components/study-session/session-tracker'
+import { StudySessionLayer } from '@/components/study-session/session-summary-modal'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -42,6 +44,8 @@ export default function RootLayout({
     <html lang="ko">
       <body className="antialiased">
         {children}
+        <SessionTracker />
+        <StudySessionLayer />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

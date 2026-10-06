@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Check, ChevronRight, FolderOpen } from "lucide-react"
-import { templateList, type TemplateId } from "@/lib/templates"
+import { defaultTemplateId, templateRegistry, type TemplateId } from "@/lib/templates"
 import { createPage, flattenTree, nodeExists, nodePath, useWorkspace } from "@/lib/workspace"
 
 const ROOT = "__root__"
@@ -15,7 +15,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
   const hasContext = nodeExists(workspace, contextParentId)
   const defaultLocation = hasContext ? (contextParentId as string) : ROOT
 
-  const [templateId, setTemplateId] = useState<TemplateId>("study-note")
+  const [templateId, setTemplateId] = useState<TemplateId>(defaultTemplateId)
   const [title, setTitle] = useState("")
   const [location, setLocation] = useState(defaultLocation)
   const [pickingLocation, setPickingLocation] = useState(!hasContext)
@@ -51,7 +51,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
       <fieldset className="flex flex-col">
         <legend className="mb-3 text-sm font-medium text-foreground">페이지 유형</legend>
         <div className="grid gap-4 sm:grid-cols-2">
-          {templateList.map(({ id, label, tagline, icon: Icon }) => {
+          {templateRegistry.map(({ id, name, tagline, cardIcon: Icon }) => {
             const selected = templateId === id
             return (
               <label
@@ -75,7 +75,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
                 >
                   <Icon className="size-5" />
                 </span>
-                <span className="text-sm font-semibold text-card-foreground">{label}</span>
+                <span className="text-sm font-semibold text-card-foreground">{name}</span>
                 <span className="text-pretty text-sm leading-relaxed text-muted-foreground">
                   {tagline}
                 </span>

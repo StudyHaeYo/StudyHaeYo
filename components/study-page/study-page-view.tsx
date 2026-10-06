@@ -2,12 +2,12 @@
 
 import { Fragment, useState } from "react"
 import Link from "next/link"
-import { Check, ChevronRight, FileQuestion, MoreHorizontal, NotebookPen, Plus, PowerOff, Save } from "lucide-react"
+import { Check, ChevronRight, FileQuestion, Lock, MoreHorizontal, Plus, PowerOff, Save } from "lucide-react"
 import { computePageStats, type PageStudyRecord } from "@/lib/study-pages"
 import { resolvePageLayout } from "@/lib/templates"
 import { nearestSubject, nodePath, updatePage, useWorkspace } from "@/lib/workspace"
+import { clearRecordPrefill, useStudySession } from "@/lib/study-session"
 import { useTodayISO } from "@/hooks/use-today"
-import { BlockEditor } from "@/components/study-page/block-editor"
 import { PageProperties } from "@/components/study-page/page-properties"
 import { StudyHistory } from "@/components/study-page/study-history"
 import { AiToolsSection } from "@/components/record/ai-tools-section"
@@ -17,14 +17,17 @@ import { AiToolsSection } from "@/components/record/ai-tools-section"
 export function StudyPageView({ pageId }: { pageId: string }) {
   const { groups, pages } = useWorkspace()
   const today = useTodayISO()
+  const { prefill } = useStudySession()
   const [saved, setSaved] = useState(false)
   const page = pages.find((p) => p.id === pageId)
 
   if (!page) return <MissingPage />
 
-  // 학습 노트: [학습 속성] → [학습 노트 본문] → [학습 기록] → [AI 학습 도구]
-  // 빈 페이지: [자유 본문] → ([학습 기능 추가] | [학습 기록] → [AI 학습 도구])
+  // Study on (any type):  [속성 패널] → [본문 템플릿] → [학습 기록] → [AI 학습 도구]
+  // Study off (optional): [본문 템플릿] → [학습 기능 추가]
   const layout = resolvePageLayout(page)
+  const { Body } = layout
+  const pagePrefill = prefill?.pageId === page.id ? prefill : null
   const setStudyEnabled = (studyEnabled: boolean) => updatePage(page.id, (p) => ({ ...p, studyEnabled }))
   const path = nodePath({ groups, pages }, page.parentId)
   const subject = nearestSubject({ groups, pages }, page.parentId)
@@ -104,7 +107,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {layout.propertiesPanel && (
+        {layout.studyOn && (
           <div className="mt-4">
             <PageProperties
               subjectName={subject?.name ?? path.at(-1)?.name ?? "내 페이지"}
@@ -126,35 +129,9 @@ export function StudyPageView({ pageId }: { pageId: string }) {
 
         <hr className="my-6 border-border" />
 
-        {layout.body === "study-note" ? (
-          <section
-            aria-labelledby="study-note-body-heading"
-            className="rounded-xl border border-indigo-100 bg-indigo-50/30"
-          >
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-indigo-100 px-5 py-3">
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-700">
-                <NotebookPen className="size-4" aria-hidden="true" />
-                <span id="study-note-body-heading">학습 노트</span>
-              </span>
-              <span className="text-xs text-muted-foreground">오늘 배운 내용 · 핵심 개념 · 헷갈린 점</span>
-            </div>
-            <div className="min-h-64 px-5 py-4">
-              <BlockEditor
-                blocks={page.blocks}
-                onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
-              />
-            </div>
-          </section>
-        ) : (
-          <div className="min-h-64">
-            <BlockEditor
-              blocks={page.blocks}
-              onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
-            />
-          </div>
-        )}
+        <Body blocks={page.blocks} onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))} />
 
-        {layout.bottom === "offer" && (
+        {!layout.studyOn && (
           <>
             <hr className="mb-8 mt-16 border-border" />
             <section
@@ -186,16 +163,15 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           </>
         )}
 
-        {layout.bottom === "tools" && (
+        {layout.studyOn && (
           <>
-            {layout.canDisableStudy ? (
-              <div className="mb-8 mt-16 flex items-center gap-3">
-                <hr className="flex-1 border-border" />
-                <StudyFeaturesMenu onDisable={() => setStudyEnabled(false)} />
-              </div>
-            ) : (
-              <hr className="mb-8 mt-16 border-border" />
-            )}
+            <div className="mb-8 mt-16 flex items-center gap-3">
+              <hr className="flex-1 border-border" />
+              <StudyFeaturesMenu
+                locked={layout.studyControl === "locked"}
+                onDisable={() => setStudyEnabled(false)}
+              />
+            </div>
             <div className="flex flex-col gap-12">
               <StudyHistory
                 pageId={page.id}
@@ -203,6 +179,8 @@ export function StudyPageView({ pageId }: { pageId: string }) {
                 onAdd={handleAddRecord}
                 onUpdate={handleUpdateRecord}
                 onDelete={handleDeleteRecord}
+                prefill={pagePrefill}
+                onPrefillDone={clearRecordPrefill}
               />
               <AiToolsSection />
             </div>
@@ -213,7 +191,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
   )
 }
 
-function StudyFeaturesMenu({ onDisable }: { onDisable: () => void }) {
+function StudyFeaturesMenu({ locked, onDisable }: { locked: boolean; onDisable: () => void }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -241,22 +219,33 @@ function StudyFeaturesMenu({ onDisable }: { onDisable: () => void }) {
             role="menu"
             className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-border bg-background p-1 shadow-lg"
           >
-            <button
-              type="button"
-              role="menuitem"
-              autoFocus
-              onClick={() => {
-                setOpen(false)
-                onDisable()
-              }}
-              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
-            >
-              <PowerOff className="size-4 text-muted-foreground" aria-hidden="true" />
-              학습 기능 끄기
-            </button>
-            <p className="px-2.5 pb-1.5 text-xs leading-relaxed text-muted-foreground">
-              본문과 학습 기록은 삭제되지 않아요.
-            </p>
+            {locked ? (
+              <div role="menuitem" aria-disabled="true" tabIndex={-1} className="flex gap-2 px-2.5 py-2">
+                <Lock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  이 페이지는 항상 학습 기록으로 추적됩니다
+                </p>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  autoFocus
+                  onClick={() => {
+                    setOpen(false)
+                    onDisable()
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
+                >
+                  <PowerOff className="size-4 text-muted-foreground" aria-hidden="true" />
+                  학습 기능 끄기
+                </button>
+                <p className="px-2.5 pb-1.5 text-xs leading-relaxed text-muted-foreground">
+                  본문과 학습 기록은 삭제되지 않아요.
+                </p>
+              </>
+            )}
           </div>
         </>
       )}

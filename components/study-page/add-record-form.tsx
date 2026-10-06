@@ -8,6 +8,8 @@ interface AddRecordFormProps {
   pageId: string
   // When provided, the form edits this record instead of creating a new one.
   initial?: PageStudyRecord
+  // Pre-filled study time for a new record (e.g. from a timer session).
+  initialMinutes?: number
   onSubmit: (record: PageStudyRecord) => void
   onCancel: () => void
 }
@@ -15,10 +17,12 @@ interface AddRecordFormProps {
 const fieldClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/30"
 
-export function AddRecordForm({ pageId, initial, onSubmit, onCancel }: AddRecordFormProps) {
+export function AddRecordForm({ pageId, initial, initialMinutes, onSubmit, onCancel }: AddRecordFormProps) {
   const isEdit = initial !== undefined
   const [date] = useState(() => initial?.date ?? todayISO())
-  const [duration, setDuration] = useState(initial ? String(initial.durationMinutes) : "")
+  const [duration, setDuration] = useState(
+    initial ? String(initial.durationMinutes) : initialMinutes ? String(initialMinutes) : "",
+  )
   const [understanding, setUnderstanding] = useState<number | null>(initial?.understanding ?? null)
   const [studyContent, setStudyContent] = useState(initial?.studyContent ?? "")
   const [difficulties, setDifficulties] = useState(initial?.difficulties ?? "")
