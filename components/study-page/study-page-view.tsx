@@ -10,6 +10,7 @@ import { clearRecordPrefill, useStudySession } from "@/lib/study-session"
 import { useTodayISO } from "@/hooks/use-today"
 import { PageProperties } from "@/components/study-page/page-properties"
 import { StudyHistory } from "@/components/study-page/study-history"
+import { PageSessionTime } from "@/components/study-page/page-session-time"
 import { AiToolsSection } from "@/components/record/ai-tools-section"
 
 // The single page UI: seeded pages and user-created pages both render here.
@@ -60,10 +61,58 @@ export function StudyPageView({ pageId }: { pageId: string }) {
     }))
   }
 
+  // Same pieces for every page type; layout.frame only decides where they are placed.
+  const twoColumn = layout.frame === "two-column"
+
+  const renderProperties = (variant: "inline" | "panel") => (
+    <PageProperties
+      variant={variant}
+      subjectName={subject?.name ?? path.at(-1)?.name ?? "내 페이지"}
+      stats={stats}
+      recordCount={page.studyRecords.length}
+      tags={page.tags}
+      sessionTime={twoColumn ? <PageSessionTime pageId={page.id} /> : undefined}
+      onChangeTags={(tags) => updatePage(page.id, (p) => ({ ...p, tags }))}
+      onChangeStatus={(status) =>
+        updatePage(page.id, ({ status: _prev, ...rest }) => (status ? { ...rest, status } : rest))
+      }
+      onChangeUnderstanding={(understanding) =>
+        updatePage(page.id, ({ understanding: _prev, ...rest }) => (understanding ? { ...rest, understanding } : rest))
+      }
+    />
+  )
+
+  const renderBody = () => (
+    <Body blocks={page.blocks} onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))} />
+  )
+
+  const renderStudyArea = () => (
+    <>
+      <div className="mb-8 mt-16 flex items-center gap-3">
+        <hr className="flex-1 border-border" />
+        <StudyFeaturesMenu locked={layout.studyControl === "locked"} onDisable={() => setStudyEnabled(false)} />
+      </div>
+      <div className="flex flex-col gap-12">
+        <StudyHistory
+          pageId={page.id}
+          records={page.studyRecords}
+          onAdd={handleAddRecord}
+          onUpdate={handleUpdateRecord}
+          onDelete={handleDeleteRecord}
+          prefill={pagePrefill}
+          onPrefillDone={clearRecordPrefill}
+        />
+        <AiToolsSection />
+      </div>
+    </>
+  )
+
   return (
     <div className="flex flex-col">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-3 lg:px-10">
+        <div
+          className={`mx-auto flex items-center justify-between gap-4 px-6 py-3 lg:px-10 ${twoColumn ? "max-w-6xl" : "max-w-3xl"}`}
+        >
           <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
             <span className="shrink-0 text-muted-foreground">내 페이지</span>
             {path.map((node) => (
@@ -94,7 +143,9 @@ export function StudyPageView({ pageId }: { pageId: string }) {
         </div>
       </header>
 
-      <article className="mx-auto flex w-full max-w-3xl flex-col px-6 pb-24 pt-12 lg:px-10">
+      <article
+        className={`mx-auto flex w-full flex-col px-6 pb-24 pt-12 lg:px-10 ${twoColumn ? "max-w-6xl" : "max-w-3xl"}`}
+      >
         <label htmlFor="page-title" className="sr-only">
           페이지 제목
         </label>
@@ -107,29 +158,27 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {layout.studyOn && (
-          <div className="mt-4">
-            <PageProperties
-              subjectName={subject?.name ?? path.at(-1)?.name ?? "내 페이지"}
-              stats={stats}
-              recordCount={page.studyRecords.length}
-              tags={page.tags}
-              onChangeTags={(tags) => updatePage(page.id, (p) => ({ ...p, tags }))}
-              onChangeStatus={(status) =>
-                updatePage(page.id, ({ status: _prev, ...rest }) => (status ? { ...rest, status } : rest))
-              }
-              onChangeUnderstanding={(understanding) =>
-                updatePage(page.id, ({ understanding: _prev, ...rest }) =>
-                  understanding ? { ...rest, understanding } : rest,
-                )
-              }
-            />
+        {twoColumn ? (
+          <div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
+            <aside
+              aria-label="학습 정보"
+              className="rounded-xl border border-border bg-muted/30 p-2 lg:sticky lg:top-20 lg:w-60 lg:shrink-0"
+            >
+              {renderProperties("panel")}
+            </aside>
+            <div className="flex min-w-0 flex-1 flex-col">
+              {renderBody()}
+              {renderStudyArea()}
+            </div>
           </div>
+        ) : (
+          <>
+            {layout.studyOn && <div className="mt-4">{renderProperties("inline")}</div>}
+            <hr className="my-6 border-border" />
+            {renderBody()}
+            {layout.studyOn && renderStudyArea()}
+          </>
         )}
-
-        <hr className="my-6 border-border" />
-
-        <Body blocks={page.blocks} onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))} />
 
         {!layout.studyOn && (
           <>
@@ -163,29 +212,6 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           </>
         )}
 
-        {layout.studyOn && (
-          <>
-            <div className="mb-8 mt-16 flex items-center gap-3">
-              <hr className="flex-1 border-border" />
-              <StudyFeaturesMenu
-                locked={layout.studyControl === "locked"}
-                onDisable={() => setStudyEnabled(false)}
-              />
-            </div>
-            <div className="flex flex-col gap-12">
-              <StudyHistory
-                pageId={page.id}
-                records={page.studyRecords}
-                onAdd={handleAddRecord}
-                onUpdate={handleUpdateRecord}
-                onDelete={handleDeleteRecord}
-                prefill={pagePrefill}
-                onPrefillDone={clearRecordPrefill}
-              />
-              <AiToolsSection />
-            </div>
-          </>
-        )}
       </article>
     </div>
   )

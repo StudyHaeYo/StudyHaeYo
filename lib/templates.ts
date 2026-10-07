@@ -84,6 +84,8 @@ export interface PageLayout {
   studyOn: boolean
   // "locked": study is always on (menu shows a notice), "toggle": the user can turn it off.
   studyControl: "locked" | "toggle"
+  // Placement only (same data either way): "two-column" = 속성 사이드 패널 + 본문, "single-column" = 본문 위에 속성.
+  frame: "two-column" | "single-column"
 }
 
 // What a page renders comes only from its template definition plus its own study flag.
@@ -94,6 +96,7 @@ export function resolvePageLayout(page: PageLike): PageLayout {
     Body: template.bodyTemplate,
     studyOn: isStudyOn(page),
     studyControl: template.studyMode === "locked-on" ? "locked" : "toggle",
+    frame: template.studyMode === "locked-on" ? "two-column" : "single-column",
   }
 }
 

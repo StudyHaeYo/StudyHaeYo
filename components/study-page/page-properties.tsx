@@ -9,6 +9,7 @@ import {
   Clock,
   Gauge,
   Hash,
+  Timer,
   X,
   type LucideIcon,
 } from "lucide-react"
@@ -29,6 +30,10 @@ interface PagePropertiesProps {
   onChangeTags: (tags: string[]) => void
   onChangeStatus: (status: PageStatus | null) => void
   onChangeUnderstanding: (understanding: number | null) => void
+  // "inline": label | value rows above the body. "panel": label over value, for the narrow side panel.
+  variant?: "inline" | "panel"
+  // Session timer total for this page, shown only when provided.
+  sessionTime?: ReactNode
 }
 
 export function PageProperties({
@@ -39,8 +44,11 @@ export function PageProperties({
   onChangeTags,
   onChangeStatus,
   onChangeUnderstanding,
+  variant = "inline",
+  sessionTime,
 }: PagePropertiesProps) {
   const [draft, setDraft] = useState("")
+  const Row = variant === "panel" ? PanelRow : InlineRow
   const empty = <span className="text-muted-foreground/70">비어 있음</span>
 
   const addTag = () => {
@@ -117,6 +125,11 @@ export function PageProperties({
         <Row icon={Clock} label="학습 시간">
           {stats.totalDurationMinutes > 0 ? formatDuration(stats.totalDurationMinutes) : empty}
         </Row>
+        {sessionTime !== undefined && (
+          <Row icon={Timer} label="타이머 누적">
+            {sessionTime}
+          </Row>
+        )}
         <Row icon={CalendarCheck} label="마지막 학습">
           {stats.lastStudiedAt ? formatDate(stats.lastStudiedAt) : empty}
         </Row>
@@ -174,7 +187,25 @@ export function PageProperties({
   )
 }
 
-function Row({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: ReactNode }) {
+interface RowProps {
+  icon: LucideIcon
+  label: string
+  children: ReactNode
+}
+
+function PanelRow({ icon: Icon, label, children }: RowProps) {
+  return (
+    <div className="flex flex-col gap-1 rounded-md px-2 py-2 text-sm transition-colors hover:bg-muted/60">
+      <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Icon className="size-3.5" aria-hidden="true" />
+        {label}
+      </dt>
+      <dd className="min-w-0 text-foreground">{children}</dd>
+    </div>
+  )
+}
+
+function InlineRow({ icon: Icon, label, children }: RowProps) {
   return (
     <div className="flex min-h-8 items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted/60">
       <dt className="flex w-28 shrink-0 items-center gap-2 text-muted-foreground">
