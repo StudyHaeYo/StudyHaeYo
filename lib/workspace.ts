@@ -48,7 +48,7 @@ export function createPage(input: { title: string; templateId: TemplateId; paren
     parentId: input.parentId,
     templateId: input.templateId,
     createdAt: todayISO(),
-    blocks: getTemplate(input.templateId).createBlocks(),
+    ...getTemplate(input.templateId).createContent(),
     tags: [],
     studyRecords: [],
   }

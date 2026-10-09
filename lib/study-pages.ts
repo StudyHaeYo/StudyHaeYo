@@ -121,6 +121,11 @@ export function computePageStats(page: StudyPage, today: string | null): PageSta
   }
 }
 
+// Study notes saved before the structured body existed keep their blocks as "오늘 배운 내용".
+export function noteOf(page: Pick<StudyPage, "note" | "blocks">): StudyNoteContent {
+  return page.note ?? { learned: page.blocks, concepts: [], confusions: [] }
+}
+
 export function unresolvedConfusionCount(page: Pick<StudyPage, "note">) {
   return page.note?.confusions.filter((c) => !c.resolved).length ?? 0
 }
@@ -199,7 +204,7 @@ export const studyPages: StudyPage[] = [
     ),
     studyRecords: [
       { id: "ds1-r1", pageId: "ds-1", date: "2026-09-25", durationMinutes: 40, understanding: 2, studyContent: "강의 영상으로 해시 함수와 해시 테이블의 기본 구조를 공부함", difficulties: "해시 함수가 인덱스를 만드는 과정", nextSteps: "체이닝 직접 구현해보기", tags: ["해시"] },
-      { id: "ds1-r2", pageId: "ds-1", date: "2026-09-27", durationMinutes: 50, understanding: 3, studyContent: "체이닝을 직접 구현하고 Open Addressing 개념을 읽음", difficulties: "Open Addressing의 탐색 과정", nextSteps: "탐사 방식별 차이 정리", tags: ["해시"] },
+      { id: "ds1-r2", pageId: "ds-1", date: "2026-09-27", durationMinutes: 50, understanding: 3, studyContent: "체이닝을 직접 구현하고 Open Addressing 개념을 읽음", difficulties: "Open Addressing의 탐색 과정", nextSteps: "탐사 방식별 차이 정리", tags: ["���시"] },
       { id: "ds1-r3", pageId: "ds-1", date: "2026-09-28", durationMinutes: 60, understanding: 4, studyContent: "선형·이차 탐사, 이중 해싱을 비교 정리하고 로드 팩터 예제를 풀어봄", difficulties: "Open Addressing의 충돌 처리 방식", nextSteps: "충돌 처리 방법 다시 복습하기", tags: ["해시", "충돌"] },
     ],
   },

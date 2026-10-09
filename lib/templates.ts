@@ -1,7 +1,14 @@
 import type { ComponentType } from "react"
 import { FilePlus, FileText, GraduationCap, NotebookPen, type LucideIcon } from "lucide-react"
-import { newBlockId, type Block } from "@/lib/study-pages"
+import { newBlockId, type Block, type StudyNoteContent } from "@/lib/study-pages"
 import { FreeBody, StudyNoteBody, type PageBodyProps } from "@/components/study-page/page-bodies"
+import { StudyNoteReview, type ReviewBodyProps } from "@/components/study-page/study-note-review"
+
+// Initial body for a new page. `note` is only set by structured-note templates.
+export interface PageContent {
+  blocks: Block[]
+  note?: StudyNoteContent
+}
 
 // Two independent axes describe a page type:
 // - studyMode: whether study features (속성 패널 · 학습 기록 · AI 학습 도구) can be turned off.
@@ -19,8 +26,10 @@ export interface PageTemplate {
   // Icon in the sidebar page tree.
   treeIcon: LucideIcon
   bodyTemplate: ComponentType<PageBodyProps>
+  // Optional body used when the page is opened with ?mode=review.
+  reviewTemplate?: ComponentType<ReviewBodyProps>
   studyMode: StudyMode
-  createBlocks: () => Block[]
+  createContent: () => PageContent
 }
 
 // Add a template (강의 노트, 시험 대비 ...) by appending to this array; the new-page cards follow automatically.
@@ -32,15 +41,12 @@ export const templateRegistry = [
     cardIcon: NotebookPen,
     treeIcon: GraduationCap,
     bodyTemplate: StudyNoteBody,
+    reviewTemplate: StudyNoteReview,
     studyMode: "locked-on",
-    createBlocks: () => [
-      { id: newBlockId(), type: "h2", text: "오늘 배운 내용" },
-      { id: newBlockId(), type: "p", text: "" },
-      { id: newBlockId(), type: "h2", text: "핵심 개념" },
-      { id: newBlockId(), type: "p", text: "" },
-      { id: newBlockId(), type: "h2", text: "헷갈린 점" },
-      { id: newBlockId(), type: "p", text: "" },
-    ],
+    createContent: () => ({
+      blocks: [],
+      note: { learned: [{ id: newBlockId(), type: "p", text: "" }], concepts: [], confusions: [] },
+    }),
   },
   {
     id: "blank",
@@ -50,7 +56,7 @@ export const templateRegistry = [
     treeIcon: FileText,
     bodyTemplate: FreeBody,
     studyMode: "optional",
-    createBlocks: () => [{ id: newBlockId(), type: "p", text: "" }],
+    createContent: () => ({ blocks: [{ id: newBlockId(), type: "p", text: "" }] }),
   },
 ] as const satisfies readonly PageTemplate[]
 
@@ -81,22 +87,23 @@ export function isStudyOn(page: PageLike) {
 
 export interface PageLayout {
   Body: ComponentType<PageBodyProps>
+  // Set only for locked-on templates that define a review body.
+  ReviewBody: ComponentType<ReviewBodyProps> | null
   studyOn: boolean
   // "locked": study is always on (menu shows a notice), "toggle": the user can turn it off.
   studyControl: "locked" | "toggle"
-  // Placement only (same data either way): "two-column" = 속성 사이드 패널 + 본문, "single-column" = 본문 위에 속성.
-  frame: "two-column" | "single-column"
 }
 
 // What a page renders comes only from its template definition plus its own study flag.
-// Every page with study on gets the same 속성 패널 + 학습 기록 + AI 학습 도구.
+// Every page uses the same single-column frame; with study on it gets 속성 + 학습 기록 + AI 학습 도구.
 export function resolvePageLayout(page: PageLike): PageLayout {
   const template = getTemplate(page.templateId)
+  const lockedOn = template.studyMode === "locked-on"
   return {
     Body: template.bodyTemplate,
+    ReviewBody: lockedOn ? (template.reviewTemplate ?? null) : null,
     studyOn: isStudyOn(page),
-    studyControl: template.studyMode === "locked-on" ? "locked" : "toggle",
-    frame: template.studyMode === "locked-on" ? "two-column" : "single-column",
+    studyControl: lockedOn ? "locked" : "toggle",
   }
 }
 
