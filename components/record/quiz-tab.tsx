@@ -80,7 +80,7 @@ function QuestionCard({ number, question }: { number: number; question: Question
         {options.map((option, i) => {
           const isAnswer = gradable && i === question.answer
           const isSelected = selected === i
-          const highlightCorrect = isAnswer && (showAnswer || result === "incorrect" || result === "correct")
+          const highlightCorrect = isAnswer && (showAnswer || result === "correct")
           const highlightWrong = isSelected && result === "incorrect"
           return (
             <li key={`${i}-${option}`}>
