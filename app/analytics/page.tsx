@@ -6,13 +6,17 @@ import Link from "next/link"
 import { Sidebar } from "@/components/sidebar"
 import { SubjectMastery } from "@/components/learning-os/subject-mastery"
 import { recentActivity, reviewQueue, upcomingReviews } from "@/lib/learning-os"
-import { formatDuration } from "@/lib/study-pages"
+import { formatDuration, unresolvedConfusionCount } from "@/lib/study-pages"
 import { useWorkspace } from "@/lib/workspace"
 import { unrecordedSessionMinutes, useStudySession } from "@/lib/study-session"
 
 export default function AnalyticsPage() {
   const { pages } = useWorkspace()
   const records = pages.flatMap((p) => p.studyRecords)
+  const unresolvedByPage = (pageId: string) => {
+    const page = pages.find((p) => p.id === pageId)
+    return page ? unresolvedConfusionCount(page) : 0
+  }
   const { log } = useStudySession()
   const sessionMinutes = unrecordedSessionMinutes(log)
   const totalMinutes = records.reduce((sum, r) => sum + r.durationMinutes, 0) + sessionMinutes
@@ -76,6 +80,11 @@ export default function AnalyticsPage() {
                         <span className="px-1.5 text-muted-foreground">·</span>
                         <span className="font-medium text-card-foreground">{item.topic}</span>
                         <span className="ml-2 text-xs text-muted-foreground">이해도 {item.understanding}/5</span>
+                        {unresolvedByPage(item.pageId) > 0 && (
+                          <span className="ml-2 text-xs font-medium text-amber-700">
+                            {`미해결 헷갈린 점 ${unresolvedByPage(item.pageId)}개`}
+                          </span>
+                        )}
                       </span>
                       <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
                         보강 필요

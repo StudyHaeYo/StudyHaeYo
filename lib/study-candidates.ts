@@ -1,4 +1,4 @@
-import { addDays, computePageStats, type PageStatus } from "@/lib/study-pages"
+import { addDays, computePageStats, unresolvedConfusionCount, type PageStatus } from "@/lib/study-pages"
 import { isReviewCandidate } from "@/lib/templates"
 import { nearestSubject, type WorkspaceState } from "@/lib/workspace"
 
@@ -11,7 +11,10 @@ export interface StudyCandidate {
   lastStudied: string
   due: "오늘" | "내일"
   overdue: boolean
+  unresolvedConfusions: number
 }
+
+export const reviewHref = (pageId: string) => `/record/${pageId}?mode=review`
 
 function daysBetween(fromISO: string, toISO: string) {
   const [fy, fm, fd] = fromISO.split("-").map(Number)
@@ -29,11 +32,12 @@ function relativeDay(iso: string | null, today: string) {
 
 // Pages due for review today or tomorrow. Only pages whose template is studyMode "locked-on"
 // are candidates; "optional" pages (even with study on) are left out of these Home widgets.
+// Order: review date → understanding → more unresolved 헷갈린 점 first.
 export function reviewCandidates(workspace: WorkspaceState, today: string): StudyCandidate[] {
   const tomorrow = addDays(today, 1)
   return workspace.pages
     .filter(isReviewCandidate)
-    .map((page) => ({ page, stats: computePageStats(page, today) }))
+    .map((page) => ({ page, stats: computePageStats(page, today), unresolved: unresolvedConfusionCount(page) }))
     .filter(({ stats }) => {
       if (stats.status === "완료") return false
       if (stats.status === "복습 필요") return true
@@ -42,9 +46,10 @@ export function reviewCandidates(workspace: WorkspaceState, today: string): Stud
     .sort(
       (a, b) =>
         (a.stats.nextReviewAt ?? today).localeCompare(b.stats.nextReviewAt ?? today) ||
-        (a.stats.understanding ?? 0) - (b.stats.understanding ?? 0),
+        (a.stats.understanding ?? 0) - (b.stats.understanding ?? 0) ||
+        b.unresolved - a.unresolved,
     )
-    .map(({ page, stats }) => {
+    .map(({ page, stats, unresolved }) => {
       const dueAt = stats.nextReviewAt ?? today
       return {
         pageId: page.id,
@@ -55,6 +60,7 @@ export function reviewCandidates(workspace: WorkspaceState, today: string): Stud
         lastStudied: relativeDay(stats.lastStudiedAt, today),
         due: dueAt <= today ? "오늘" : "내일",
         overdue: dueAt < today,
+        unresolvedConfusions: unresolved,
       }
     })
 }

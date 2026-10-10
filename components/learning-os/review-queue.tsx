@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { RotateCcw } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
-import { reviewCandidates } from "@/lib/study-candidates"
+import { reviewCandidates, reviewHref } from "@/lib/study-candidates"
+import { UnresolvedBadge } from "@/components/study-page/unresolved-badge"
 import { useWorkspace } from "@/lib/workspace"
 
 export function ReviewQueue({ title = "복습이 필요한 학습" }: { title?: string }) {
@@ -29,11 +30,14 @@ export function ReviewQueue({ title = "복습이 필요한 학습" }: { title?: 
         {queue.map((item) => (
           <li key={item.pageId}>
             <Link
-              href={`/record/${item.pageId}`}
+              href={reviewHref(item.pageId)}
               className="group flex items-center justify-between gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent"
             >
               <span className="min-w-0">
-                <span className="block truncate text-sm font-medium text-card-foreground">{item.topic}</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="truncate text-sm font-medium text-card-foreground">{item.topic}</span>
+                  <UnresolvedBadge count={item.unresolvedConfusions} />
+                </span>
                 <span className="block truncate text-xs text-muted-foreground">
                   {item.subject} · 마지막 학습 {item.lastStudied}
                   {item.understanding !== null ? ` · 이해도 ${item.understanding}/5` : ""}

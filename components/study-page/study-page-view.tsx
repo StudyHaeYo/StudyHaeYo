@@ -2,32 +2,41 @@
 
 import { Fragment, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Check, ChevronRight, FileQuestion, Lock, MoreHorizontal, Plus, PowerOff, Save } from "lucide-react"
-import { computePageStats, type PageStudyRecord } from "@/lib/study-pages"
+import {
+  computePageStats,
+  noteOf,
+  todayISO,
+  type PageStudyRecord,
+  type StudyNoteContent,
+} from "@/lib/study-pages"
+import type { ReviewResult } from "@/components/study-page/study-note-review"
 import { resolvePageLayout } from "@/lib/templates"
 import { nearestSubject, nodePath, updatePage, useWorkspace } from "@/lib/workspace"
 import { clearRecordPrefill, useStudySession } from "@/lib/study-session"
 import { useTodayISO } from "@/hooks/use-today"
 import { PageProperties } from "@/components/study-page/page-properties"
 import { StudyHistory } from "@/components/study-page/study-history"
-import { PageSessionTime } from "@/components/study-page/page-session-time"
 import { AiToolsSection } from "@/components/record/ai-tools-section"
 
 // The single page UI: seeded pages and user-created pages both render here.
 // What renders is decided by the page type (template) via resolvePageLayout.
-export function StudyPageView({ pageId }: { pageId: string }) {
+export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review" }) {
   const { groups, pages } = useWorkspace()
   const today = useTodayISO()
+  const router = useRouter()
   const { prefill } = useStudySession()
   const [saved, setSaved] = useState(false)
   const page = pages.find((p) => p.id === pageId)
 
   if (!page) return <MissingPage />
 
-  // Study on (any type):  [속성 패널] → [본문 템플릿] → [학습 기록] → [AI 학습 도구]
-  // Study off (optional): [본문 템플릿] → [학습 기능 추가]
+  // Every page type shares one column:
+  // Study on:  [속성] → [본문 템플릿 or 복습 모드] → [학습 기록] → [AI 학습 도구]
+  // Study off: [본문 템플릿] → [학습 기능 추가]
   const layout = resolvePageLayout(page)
-  const { Body } = layout
+  const { Body, ReviewBody } = layout
   const pagePrefill = prefill?.pageId === page.id ? prefill : null
   const setStudyEnabled = (studyEnabled: boolean) => updatePage(page.id, (p) => ({ ...p, studyEnabled }))
   const path = nodePath({ groups, pages }, page.parentId)
@@ -61,17 +70,31 @@ export function StudyPageView({ pageId }: { pageId: string }) {
     }))
   }
 
-  // Same pieces for every page type; layout.frame only decides where they are placed.
-  const twoColumn = layout.frame === "two-column"
+  const pageHref = `/record/${page.id}`
+  const reviewing = mode === "review" && ReviewBody !== null
+  const changeNote = (note: StudyNoteContent) => updatePage(page.id, (p) => ({ ...p, note }))
 
-  const renderProperties = (variant: "inline" | "panel") => (
+  const handleReviewComplete = (result: ReviewResult) => {
+    handleAddRecord({
+      id: `${page.id}-r-${Date.now()}`,
+      pageId: page.id,
+      date: today ?? todayISO(),
+      durationMinutes: result.durationMinutes,
+      understanding: result.understanding,
+      studyContent: `복습 모드: 핵심 개념 ${result.remembered.length + result.confused.length}개 확인`,
+      difficulties: result.confused.length > 0 ? `헷갈린 개념: ${result.confused.join(", ")}` : "",
+      nextSteps: "",
+      tags: [],
+    })
+    router.replace(pageHref)
+  }
+
+  const properties = (
     <PageProperties
-      variant={variant}
       subjectName={subject?.name ?? path.at(-1)?.name ?? "내 페이지"}
       stats={stats}
       recordCount={page.studyRecords.length}
       tags={page.tags}
-      sessionTime={twoColumn ? <PageSessionTime pageId={page.id} /> : undefined}
       onChangeTags={(tags) => updatePage(page.id, (p) => ({ ...p, tags }))}
       onChangeStatus={(status) =>
         updatePage(page.id, ({ status: _prev, ...rest }) => (status ? { ...rest, status } : rest))
@@ -82,9 +105,22 @@ export function StudyPageView({ pageId }: { pageId: string }) {
     />
   )
 
-  const renderBody = () => (
-    <Body blocks={page.blocks} onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))} />
-  )
+  const body =
+    reviewing && ReviewBody ? (
+      <ReviewBody
+        note={noteOf(page)}
+        exitHref={pageHref}
+        onChangeNote={changeNote}
+        onComplete={handleReviewComplete}
+      />
+    ) : (
+      <Body
+        blocks={page.blocks}
+        note={page.note}
+        onChangeBlocks={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
+        onChangeNote={changeNote}
+      />
+    )
 
   const renderStudyArea = () => (
     <>
@@ -110,9 +146,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
   return (
     <div className="flex flex-col">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div
-          className={`mx-auto flex items-center justify-between gap-4 px-6 py-3 lg:px-10 ${twoColumn ? "max-w-6xl" : "max-w-3xl"}`}
-        >
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-3 lg:px-10">
           <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
             <span className="shrink-0 text-muted-foreground">내 페이지</span>
             {path.map((node) => (
@@ -143,9 +177,7 @@ export function StudyPageView({ pageId }: { pageId: string }) {
         </div>
       </header>
 
-      <article
-        className={`mx-auto flex w-full flex-col px-6 pb-24 pt-12 lg:px-10 ${twoColumn ? "max-w-6xl" : "max-w-3xl"}`}
-      >
+      <article className="mx-auto flex w-full max-w-3xl flex-col px-6 pb-24 pt-12 lg:px-10">
         <label htmlFor="page-title" className="sr-only">
           페이지 제목
         </label>
@@ -158,27 +190,10 @@ export function StudyPageView({ pageId }: { pageId: string }) {
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {twoColumn ? (
-          <div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
-            <aside
-              aria-label="학습 정보"
-              className="rounded-xl border border-border bg-muted/30 p-2 lg:sticky lg:top-20 lg:w-60 lg:shrink-0"
-            >
-              {renderProperties("panel")}
-            </aside>
-            <div className="flex min-w-0 flex-1 flex-col">
-              {renderBody()}
-              {renderStudyArea()}
-            </div>
-          </div>
-        ) : (
-          <>
-            {layout.studyOn && <div className="mt-4">{renderProperties("inline")}</div>}
-            <hr className="my-6 border-border" />
-            {renderBody()}
-            {layout.studyOn && renderStudyArea()}
-          </>
-        )}
+        {layout.studyOn && <div className="mt-4">{properties}</div>}
+        <hr className="my-6 border-border" />
+        {body}
+        {layout.studyOn && renderStudyArea()}
 
         {!layout.studyOn && (
           <>

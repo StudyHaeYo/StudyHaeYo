@@ -132,7 +132,7 @@ export function unresolvedConfusionCount(page: Pick<StudyPage, "note">) {
 
 // "용어: 설명" → front "용어", back "설명". Without a separator the whole text is the back of the card.
 export function splitConcept(text: string): { term: string | null; detail: string } {
-  const match = text.match(/^\s*([^:：]{1,40})[:：]\s*(.+)$/s)
+  const match = text.match(/^\s*([^:：\n]{1,40})[:：]\s*([\s\S]+)$/)
   return match ? { term: match[1].trim(), detail: match[2].trim() } : { term: null, detail: text.trim() }
 }
 

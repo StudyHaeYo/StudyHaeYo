@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { Clock, Flame, Sparkles } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
-import { reviewCandidates } from "@/lib/study-candidates"
+import { reviewCandidates, reviewHref } from "@/lib/study-candidates"
+import { UnresolvedBadge } from "@/components/study-page/unresolved-badge"
 import { useWorkspace } from "@/lib/workspace"
 
 export function TodayPriority() {
@@ -37,6 +38,7 @@ export function TodayPriority() {
               <span className="rounded-md bg-amber-50 px-2 py-1 font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
                 상태: {priority.status}
               </span>
+              <UnresolvedBadge count={priority.unresolvedConfusions} long />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               {priority.understanding !== null ? `이해도 ${priority.understanding}/5 · ` : ""}
@@ -45,7 +47,7 @@ export function TodayPriority() {
           </div>
 
           <Link
-            href={`/record/${priority.pageId}`}
+            href={reviewHref(priority.pageId)}
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
           >
             <Flame className="size-4" />
