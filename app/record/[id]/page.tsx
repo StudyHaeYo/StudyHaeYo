@@ -10,18 +10,18 @@ export default async function StudyPageRoute({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const { id } = await params
+  const query = await searchParams
 
   if (id === "new") {
-    const query = await searchParams
     const subject = typeof query.subject === "string" ? query.subject : ""
-    redirect(subject ? `/new?subject=${subject}` : "/new")
+    redirect(subject ? `/new?subject=${encodeURIComponent(subject)}` : "/new")
   }
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar />
       <main className="h-screen flex-1 overflow-y-auto">
-        <StudyPageView key={id} pageId={id} />
+        <StudyPageView key={id} pageId={id} mode={query.mode === "review" ? "review" : undefined} />
       </main>
     </div>
   )

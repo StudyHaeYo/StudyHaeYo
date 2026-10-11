@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { FileText, Plus } from "lucide-react"
 import { RecordCard } from "@/components/record-card"
-import { computePageStats, formatDate } from "@/lib/study-pages"
+import { computePageStats, formatDate, unresolvedConfusionCount } from "@/lib/study-pages"
 import { descendantPages, useWorkspace } from "@/lib/workspace"
 import { useTodayISO } from "@/hooks/use-today"
 
@@ -44,6 +44,7 @@ export function SubjectRecords({ subjectId, subjectName }: { subjectId: string; 
                     understanding: stats.understanding ?? undefined,
                     reviewDate: stats.nextReviewAt ? formatDate(stats.nextReviewAt) : undefined,
                   }}
+                  unresolvedConfusions={unresolvedConfusionCount(page)}
                   onClick={(id) => router.push(`/record/${id}`)}
                 />
               </li>

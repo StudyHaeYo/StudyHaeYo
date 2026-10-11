@@ -33,9 +33,17 @@ const placeholders: Record<BlockType, string> = {
 interface BlockEditorProps {
   blocks: Block[]
   onChange: (blocks: Block[]) => void
+  // Heading text → guiding question shown under that heading while its first paragraph is empty.
+  sectionHints?: Record<string, string>
 }
 
-export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
+export function BlockEditor({ blocks, onChange, sectionHints }: BlockEditorProps) {
+  const hintFor = (index: number) => {
+    const block = blocks[index]
+    const prev = blocks[index - 1]
+    if (!sectionHints || block.type !== "p" || block.text !== "" || !prev || prev.type === "p") return undefined
+    return sectionHints[prev.text.trim()]
+  }
   const refs = useRef(new Map<string, HTMLTextAreaElement>())
   const [pendingFocus, setPendingFocus] = useState<{ id: string; caret: number } | null>(null)
   const isSoleEmptyBlock = blocks.length === 1 && blocks[0].text === ""
@@ -118,7 +126,9 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
 
   return (
     <div className="flex flex-col gap-1" aria-label="페이지 본문">
-      {blocks.map((block, index) => (
+      {blocks.map((block, index) => {
+        const hint = hintFor(index)
+        return (
         <div key={block.id} className="flex items-start gap-2">
           {block.type === "li" && (
             <span aria-hidden="true" className="select-none pt-0.5 text-base leading-relaxed text-muted-foreground">
@@ -137,15 +147,18 @@ export function BlockEditor({ blocks, onChange }: BlockEditorProps) {
             spellCheck={false}
             onChange={(e) => updateText(block, e.target.value)}
             onKeyDown={(e) => handleKeyDown(e, block, index)}
-            placeholder={isSoleEmptyBlock ? "자유롭게 학습 내용을 작성해보세요. # 제목, - 목록, ``` 코드" : placeholders[block.type]}
+            placeholder={
+              hint ?? (isSoleEmptyBlock ? "자유롭게 학습 내용을 작성해보세요. # 제목, - 목록, ``` 코드" : placeholders[block.type])
+            }
             className={`w-full resize-none bg-transparent text-foreground outline-none [field-sizing:content] ${
-              isSoleEmptyBlock
+              hint || isSoleEmptyBlock
                 ? "placeholder:text-muted-foreground/60"
                 : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
             } ${blockStyles[block.type]}`}
           />
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

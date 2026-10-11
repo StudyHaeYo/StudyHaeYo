@@ -13,12 +13,32 @@ import {
   Pencil,
   Plus,
   Trash2,
+  type LucideIcon,
 } from "lucide-react"
 import { ConfirmDeleteModal } from "./confirm-delete-modal"
 
 export interface SidebarRecord {
   id: string
   title: string
+  icon?: LucideIcon
+  studyBadge?: boolean
+}
+
+function PageIcon({ record }: { record: SidebarRecord }) {
+  const Icon = record.icon ?? FileText
+  return (
+    <span className="relative inline-flex shrink-0">
+      <Icon className="size-3.5" aria-hidden="true" />
+      {record.studyBadge && (
+        <span
+          title="학습 기록이 쌓이고 있는 페이지"
+          className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-indigo-500 ring-2 ring-sidebar"
+        >
+          <span className="sr-only">학습 기능 사용 중</span>
+        </span>
+      )}
+    </span>
+  )
 }
 
 interface RecordItemProps {
@@ -98,7 +118,9 @@ export function RecordItem({
     <li className="group relative">
       {renaming ? (
         <div className="flex items-center gap-2 rounded-md bg-accent px-2 py-1">
-          <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+          <span className="text-muted-foreground">
+            <PageIcon record={record} />
+          </span>
           <input
             autoFocus
             value={draft}
@@ -142,7 +164,7 @@ export function RecordItem({
               onToggle ? "pl-0.5" : "pl-2"
             } ${active ? "font-medium text-foreground" : "text-muted-foreground"}`}
           >
-            <FileText className="size-3.5 shrink-0" />
+            <PageIcon record={record} />
             <span className="truncate">{record.title}</span>
           </Link>
           {addChildHref && (

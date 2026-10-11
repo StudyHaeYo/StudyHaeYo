@@ -2,6 +2,7 @@
 
 import { CalendarClock, Clock, Gauge, Tag } from "lucide-react"
 import type { StudyRecord, StudyType } from "@/lib/types"
+import { UnresolvedBadge } from "@/components/study-page/unresolved-badge"
 
 const typeStyles: Record<StudyType, string> = {
   강의: "bg-indigo-50 text-indigo-700 ring-indigo-200",
@@ -12,10 +13,11 @@ const typeStyles: Record<StudyType, string> = {
 
 interface RecordCardProps {
   record: StudyRecord
+  unresolvedConfusions?: number
   onClick?: (id: string) => void
 }
 
-export function RecordCard({ record, onClick }: RecordCardProps) {
+export function RecordCard({ record, unresolvedConfusions = 0, onClick }: RecordCardProps) {
   return (
     <button
       onClick={() => onClick?.(record.id)}
@@ -53,6 +55,7 @@ export function RecordCard({ record, onClick }: RecordCardProps) {
             복습 예정 {record.reviewDate}
           </span>
         )}
+        <UnresolvedBadge count={unresolvedConfusions} long />
       </div>
     </button>
   )
