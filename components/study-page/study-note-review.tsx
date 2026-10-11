@@ -12,18 +12,19 @@ export interface ReviewResult {
   durationMinutes: number
   remembered: string[]
   confused: string[]
+  // Full text of concepts marked "헷갈려요"; added to the note's confusions only when the review is saved.
+  confusedTexts: string[]
 }
 
 export interface ReviewBodyProps {
   note: StudyNoteContent
   exitHref: string
-  onChangeNote: (note: StudyNoteContent) => void
   onComplete: (result: ReviewResult) => void
 }
 
 const understandingLabels = ["", "거의 모름", "조금 앎", "보통", "대부분 앎", "완벽히 앎"]
 
-export function StudyNoteReview({ note, exitHref, onChangeNote, onComplete }: ReviewBodyProps) {
+export function StudyNoteReview({ note, exitHref, onComplete }: ReviewBodyProps) {
   const [startedAt] = useState(() => Date.now())
   const [answers, setAnswers] = useState<Record<string, ReviewAnswer>>({})
   const [openId, setOpenId] = useState<string | null>(null)
@@ -33,16 +34,9 @@ export function StudyNoteReview({ note, exitHref, onChangeNote, onComplete }: Re
   const answered = concepts.filter((c) => answers[c.id]).length
   const allDone = answered === concepts.length
 
-  const answer = (conceptId: string, text: string, value: ReviewAnswer) => {
-    const previous = answers[conceptId]
+  const answer = (conceptId: string, value: ReviewAnswer) => {
     setAnswers((a) => ({ ...a, [conceptId]: value }))
     setOpenId(null)
-    if (value === "confused" && previous !== "confused") {
-      const alreadyOpen = note.confusions.some((q) => !q.resolved && q.text.trim() === text.trim())
-      if (!alreadyOpen) {
-        onChangeNote({ ...note, confusions: [...note.confusions, { id: newItemId("q"), text, resolved: false }] })
-      }
-    }
   }
 
   const finish = () => {
@@ -53,6 +47,7 @@ export function StudyNoteReview({ note, exitHref, onChangeNote, onComplete }: Re
       durationMinutes: Math.max(1, Math.round((Date.now() - startedAt) / 60_000)),
       remembered: concepts.filter((c) => answers[c.id] === "remembered").map((c) => termOf(c.text)),
       confused: concepts.filter((c) => answers[c.id] === "confused").map((c) => termOf(c.text)),
+      confusedTexts: concepts.filter((c) => answers[c.id] === "confused").map((c) => c.text),
     })
   }
 
@@ -131,7 +126,7 @@ export function StudyNoteReview({ note, exitHref, onChangeNote, onComplete }: Re
                       <div className="flex gap-2">
                         <button
                           type="button"
-                          onClick={() => answer(concept.id, concept.text, "remembered")}
+                          onClick={() => answer(concept.id, "remembered")}
                           className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
                         >
                           <Check className="size-4" aria-hidden="true" />
@@ -139,7 +134,7 @@ export function StudyNoteReview({ note, exitHref, onChangeNote, onComplete }: Re
                         </button>
                         <button
                           type="button"
-                          onClick={() => answer(concept.id, concept.text, "confused")}
+                          onClick={() => answer(concept.id, "confused")}
                           className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100"
                         >
                           <HelpCircle className="size-4" aria-hidden="true" />
@@ -164,7 +159,7 @@ export function StudyNoteReview({ note, exitHref, onChangeNote, onComplete }: Re
               {concepts.length > 0 && (
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {`기억남 ${concepts.filter((c) => answers[c.id] === "remembered").length}개 · 헷갈림 ${concepts.filter((c) => answers[c.id] === "confused").length}개`}
-                  {concepts.some((c) => answers[c.id] === "confused") && " — 헷갈린 개념은 헷갈린 점 목록에 추가했어요."}
+                  {concepts.some((c) => answers[c.id] === "confused") && " — 학습 기록을 남기면 헷갈린 개념이 헷갈린 점 목록에 추가돼요."}
                 </p>
               )}
             </div>

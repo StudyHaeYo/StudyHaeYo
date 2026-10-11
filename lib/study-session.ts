@@ -13,8 +13,8 @@ export interface FinishedSession {
   startedAt: number
   endedAt: number
   segments: SessionSegment[]
-  // Pages whose segment time was saved as a study record (so analytics doesn't count it twice).
-  recordedPageIds?: string[]
+  // Ended on load because the tab had been inactive too long; endedAt is the last activity time.
+  autoEnded?: boolean
 }
 
 export interface RecordPrefill {
@@ -30,51 +30,87 @@ export interface SessionState {
   segments: SessionSegment[]
   // Open segment on a locked-on page; closed when leaving the page, hiding the tab, or ending the session.
   openSegment: { pageId: string; start: number } | null
+  // Heartbeat while a session runs and the tab is visible; used to close stale segments after a reload.
+  lastActiveAt: number | null
   // Finished sessions stay here after the summary modal closes so totals keep counting them.
   log: FinishedSession[]
   summarySessionId: string | null
   prefill: RecordPrefill | null
 }
 
+interface TimedRecord {
+  id: string
+  pageId: string
+  createdAt?: number
+}
+
 const STORAGE_KEY = "studyhaeyo:study-session"
+export const HEARTBEAT_MS = 30_000
+const STALE_SESSION_MS = 30 * 60_000
 
 const idle: SessionState = {
   startedAt: null,
   segments: [],
   openSegment: null,
+  lastActiveAt: null,
   log: [],
   summarySessionId: null,
   prefill: null,
 }
 
 let state: SessionState | null = null
+let recovered = false
 const listeners = new Set<() => void>()
+
+function parse(raw: string | null): SessionState {
+  if (!raw) return idle
+  try {
+    return { ...idle, ...(JSON.parse(raw) as Partial<SessionState>) }
+  } catch {
+    return idle
+  }
+}
 
 function load(): SessionState {
   if (state) return state
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    state = raw ? { ...idle, ...(JSON.parse(raw) as Partial<SessionState>) } : idle
+    state = parse(window.localStorage.getItem(STORAGE_KEY))
   } catch {
     state = idle
   }
   return state
 }
 
+function notify() {
+  for (const listener of listeners) listener()
+}
+
 function set(update: (prev: SessionState) => SessionState) {
-  state = update(load())
+  const prev = load()
+  const next = update(prev)
+  if (next === prev) return
+  state = next
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch {
     // Storage full or disabled: the session still works for this tab.
   }
-  for (const listener of listeners) listener()
+  notify()
+}
+
+// Another tab wrote the session: adopt it instead of overwriting it with this tab's stale copy.
+function handleStorage(e: StorageEvent) {
+  if (e.key !== STORAGE_KEY) return
+  state = parse(e.newValue)
+  notify()
 }
 
 function subscribe(listener: () => void) {
+  if (listeners.size === 0) window.addEventListener("storage", handleStorage)
   listeners.add(listener)
   return () => {
     listeners.delete(listener)
+    if (listeners.size === 0) window.removeEventListener("storage", handleStorage)
   }
 }
 
@@ -85,7 +121,7 @@ export function useStudySession(): SessionState {
 
 function closeOpen(s: SessionState, at: number): SessionState {
   if (!s.openSegment) return s
-  const segment = { ...s.openSegment, end: at }
+  const segment = { ...s.openSegment, end: Math.max(at, s.openSegment.start) }
   return {
     ...s,
     openSegment: null,
@@ -93,35 +129,92 @@ function closeOpen(s: SessionState, at: number): SessionState {
   }
 }
 
+function finish(s: SessionState, at: number, autoEnded = false): SessionState {
+  if (!s.startedAt) return s
+  const closed = closeOpen(s, at)
+  const endedAt = Math.max(at, s.startedAt)
+  const session: FinishedSession = {
+    id: `session-${endedAt}`,
+    startedAt: s.startedAt,
+    endedAt,
+    segments: closed.segments,
+    ...(autoEnded ? { autoEnded } : {}),
+  }
+  return {
+    ...closed,
+    startedAt: null,
+    segments: [],
+    lastActiveAt: null,
+    log: [...s.log, session],
+    summarySessionId: session.id,
+  }
+}
+
+function lastKnownActivity(s: SessionState) {
+  return Math.max(s.lastActiveAt ?? 0, s.startedAt ?? 0, s.openSegment?.start ?? 0, ...s.segments.map((seg) => seg.end))
+}
+
+// Runs once per page load, after mount: a segment left open by a closed or crashed tab ends at the
+// last heartbeat (not "now"), and a session idle for 30+ minutes ends at that time too.
+export function recoverStaleSession() {
+  if (recovered) return
+  recovered = true
+  set((s) => {
+    if (!s.startedAt && !s.openSegment) return s
+    const lastActive = lastKnownActivity(s)
+    const closed = closeOpen(s, lastActive)
+    if (closed.startedAt && Date.now() - lastActive >= STALE_SESSION_MS) return finish(closed, lastActive, true)
+    return closed === s ? s : { ...closed, lastActiveAt: lastActive }
+  })
+}
+
 export function startSession() {
-  set((s) => (s.startedAt ? s : { ...s, startedAt: Date.now(), segments: [], openSegment: null }))
+  recoverStaleSession()
+  set((s) => {
+    if (s.startedAt) return s
+    const now = Date.now()
+    return { ...s, startedAt: now, segments: [], openSegment: null, lastActiveAt: now }
+  })
+}
+
+function track(s: SessionState, pageId: string | null, now: number): SessionState {
+  if (s.openSegment && s.openSegment.pageId === pageId) return s
+  const closed = closeOpen(s, now)
+  return pageId ? { ...closed, openSegment: { pageId, start: now } } : closed
 }
 
 // Aligns the open segment with the page that should be tracked right now (null = track nothing).
 export function syncTrackedPage(pageId: string | null) {
-  const s = load()
-  if (!s.startedAt) return
-  if (s.openSegment?.pageId === pageId) return
-  set((prev) => {
+  recoverStaleSession()
+  set((s) => {
+    if (!s.startedAt) return s
     const now = Date.now()
-    const closed = closeOpen(prev, now)
-    return pageId ? { ...closed, openSegment: { pageId, start: now } } : closed
+    const next = track(s, pageId, now)
+    return next === s ? s : { ...next, lastActiveAt: now }
+  })
+}
+
+// Every 30s while visible: records activity and re-opens tracking if another tab closed the segment.
+export function heartbeat(pageId: string | null) {
+  set((s) => {
+    if (!s.startedAt) return s
+    const now = Date.now()
+    return { ...track(s, pageId, now), lastActiveAt: now }
+  })
+}
+
+// pagehide / tab hidden: close the open segment at this moment.
+export function suspendTracking() {
+  set((s) => {
+    if (!s.startedAt) return s
+    const now = Date.now()
+    return { ...closeOpen(s, now), lastActiveAt: now }
   })
 }
 
 export function endSession() {
-  set((s) => {
-    if (!s.startedAt) return s
-    const now = Date.now()
-    const closed = closeOpen(s, now)
-    const session: FinishedSession = {
-      id: `session-${now}`,
-      startedAt: s.startedAt,
-      endedAt: now,
-      segments: closed.segments,
-    }
-    return { ...closed, startedAt: null, segments: [], log: [...s.log, session], summarySessionId: session.id }
-  })
+  recoverStaleSession()
+  set((s) => finish(s, Date.now()))
 }
 
 export function openSummary(sessionId: string) {
@@ -136,27 +229,39 @@ export function requestRecordPrefill(sessionId: string, pageId: string, minutes:
   set((s) => ({ ...s, summarySessionId: null, prefill: { sessionId, pageId, minutes, token: Date.now() } }))
 }
 
-export function clearRecordPrefill(recorded = false) {
-  set((s) => {
-    if (!s.prefill) return s
-    const { sessionId, pageId } = s.prefill
-    const log = recorded
-      ? s.log.map((session) =>
-          session.id === sessionId
-            ? { ...session, recordedPageIds: [...new Set([...(session.recordedPageIds ?? []), pageId])] }
-            : session,
-        )
-      : s.log
-    return { ...s, log, prefill: null }
+export function clearRecordPrefill() {
+  set((s) => (s.prefill ? { ...s, prefill: null } : s))
+}
+
+// Records made before createdAt existed carry their creation time in the id (`<pageId>-r-<ms>`).
+export function recordCreatedAt(record: TimedRecord): number | null {
+  if (typeof record.createdAt === "number") return record.createdAt
+  const match = record.id.match(/-r-(\d{12,})$/)
+  return match ? Number(match[1]) : null
+}
+
+export function hasRecordInWindow(records: TimedRecord[], pageId: string, from: number, to: number) {
+  return records.some((r) => {
+    if (r.pageId !== pageId) return false
+    const at = recordCreatedAt(r)
+    return at !== null && at >= from && at <= to
   })
 }
 
-// Segment time from finished sessions that has not been saved as a study record yet.
-export function unrecordedSessionMinutes(log: FinishedSession[]) {
+// Session time not yet captured by a study record. A page's time in a session is dropped as soon as
+// any record for that page was created during the session (summary button, review, or manual add);
+// that record's own minutes are what counts, even if the user lowered the prefilled value.
+export function unrecordedSessionMinutes(s: SessionState, records: TimedRecord[], now: number) {
+  const windows: { startedAt: number; endedAt: number; segments: SessionSegment[] }[] = [...s.log]
+  if (s.startedAt) {
+    const live = s.openSegment ? [...s.segments, { ...s.openSegment, end: Math.max(now, s.openSegment.start) }] : s.segments
+    windows.push({ startedAt: s.startedAt, endedAt: now, segments: live })
+  }
   let ms = 0
-  for (const session of log) {
-    const recorded = new Set(session.recordedPageIds ?? [])
-    for (const seg of session.segments) if (!recorded.has(seg.pageId)) ms += seg.end - seg.start
+  for (const session of windows) {
+    for (const { pageId, ms: pageMs } of totalsByPage(session.segments)) {
+      if (!hasRecordInWindow(records, pageId, session.startedAt, session.endedAt)) ms += pageMs
+    }
   }
   return Math.round(ms / 60_000)
 }

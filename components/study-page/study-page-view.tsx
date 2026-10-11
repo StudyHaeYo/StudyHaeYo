@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Check, ChevronRight, FileQuestion, Lock, MoreHorizontal, Plus, PowerOff, Save } from "lucide-react"
 import {
   computePageStats,
+  newItemId,
   noteOf,
   todayISO,
   type PageStudyRecord,
@@ -75,10 +76,18 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
   const changeNote = (note: StudyNoteContent) => updatePage(page.id, (p) => ({ ...p, note }))
 
   const handleReviewComplete = (result: ReviewResult) => {
+    const note = noteOf(page)
+    const openTexts = new Set(note.confusions.filter((q) => !q.resolved).map((q) => q.text.trim()))
+    const newConfusions = result.confusedTexts
+      .filter((text) => !openTexts.has(text.trim()))
+      .map((text) => ({ id: newItemId("q"), text, resolved: false }))
+    if (newConfusions.length > 0) changeNote({ ...note, confusions: [...note.confusions, ...newConfusions] })
+    const now = Date.now()
     handleAddRecord({
-      id: `${page.id}-r-${Date.now()}`,
+      id: `${page.id}-r-${now}`,
       pageId: page.id,
       date: today ?? todayISO(),
+      createdAt: now,
       durationMinutes: result.durationMinutes,
       understanding: result.understanding,
       studyContent: `복습 모드: 핵심 개념 ${result.remembered.length + result.confused.length}개 확인`,
@@ -110,7 +119,6 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
       <ReviewBody
         note={noteOf(page)}
         exitHref={pageHref}
-        onChangeNote={changeNote}
         onComplete={handleReviewComplete}
       />
     ) : (

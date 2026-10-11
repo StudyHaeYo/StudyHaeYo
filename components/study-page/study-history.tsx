@@ -14,7 +14,7 @@ interface StudyHistoryProps {
   onDelete: (recordId: string) => void
   // Opens the add form with the study time pre-filled (from a finished timer session).
   prefill?: { minutes: number; token: number } | null
-  onPrefillDone?: (recorded: boolean) => void
+  onPrefillDone?: () => void
 }
 
 type Notice = { recordId: string | null; message: string }
@@ -43,9 +43,9 @@ export function StudyHistory({
     setNotice(null)
   }
 
-  const closeAddForm = (recorded = false) => {
+  const closeAddForm = () => {
     setAdding(false)
-    if (prefill) onPrefillDone?.(recorded)
+    if (prefill) onPrefillDone?.()
   }
 
   return (
@@ -84,7 +84,7 @@ export function StudyHistory({
           onCancel={() => closeAddForm()}
           onSubmit={(record) => {
             onAdd(record)
-            closeAddForm(true)
+            closeAddForm()
             setNotice({
               recordId: record.id,
               message: "학습 기록이 추가되어 페이지 속성의 이해도와 복습 일정이 업데이트되었어요.",

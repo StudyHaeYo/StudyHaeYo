@@ -8,6 +8,7 @@ import { useWorkspace } from "@/lib/workspace"
 import {
   closeSummary,
   formatDuration,
+  hasRecordInWindow,
   msToMinutes,
   requestRecordPrefill,
   sessionDurationMs,
@@ -35,11 +36,13 @@ export function SessionSummaryModal() {
 
   if (!session) return null
 
-  const recorded = new Set(session.recordedPageIds ?? [])
+  const records = pages.flatMap((p) => p.studyRecords)
   const rows = totalsByPage(session.segments).map((row) => ({
     ...row,
     title: pages.find((p) => p.id === row.pageId)?.title || "제목 없음",
+    recorded: hasRecordInWindow(records, row.pageId, session.startedAt, session.endedAt),
   }))
+  const noteMs = rows.reduce((sum, row) => sum + row.ms, 0)
 
   return createPortal(
     <div
@@ -60,10 +63,16 @@ export function SessionSummaryModal() {
         <h2 id="session-summary-title" className="mt-4 text-base font-semibold text-foreground">
           학습 세션 요약
         </h2>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          총 학습 시간{" "}
-          <span className="font-semibold text-foreground">{formatDuration(sessionDurationMs(session))}</span>
+        <p className="mt-4 text-xs font-medium text-muted-foreground">학습 노트에서 보낸 시간 (노트별 합계)</p>
+        <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{formatDuration(noteMs)}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {`세션 경과 시간 ${formatDuration(sessionDurationMs(session))}`}
         </p>
+        {session.autoEnded && (
+          <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+            30분 넘게 활동이 없어 마지막 활동 시각에 세션을 자동으로 종료했어요.
+          </p>
+        )}
 
         <h3 className="mt-5 text-xs font-medium text-muted-foreground">학습 노트별 소요 시간</h3>
         {rows.length === 0 ? (
@@ -79,7 +88,7 @@ export function SessionSummaryModal() {
                   <p className="truncate text-sm font-medium text-foreground">{row.title}</p>
                   <p className="text-xs text-muted-foreground">{formatDuration(row.ms)}</p>
                 </div>
-                {recorded.has(row.pageId) ? (
+                {row.recorded ? (
                   <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
                     <Check className="size-3.5" aria-hidden="true" />
                     기록됨

@@ -32,6 +32,8 @@ export interface PageStudyRecord {
   id: string
   pageId: string
   date: string
+  // Creation time (ms); lets analytics tell which timer session a record belongs to. Kept on edit.
+  createdAt?: number
   durationMinutes: number
   understanding: number
   // What was actually done in this session (activity log), distinct from the page body's "오늘 배운 내용".

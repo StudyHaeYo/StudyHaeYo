@@ -39,6 +39,7 @@ export function AddRecordForm({ pageId, initial, initialMinutes, onSubmit, onCan
       id: initial?.id ?? `${pageId}-r-${Date.now()}`,
       pageId,
       date,
+      createdAt: initial ? initial.createdAt : Date.now(),
       durationMinutes: minutes,
       understanding,
       studyContent: studyContent.trim(),

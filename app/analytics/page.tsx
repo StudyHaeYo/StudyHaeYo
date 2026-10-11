@@ -17,8 +17,8 @@ export default function AnalyticsPage() {
     const page = pages.find((p) => p.id === pageId)
     return page ? unresolvedConfusionCount(page) : 0
   }
-  const { log } = useStudySession()
-  const sessionMinutes = unrecordedSessionMinutes(log)
+  const session = useStudySession()
+  const sessionMinutes = unrecordedSessionMinutes(session, records, Date.now())
   const totalMinutes = records.reduce((sum, r) => sum + r.durationMinutes, 0) + sessionMinutes
   const averageUnderstanding =
     records.length > 0 ? (records.reduce((sum, r) => sum + r.understanding, 0) / records.length).toFixed(1) : "-"

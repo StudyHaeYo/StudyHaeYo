@@ -14,7 +14,7 @@ export default async function StudyPageRoute({
 
   if (id === "new") {
     const subject = typeof query.subject === "string" ? query.subject : ""
-    redirect(subject ? `/new?subject=${subject}` : "/new")
+    redirect(subject ? `/new?subject=${encodeURIComponent(subject)}` : "/new")
   }
 
   return (
