@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useState } from "react"
+import { Fragment, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Check, ChevronRight, FileQuestion, Lock, MoreHorizontal, Plus, PowerOff, Save } from "lucide-react"
@@ -14,7 +14,8 @@ import {
 } from "@/lib/study-pages"
 import type { ReviewResult } from "@/components/study-page/study-note-review"
 import { resolvePageLayout } from "@/lib/templates"
-import { nearestSubject, nodePath, updatePage, useWorkspace } from "@/lib/workspace"
+import { nearestSubject, nodePath, setPageStudyEnabled, updatePage, useWorkspace } from "@/lib/workspace"
+import { PageActionsMenu } from "@/components/page-actions-menu"
 import { clearRecordPrefill, useStudySession } from "@/lib/study-session"
 import { useTodayISO } from "@/hooks/use-today"
 import { PageProperties } from "@/components/study-page/page-properties"
@@ -29,6 +30,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
   const router = useRouter()
   const { prefill } = useStudySession()
   const [saved, setSaved] = useState(false)
+  const titleRef = useRef<HTMLInputElement>(null)
   const page = pages.find((p) => p.id === pageId)
 
   if (!page) return <MissingPage />
@@ -39,7 +41,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
   const layout = resolvePageLayout(page)
   const { Body, ReviewBody } = layout
   const pagePrefill = prefill?.pageId === page.id ? prefill : null
-  const setStudyEnabled = (studyEnabled: boolean) => updatePage(page.id, (p) => ({ ...p, studyEnabled }))
+  const setStudyEnabled = (studyEnabled: boolean) => setPageStudyEnabled(page.id, studyEnabled)
   const path = nodePath({ groups, pages }, page.parentId)
   const subject = nearestSubject({ groups, pages }, page.parentId)
   const stats = computePageStats(page, today)
@@ -175,6 +177,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
             <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
             <span className="truncate font-medium text-foreground">{page.title.trim() || "제목 없음"}</span>
           </nav>
+          <div className="flex shrink-0 items-center gap-1">
           <button
             onClick={handleSave}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
@@ -182,6 +185,17 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
             {saved ? <Check className="size-4" /> : <Save className="size-4" />}
             {saved ? "저장됨" : "저장"}
           </button>
+          <PageActionsMenu
+            pageId={page.id}
+            title={page.title.trim() || "제목 없음"}
+            showStudyToggle
+            onRename={() => {
+              titleRef.current?.focus()
+              titleRef.current?.select()
+            }}
+            onDeleted={() => router.push("/")}
+          />
+          </div>
         </div>
       </header>
 
@@ -191,6 +205,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
         </label>
         <input
           id="page-title"
+          ref={titleRef}
           value={page.title}
           onChange={(e) => updatePage(page.id, (p) => ({ ...p, title: e.target.value }))}
           placeholder="제목 없음"

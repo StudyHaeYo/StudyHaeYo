@@ -34,6 +34,7 @@ export function StudyNoteBody({ blocks, note: stored, onChangeNote }: PageBodyPr
             blocks={learned}
             onChange={(next) => onChangeNote({ ...note, learned: next })}
             sectionHints={{}}
+            allowAttachments
           />
         </NoteSection>
 
@@ -201,7 +202,7 @@ function ItemList<T extends { id: string; text: string }>({
 export function FreeBody({ blocks, onChangeBlocks }: PageBodyProps) {
   return (
     <div className="min-h-64">
-      <BlockEditor blocks={blocks} onChange={onChangeBlocks} />
+      <BlockEditor blocks={blocks} onChange={onChangeBlocks} allowAttachments />
     </div>
   )
 }

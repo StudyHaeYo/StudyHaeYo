@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
+import { Toaster } from 'sonner'
 import { SessionTracker } from '@/components/study-session/session-tracker'
 import { StudySessionLayer } from '@/components/study-session/session-summary-modal'
 import './globals.css'
@@ -46,6 +47,7 @@ export default function RootLayout({
         {children}
         <SessionTracker />
         <StudySessionLayer />
+        <Toaster position="bottom-center" richColors closeButton />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

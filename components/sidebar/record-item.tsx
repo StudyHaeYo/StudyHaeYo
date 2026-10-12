@@ -1,21 +1,17 @@
 "use client"
 
-import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react"
+import { useState, type HTMLAttributes, type ReactNode } from "react"
 import Link from "next/link"
 import {
   ChevronDown,
   ChevronRight,
-  Copy,
   FilePlus,
   FileText,
   FolderPlus,
-  MoreHorizontal,
-  Pencil,
   Plus,
-  Trash2,
   type LucideIcon,
 } from "lucide-react"
-import { ConfirmDeleteModal } from "./confirm-delete-modal"
+import { menuItemClass, PageActionsMenu } from "@/components/page-actions-menu"
 
 export interface SidebarRecord {
   id: string
@@ -45,14 +41,12 @@ interface RecordItemProps {
   record: SidebarRecord
   active: boolean
   onRename: (title: string) => void
-  onDuplicate: () => void
-  onDelete: () => void
+  onDeleted?: () => void
   // Present only when the page has child pages.
   expanded?: boolean
   onToggle?: () => void
   addChildHref?: string
   onAddSubgroup?: () => void
-  deleteNote?: string
   rowProps?: HTMLAttributes<HTMLDivElement>
   rowClassName?: string
   children?: ReactNode
@@ -62,47 +56,18 @@ export function RecordItem({
   record,
   active,
   onRename,
-  onDuplicate,
-  onDelete,
+  onDeleted,
   expanded,
   onToggle,
   addChildHref,
   onAddSubgroup,
-  deleteNote,
   rowProps,
   rowClassName = "",
   children,
 }: RecordItemProps) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [confirmOpen, setConfirmOpen] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [draft, setDraft] = useState(record.title)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (!menuOpen) return
-    const handlePointer = (e: MouseEvent) => {
-      if (
-        !menuRef.current?.contains(e.target as Node) &&
-        !triggerRef.current?.contains(e.target as Node)
-      ) {
-        setMenuOpen(false)
-      }
-    }
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setMenuOpen(false)
-        triggerRef.current?.focus()
-      }
-    }
-    document.addEventListener("mousedown", handlePointer)
-    document.addEventListener("keydown", handleKey)
-    return () => {
-      document.removeEventListener("mousedown", handlePointer)
-      document.removeEventListener("keydown", handleKey)
-    }
-  }, [menuOpen])
 
   const commitRename = () => {
     const next = draft.trim()
@@ -110,9 +75,6 @@ export function RecordItem({
     else setDraft(record.title)
     setRenaming(false)
   }
-
-  const menuItemClass =
-    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
 
   return (
     <li className="group relative">
@@ -177,107 +139,50 @@ export function RecordItem({
               <Plus className="size-3.5" />
             </Link>
           )}
-          <button
-            ref={triggerRef}
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label={`${record.title} 메뉴`}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            className={`mr-1 flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-opacity hover:bg-border hover:text-foreground focus-visible:opacity-100 ${
-              menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-            }`}
-          >
-            <MoreHorizontal className="size-4" />
-          </button>
-        </div>
-      )}
-
-      {menuOpen && (
-        <div
-          ref={menuRef}
-          role="menu"
-          aria-label={`${record.title} 메뉴`}
-          className="absolute right-0 top-full z-30 mt-1 w-40 rounded-xl border border-border bg-card p-1 shadow-lg"
-        >
-          <button
-            role="menuitem"
-            type="button"
-            className={`${menuItemClass} text-foreground`}
-            onClick={() => {
-              setMenuOpen(false)
+          <PageActionsMenu
+            pageId={record.id}
+            title={record.title}
+            onRename={() => {
               setDraft(record.title)
               setRenaming(true)
             }}
-          >
-            <Pencil className="size-4 text-muted-foreground" />
-            이름 바꾸기
-          </button>
-          <button
-            role="menuitem"
-            type="button"
-            className={`${menuItemClass} text-foreground`}
-            onClick={() => {
-              setMenuOpen(false)
-              onDuplicate()
-            }}
-          >
-            <Copy className="size-4 text-muted-foreground" />
-            복제하기
-          </button>
-          {addChildHref && (
-            <Link
-              role="menuitem"
-              href={addChildHref}
-              className={`${menuItemClass} text-foreground`}
-              onClick={() => setMenuOpen(false)}
-            >
-              <FilePlus className="size-4 text-muted-foreground" />
-              하위 페이지 추가
-            </Link>
-          )}
-          {onAddSubgroup && (
-            <button
-              role="menuitem"
-              type="button"
-              className={`${menuItemClass} text-foreground`}
-              onClick={() => {
-                setMenuOpen(false)
-                onAddSubgroup()
-              }}
-            >
-              <FolderPlus className="size-4 text-muted-foreground" />
-              하위 그룹 추가
-            </button>
-          )}
-          <div role="separator" className="my-1 border-t border-border" />
-          <button
-            role="menuitem"
-            type="button"
-            className={`${menuItemClass} text-destructive hover:bg-destructive/10 focus-visible:bg-destructive/10`}
-            onClick={() => {
-              setMenuOpen(false)
-              setConfirmOpen(true)
-            }}
-          >
-            <Trash2 className="size-4" />
-            삭제하기
-          </button>
+            onDeleted={onDeleted}
+            onOpenChange={setMenuOpen}
+            className="mr-1 shrink-0"
+            triggerClassName={(open) =>
+              `flex size-6 items-center justify-center rounded text-muted-foreground transition-opacity hover:bg-border hover:text-foreground focus-visible:opacity-100 ${
+                open ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              }`
+            }
+            extraItems={(close) => (
+              <>
+                {addChildHref && (
+                  <Link role="menuitem" href={addChildHref} className={`${menuItemClass} text-foreground`} onClick={close}>
+                    <FilePlus className="size-4 text-muted-foreground" />
+                    하위 페이지 추가
+                  </Link>
+                )}
+                {onAddSubgroup && (
+                  <button
+                    role="menuitem"
+                    type="button"
+                    className={`${menuItemClass} text-foreground`}
+                    onClick={() => {
+                      close()
+                      onAddSubgroup()
+                    }}
+                  >
+                    <FolderPlus className="size-4 text-muted-foreground" />
+                    하위 그룹 추가
+                  </button>
+                )}
+              </>
+            )}
+          />
         </div>
       )}
 
       {children}
-
-      <ConfirmDeleteModal
-        open={confirmOpen}
-        title={record.title}
-        note={deleteNote}
-        onCancel={() => setConfirmOpen(false)}
-        onConfirm={() => {
-          setConfirmOpen(false)
-          onDelete()
-        }}
-      />
     </li>
   )
 }
