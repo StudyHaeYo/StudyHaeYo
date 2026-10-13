@@ -64,6 +64,10 @@ export function renamePage(id: string, title: string) {
   updatePage(id, (p) => ({ ...p, title }))
 }
 
+export function setPageStudyEnabled(id: string, studyEnabled: boolean) {
+  updatePage(id, (p) => ({ ...p, studyEnabled }))
+}
+
 export function duplicatePage(id: string) {
   setPages((pages) => {
     const index = pages.findIndex((p) => p.id === id)
@@ -74,6 +78,13 @@ export function duplicatePage(id: string) {
       ...source,
       id: copyId,
       title: `${source.title || "제목 없음"} (사본)`,
+      // Attachment blocks are copied with the body; copies point at the same file URL.
+      blocks: source.blocks.map((b) => ({ ...b })),
+      note: source.note && {
+        learned: source.note.learned.map((b) => ({ ...b })),
+        concepts: source.note.concepts.map((c) => ({ ...c })),
+        confusions: source.note.confusions.map((c) => ({ ...c })),
+      },
       studyRecords: source.studyRecords.map((r) => ({ ...r, id: `${r.id}-${copyId}`, pageId: copyId })),
     }
     return [...pages.slice(0, index + 1), copy, ...pages.slice(index + 1)]

@@ -19,8 +19,6 @@ import type { StudyPage } from "@/lib/study-pages"
 import {
   addGroup,
   childNodes,
-  deletePage,
-  duplicatePage,
   flattenTree,
   renamePage,
   useWorkspace,
@@ -46,7 +44,7 @@ interface TreeContext {
   pages: StudyPage[]
   order: string[]
   pathname: string
-  onDeletePage: (id: string) => void
+  onPageDeleted: (id: string) => void
 }
 
 export function Sidebar({
@@ -65,8 +63,7 @@ export function Sidebar({
     pages,
     order,
     pathname,
-    onDeletePage: (id) => {
-      deletePage(id)
+    onPageDeleted: (id) => {
       if (pathname === `/record/${id}`) router.push("/")
     },
   }
@@ -207,8 +204,7 @@ function PageNode({ page, ctx }: { page: StudyPage; ctx: TreeContext }) {
       record={{ id: page.id, title: page.title || "제목 없음", ...resolveTreeAppearance(page) }}
       active={ctx.pathname === `/record/${page.id}`}
       onRename={(title) => renamePage(page.id, title)}
-      onDuplicate={() => duplicatePage(page.id)}
-      onDelete={() => ctx.onDeletePage(page.id)}
+      onDeleted={() => ctx.onPageDeleted(page.id)}
       onAddSubgroup={() => {
         setOpen(true)
         setAddingSubgroup(true)
@@ -216,7 +212,6 @@ function PageNode({ page, ctx }: { page: StudyPage; ctx: TreeContext }) {
       addChildHref={`/new?parent=${page.id}`}
       expanded={hasChildren ? open : undefined}
       onToggle={hasChildren ? () => setOpen((v) => !v) : undefined}
-      deleteNote={hasChildren ? `하위 항목 ${nested}개도 함께 삭제됩니다.` : undefined}
       rowProps={rowProps}
       rowClassName={`${dropIndicatorClass(indicator)} ${isDragging ? "opacity-40" : ""}`}
     >

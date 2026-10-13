@@ -3,11 +3,36 @@ import type { StudyType } from "@/lib/types"
 import type { TemplateId } from "@/lib/templates"
 
 export type BlockType = "h1" | "h2" | "h3" | "p" | "li" | "code"
+export type AttachmentBlockType = "image" | "file"
 
-export interface Block {
+export interface TextBlock {
   id: string
   type: BlockType
   text: string
+}
+
+// "image" is used only for formats the browser previews inline; every other file is a "file" card.
+export interface AttachmentBlock {
+  id: string
+  type: AttachmentBlockType
+  name: string
+  mime: string
+  size: number
+  url: string
+}
+
+export type Block = TextBlock | AttachmentBlock
+
+export function isTextBlock(block: Block): block is TextBlock {
+  return block.type !== "image" && block.type !== "file"
+}
+
+// Plain text of the body for text-only consumers (AI tools, search); attachments are skipped.
+export function blocksPlainText(blocks: Block[]) {
+  return blocks
+    .filter(isTextBlock)
+    .map((b) => b.text)
+    .join("\n")
 }
 
 export interface NoteConcept {
