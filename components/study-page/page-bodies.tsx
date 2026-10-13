@@ -1,20 +1,22 @@
 "use client"
 
-import { useState, type KeyboardEvent } from "react"
+import { useState, type KeyboardEvent, type Ref } from "react"
 import { NotebookPen, Plus, X } from "lucide-react"
 import { newBlockId, newItemId, noteOf, type Block, type StudyNoteContent } from "@/lib/study-pages"
-import { BlockEditor } from "@/components/study-page/block-editor"
+import { BlockEditor, type AttachmentHandle } from "@/components/study-page/block-editor"
 
 export interface PageBodyProps {
   blocks: Block[]
   note?: StudyNoteContent
   onChangeBlocks: (blocks: Block[]) => void
   onChangeNote: (note: StudyNoteContent) => void
+  // The page header's "파일 첨부" opens this body's file picker; attachments always go into the free-text editor.
+  attachRef?: Ref<AttachmentHandle>
 }
 
 const isComposing = (e: KeyboardEvent) => e.nativeEvent.isComposing || e.keyCode === 229
 
-export function StudyNoteBody({ blocks, note: stored, onChangeNote }: PageBodyProps) {
+export function StudyNoteBody({ blocks, note: stored, onChangeNote, attachRef }: PageBodyProps) {
   const note = noteOf({ note: stored, blocks })
   const learned = note.learned.length > 0 ? note.learned : [{ id: newBlockId(), type: "p" as const, text: "" }]
 
@@ -35,6 +37,7 @@ export function StudyNoteBody({ blocks, note: stored, onChangeNote }: PageBodyPr
             onChange={(next) => onChangeNote({ ...note, learned: next })}
             sectionHints={{}}
             allowAttachments
+            attachRef={attachRef}
           />
         </NoteSection>
 
@@ -199,10 +202,10 @@ function ItemList<T extends { id: string; text: string }>({
   )
 }
 
-export function FreeBody({ blocks, onChangeBlocks }: PageBodyProps) {
+export function FreeBody({ blocks, onChangeBlocks, attachRef }: PageBodyProps) {
   return (
     <div className="min-h-64">
-      <BlockEditor blocks={blocks} onChange={onChangeBlocks} allowAttachments />
+      <BlockEditor blocks={blocks} onChange={onChangeBlocks} allowAttachments attachRef={attachRef} />
     </div>
   )
 }

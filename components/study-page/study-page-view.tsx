@@ -3,7 +3,7 @@
 import { Fragment, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Check, ChevronRight, FileQuestion, Lock, MoreHorizontal, Plus, PowerOff, Save } from "lucide-react"
+import { Check, ChevronRight, FileQuestion, Lock, MoreHorizontal, Paperclip, Plus, PowerOff, Save } from "lucide-react"
 import {
   computePageStats,
   newItemId,
@@ -15,7 +15,8 @@ import {
 import type { ReviewResult } from "@/components/study-page/study-note-review"
 import { resolvePageLayout } from "@/lib/templates"
 import { nearestSubject, nodePath, setPageStudyEnabled, updatePage, useWorkspace } from "@/lib/workspace"
-import { PageActionsMenu } from "@/components/page-actions-menu"
+import { PageActionsMenu, menuItemClass } from "@/components/page-actions-menu"
+import type { AttachmentHandle } from "@/components/study-page/block-editor"
 import { clearRecordPrefill, useStudySession } from "@/lib/study-session"
 import { useTodayISO } from "@/hooks/use-today"
 import { PageProperties } from "@/components/study-page/page-properties"
@@ -31,6 +32,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
   const { prefill } = useStudySession()
   const [saved, setSaved] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
+  const attachRef = useRef<AttachmentHandle>(null)
   const page = pages.find((p) => p.id === pageId)
 
   if (!page) return <MissingPage />
@@ -129,6 +131,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
         note={page.note}
         onChangeBlocks={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
         onChangeNote={changeNote}
+        attachRef={attachRef}
       />
     )
 
@@ -189,6 +192,25 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
             pageId={page.id}
             title={page.title.trim() || "제목 없음"}
             showStudyToggle
+            extraItems={
+              reviewing
+                ? undefined
+                : (close) => (
+                    <button
+                      role="menuitem"
+                      type="button"
+                      title="끌어다 놓거나 이미지를 붙여넣어도 첨부돼요 · 파일당 10MB까지"
+                      className={`${menuItemClass} text-foreground`}
+                      onClick={() => {
+                        close()
+                        attachRef.current?.openPicker()
+                      }}
+                    >
+                      <Paperclip className="size-4 text-muted-foreground" />
+                      파일 첨부
+                    </button>
+                  )
+            }
             onRename={() => {
               titleRef.current?.focus()
               titleRef.current?.select()

@@ -1,7 +1,15 @@
 "use client"
 
-import { useEffect, useLayoutEffect, useRef, useState, type DragEvent, type KeyboardEvent } from "react"
-import { Paperclip } from "lucide-react"
+import {
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type DragEvent,
+  type KeyboardEvent,
+  type Ref,
+} from "react"
 import {
   isTextBlock,
   newBlockId,
@@ -61,9 +69,14 @@ interface BlockEditorProps {
   // Heading text → guiding question shown under that heading while its first paragraph is empty.
   sectionHints?: Record<string, string>
   allowAttachments?: boolean
+  attachRef?: Ref<AttachmentHandle>
 }
 
-export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments = false }: BlockEditorProps) {
+export interface AttachmentHandle {
+  openPicker: () => void
+}
+
+export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments = false, attachRef }: BlockEditorProps) {
   const hintFor = (index: number) => {
     const block = blocks[index]
     const prev = blocks[index - 1]
@@ -73,6 +86,7 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
   }
   const refs = useRef(new Map<string, HTMLTextAreaElement>())
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const lastFocusedId = useRef<string | null>(null)
   // Attachment URLs resolve asynchronously; insert into the latest blocks, not the ones from the event.
   const latest = useRef({ blocks, onChange })
@@ -84,6 +98,23 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
   useLayoutEffect(() => {
     latest.current = { blocks, onChange }
   })
+
+  useImperativeHandle(attachRef, () => ({ openPicker: () => fileInputRef.current?.click() }), [])
+
+  // Typing anywhere else on the page (title, 핵심 개념, 헷갈린 점) means there is no "last line" in this
+  // editor anymore, so menu attachments go to the end of this editor.
+  useEffect(() => {
+    if (!allowAttachments) return
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null
+      if (!target || containerRef.current?.contains(target)) return
+      if (target.matches("input:not([type=file]):not([type=checkbox]), textarea, [contenteditable=true]")) {
+        lastFocusedId.current = null
+      }
+    }
+    document.addEventListener("focusin", handleFocusIn)
+    return () => document.removeEventListener("focusin", handleFocusIn)
+  }, [allowAttachments])
 
   useEffect(() => {
     if (!pendingFocus) return
@@ -208,7 +239,7 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
     : {}
 
   return (
-    <div className="flex flex-col gap-2">
+    <div ref={containerRef} className="flex flex-col gap-2">
       <div
         {...dropHandlers}
         className={`relative flex flex-col gap-1 rounded-lg transition-colors ${
@@ -273,30 +304,19 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
       </div>
 
       {allowAttachments && (
-        <div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            className="sr-only"
-            tabIndex={-1}
-            aria-hidden="true"
-            onChange={(e) => {
-              const files = Array.from(e.target.files ?? [])
-              e.target.value = ""
-              void attachFiles(files, lastFocusedId.current)
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            title="파일 선택, 끌어다 놓기, 이미지 붙여넣기로 첨부할 수 있어요"
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-indigo-700"
-          >
-            <Paperclip className="size-4" aria-hidden="true" />
-            첨부
-          </button>
-        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? [])
+            e.target.value = ""
+            void attachFiles(files, lastFocusedId.current)
+          }}
+        />
       )}
     </div>
   )
