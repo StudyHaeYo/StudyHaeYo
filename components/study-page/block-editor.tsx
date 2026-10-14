@@ -10,16 +10,11 @@ import {
   type KeyboardEvent,
   type Ref,
 } from "react"
-import {
-  isTextBlock,
-  newBlockId,
-  type AttachmentBlock,
-  type Block,
-  type BlockType,
-  type TextBlock,
-} from "@/lib/study-pages"
+import { isDrawingBlock, isTextBlock, newBlockId, type Block, type BlockType, type TextBlock } from "@/lib/study-pages"
 import { createAttachmentBlocks } from "@/lib/attachments"
+import { newDrawingBlock } from "@/lib/drawing"
 import { AttachmentBlockView } from "@/components/study-page/attachment-block"
+import { DrawingBlockView } from "@/components/study-page/drawing-block"
 
 const shortcuts: { prefix: string; type: BlockType }[] = [
   { prefix: "### ", type: "h3" },
@@ -50,9 +45,9 @@ const placeholders: Record<BlockType, string> = {
 
 const emptyParagraph = (): TextBlock => ({ id: newBlockId(), type: "p", text: "" })
 
-// Inserts after `afterId` (or at the end). An empty text block at that spot is replaced, and a text
-// block is kept after the attachments so typing can continue below them.
-function insertAttachments(blocks: Block[], attachments: AttachmentBlock[], afterId: string | null): Block[] {
+// Inserts attachments or drawings after `afterId` (or at the end). An empty text block at that spot is
+// replaced, and a text block is kept after the inserted blocks so typing can continue below them.
+function insertBlocks(blocks: Block[], inserted: Block[], afterId: string | null): Block[] {
   let index = afterId ? blocks.findIndex((b) => b.id === afterId) : -1
   if (index === -1) index = blocks.length - 1
   const target = blocks[index]
@@ -60,7 +55,7 @@ function insertAttachments(blocks: Block[], attachments: AttachmentBlock[], afte
   const before = blocks.slice(0, replaceTarget ? index : index + 1)
   const after = blocks.slice(index + 1)
   const trailing = after[0] && isTextBlock(after[0]) ? [] : [emptyParagraph()]
-  return [...before, ...attachments, ...trailing, ...after]
+  return [...before, ...inserted, ...trailing, ...after]
 }
 
 interface BlockEditorProps {
@@ -74,6 +69,7 @@ interface BlockEditorProps {
 
 export interface AttachmentHandle {
   openPicker: () => void
+  insertDrawing: () => void
 }
 
 export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments = false, attachRef }: BlockEditorProps) {
@@ -92,6 +88,8 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
   const latest = useRef({ blocks, onChange })
   const [pendingFocus, setPendingFocus] = useState<{ id: string; caret: number } | null>(null)
   const [dragging, setDragging] = useState(false)
+  // A drawing added from the menu opens straight into edit mode.
+  const [autoEditId, setAutoEditId] = useState<string | null>(null)
   const first = blocks[0]
   const isSoleEmptyBlock = blocks.length === 1 && isTextBlock(first) && first.text === ""
 
@@ -99,7 +97,20 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
     latest.current = { blocks, onChange }
   })
 
-  useImperativeHandle(attachRef, () => ({ openPicker: () => fileInputRef.current?.click() }), [])
+  useImperativeHandle(
+    attachRef,
+    () => ({
+      openPicker: () => fileInputRef.current?.click(),
+      insertDrawing: () => {
+        const drawing = newDrawingBlock()
+        const current = latest.current
+        current.onChange(insertBlocks(current.blocks, [drawing], lastFocusedId.current))
+        lastFocusedId.current = drawing.id
+        setAutoEditId(drawing.id)
+      },
+    }),
+    [],
+  )
 
   // Typing anywhere else on the page (title, 핵심 개념, 헷갈린 점) means there is no "last line" in this
   // editor anymore, so menu attachments go to the end of this editor.
@@ -131,7 +142,7 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
     const created = await createAttachmentBlocks(files)
     if (created.length === 0) return
     const current = latest.current
-    current.onChange(insertAttachments(current.blocks, created, afterId))
+    current.onChange(insertBlocks(current.blocks, created, afterId))
   }
 
   const removeBlock = (id: string) => {
@@ -248,6 +259,27 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
         aria-label="페이지 본문"
       >
         {blocks.map((block, index) => {
+          if (isDrawingBlock(block)) {
+            return (
+              <DrawingBlockView
+                key={block.id}
+                block={block}
+                autoEdit={autoEditId === block.id}
+                onChange={(next) => {
+                  const current = latest.current
+                  current.onChange(current.blocks.map((b) => (b.id === next.id ? next : b)))
+                }}
+                onRemove={() => removeBlock(block.id)}
+                onActivate={() => {
+                  lastFocusedId.current = block.id
+                }}
+                onNavigate={(step) => {
+                  const target = textNeighbor(index, step)
+                  if (target) setPendingFocus({ id: target.id, caret: step === -1 ? target.text.length : 0 })
+                }}
+              />
+            )
+          }
           if (!isTextBlock(block)) {
             return <AttachmentBlockView key={block.id} block={block} onRemove={() => removeBlock(block.id)} />
           }

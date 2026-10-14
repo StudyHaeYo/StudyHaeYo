@@ -36,7 +36,14 @@
 | studyEnabled | boolean (선택) | 학습 기능이 "선택"인 템플릿에서 사용자가 켰는지 |
 
 ### StudyNoteContent (학습 노트 본문)
-- `learned`: Block[] — 오늘 배운 내용
+  - `learned`: Block[] — 오늘 배운 내용
+
+### 그림 블록 (`type: "drawing"`)
+- `{id, type: "drawing", strokes, height}`. `height`는 px(처음 320, "아래로 늘리기"마다 +120).
+- 획(stroke) = `{tool: "pen"｜"highlighter", color, width, points}`. `points`는 `[x, y]` 배열이고, **x와 y 모두 블록 너비를 1로 본 비율**이다. 화면 너비가 달라도 그림 모양이 유지되게 하려는 것이다. `width`는 화면 px라서 확대·축소해도 선 굵기는 그대로다.
+- 비트맵이 아닌 좌표로 저장한다. 저장 크기가 작고, 획 단위 지우개와 되돌리기가 쉽기 때문이다.
+- 텍스트가 아니므로 AI 도구용 본문 텍스트(`blocksPlainText`)에서는 빠진다. 페이지를 복제하면 획 데이터까지 깊은 복사한다(`cloneBlock`).
+- 되돌리기/다시 실행 기록은 블록이 화면에 있는 동안에만 유지되고 저장하지 않는다.
 - `concepts`: `{id, text}[]` — 핵심 개념. `"용어: 설명"` 형태로 쓰면 복습 카드의 앞면/뒷면으로 나뉜다(`splitConcept`)
 - `confusions`: `{id, text, resolved}[]` — 헷갈린 점. 항목별 해결 여부
 
