@@ -1,6 +1,6 @@
 import { createStore } from "@/lib/create-store"
 import { studyTree } from "@/lib/study-tree"
-import { studyPages, todayISO, type StudyPage } from "@/lib/study-pages"
+import { cloneBlock, studyPages, todayISO, type StudyPage } from "@/lib/study-pages"
 import { getTemplate, type TemplateId } from "@/lib/templates"
 
 // A folder groups pages or other groups; a subject is a group that plans and analytics can target.
@@ -79,9 +79,9 @@ export function duplicatePage(id: string) {
       id: copyId,
       title: `${source.title || "제목 없음"} (사본)`,
       // Attachment blocks are copied with the body; copies point at the same file URL.
-      blocks: source.blocks.map((b) => ({ ...b })),
+      blocks: source.blocks.map(cloneBlock),
       note: source.note && {
-        learned: source.note.learned.map((b) => ({ ...b })),
+        learned: source.note.learned.map(cloneBlock),
         concepts: source.note.concepts.map((c) => ({ ...c })),
         confusions: source.note.confusions.map((c) => ({ ...c })),
       },

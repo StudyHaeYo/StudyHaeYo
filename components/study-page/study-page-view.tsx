@@ -3,7 +3,7 @@
 import { Fragment, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Check, ChevronRight, FileQuestion, Lock, MoreHorizontal, Paperclip, Plus, PowerOff, Save } from "lucide-react"
+import { Check, ChevronRight, FileQuestion, Lock, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff, Save } from "lucide-react"
 import {
   computePageStats,
   newItemId,
@@ -196,19 +196,34 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
               reviewing
                 ? undefined
                 : (close) => (
-                    <button
-                      role="menuitem"
-                      type="button"
-                      title="끌어다 놓거나 이미지를 붙여넣어도 첨부돼요 · 파일당 10MB까지"
-                      className={`${menuItemClass} text-foreground`}
-                      onClick={() => {
-                        close()
-                        attachRef.current?.openPicker()
-                      }}
-                    >
-                      <Paperclip className="size-4 text-muted-foreground" />
-                      파일 첨부
-                    </button>
+                    <>
+                      <button
+                        role="menuitem"
+                        type="button"
+                        title="끌어다 놓거나 이미지를 붙여넣어도 첨부돼요 · 파일당 10MB까지"
+                        className={`${menuItemClass} text-foreground`}
+                        onClick={() => {
+                          close()
+                          attachRef.current?.openPicker()
+                        }}
+                      >
+                        <Paperclip className="size-4 text-muted-foreground" />
+                        파일 첨부
+                      </button>
+                      <button
+                        role="menuitem"
+                        type="button"
+                        title="펜과 형광펜으로 그릴 수 있는 블록을 넣어요"
+                        className={`${menuItemClass} text-foreground`}
+                        onClick={() => {
+                          close()
+                          attachRef.current?.insertDrawing()
+                        }}
+                      >
+                        <PenLine className="size-4 text-muted-foreground" />
+                        그림 추가
+                      </button>
+                    </>
                   )
             }
             onRename={() => {
