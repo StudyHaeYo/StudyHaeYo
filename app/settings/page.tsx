@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import { Sidebar } from "@/components/sidebar"
+import { formatDuration } from "@/lib/study-pages"
+import { WEEKLY_GOAL_MINUTES } from "@/lib/study-stats"
 
 export const metadata: Metadata = {
   title: "설정 | 스터디 해요",
@@ -18,7 +20,7 @@ const sections = [
     rows: [
       { label: "기본 템플릿", value: "학습 노트" },
       { label: "복습 알림", value: "켜짐 · 오전 9시" },
-      { label: "주간 목표 시간", value: "10시간" },
+      { label: "주간 목표 시간", value: formatDuration(WEEKLY_GOAL_MINUTES) },
     ],
   },
 ]

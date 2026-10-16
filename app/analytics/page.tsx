@@ -1,22 +1,17 @@
 "use client"
 
-import { AlertTriangle, CalendarClock, Clock, FileText, Gauge, History } from "lucide-react"
+import { Clock, FileText, Gauge } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
-import Link from "next/link"
 import { Sidebar } from "@/components/sidebar"
 import { SubjectMastery } from "@/components/learning-os/subject-mastery"
-import { recentActivity, reviewQueue, upcomingReviews } from "@/lib/learning-os"
-import { formatDuration, unresolvedConfusionCount } from "@/lib/study-pages"
+import { RecentActivity, UpcomingReviews, WeakAreas } from "@/components/learning-os/analytics-widgets"
+import { formatDuration } from "@/lib/study-pages"
 import { useWorkspace } from "@/lib/workspace"
 import { unrecordedSessionMinutes, useStudySession } from "@/lib/study-session"
 
 export default function AnalyticsPage() {
   const { pages } = useWorkspace()
   const records = pages.flatMap((p) => p.studyRecords)
-  const unresolvedByPage = (pageId: string) => {
-    const page = pages.find((p) => p.id === pageId)
-    return page ? unresolvedConfusionCount(page) : 0
-  }
   const session = useStudySession()
   const sessionMinutes = unrecordedSessionMinutes(session, records, Date.now())
   const totalMinutes = records.reduce((sum, r) => sum + r.durationMinutes, 0) + sessionMinutes
@@ -63,87 +58,12 @@ export default function AnalyticsPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             <SubjectMastery title="과목별 학습 상태" />
 
-            <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <AlertTriangle className="size-4 text-amber-600" />
-                <h2 className="text-sm font-medium text-card-foreground">취약 학습 영역</h2>
-              </div>
-              <ul className="flex flex-col gap-2">
-                {reviewQueue.map((item) => (
-                  <li key={item.id}>
-                    <Link
-                      href={`/record/${item.pageId}`}
-                      className="flex items-center justify-between gap-3 rounded-lg bg-muted/60 px-3 py-2.5 text-sm transition-colors hover:bg-accent"
-                    >
-                      <span className="min-w-0 truncate">
-                        <span className="text-muted-foreground">{item.subject}</span>
-                        <span className="px-1.5 text-muted-foreground">·</span>
-                        <span className="font-medium text-card-foreground">{item.topic}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">이해도 {item.understanding}/5</span>
-                        {unresolvedByPage(item.pageId) > 0 && (
-                          <span className="ml-2 text-xs font-medium text-amber-700">
-                            {`미해결 헷갈린 점 ${unresolvedByPage(item.pageId)}개`}
-                          </span>
-                        )}
-                      </span>
-                      <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
-                        보강 필요
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <WeakAreas />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <CalendarClock className="size-4 text-indigo-600" />
-                <h2 className="text-sm font-medium text-card-foreground">복습 예정</h2>
-              </div>
-              <ul className="flex flex-col divide-y divide-border">
-                {upcomingReviews.map((item) => (
-                  <li key={item.id}>
-                    <Link
-                      href={`/record/${item.pageId}`}
-                      className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-sm transition-colors hover:bg-accent"
-                    >
-                      <span className="min-w-0 truncate">
-                        <span className="font-medium text-card-foreground">{item.topic}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">{item.subject}</span>
-                      </span>
-                      <span className="shrink-0 font-semibold text-indigo-600">{item.date}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <History className="size-4 text-indigo-600" />
-                <h2 className="text-sm font-medium text-card-foreground">최근 학습 활동</h2>
-              </div>
-              <ul className="flex flex-col divide-y divide-border">
-                {recentActivity.map((item) => (
-                  <li key={item.id}>
-                    <Link
-                      href={`/record/${item.pageId}`}
-                      className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-sm transition-colors hover:bg-accent"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium text-card-foreground">{item.title}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {item.subject} · {item.when}
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-xs text-muted-foreground">이해도 {item.understanding}/5</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <UpcomingReviews />
+            <RecentActivity />
           </div>
         </div>
       </main>

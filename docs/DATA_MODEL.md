@@ -160,8 +160,16 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
 ## 5. 알려진 불일치와 주의
 
 1. **새로고침하면 페이지, 기록, 학습 계획이 시드 데이터로 돌아간다.** `createStore`는 메모리 전용이다. localStorage를 쓰는 것은 세션 타이머뿐이다.
-2. **정적 더미를 그대로 보여주는 위젯이 있다.** Home의 나의 학습 상태, 오늘의 기록 카드(`dummy-data.ts`의 `r1~r4`를 페이지 id로 매핑해서 연결), 체크리스트, 주간 통계. 학습 분석의 과목별 학습 상태, 취약 학습 영역, 복습 예정, 최근 학습 활동(`lib/learning-os.ts`의 고정값; 취약 학습 영역의 "미해결 헷갈린 점 N개"만 실제 데이터). 실제 데이터와 연결된 곳은 Home의 오늘의 우선 학습/복습이 필요한 학습과 학습 분석 상단 요약 3개뿐이다.
-3. **`StudyRecord`가 두 가지다.** `lib/types.ts`의 `StudyRecord`(title/category/type...)는 Home의 정적 카드용 옛 형태이고, 실제 학습 기록은 `lib/study-pages.ts`의 `PageStudyRecord`다. DB는 `PageStudyRecord` 기준으로 설계한다.
+2. **정적 더미 위젯은 체크리스트 하나만 남았다.** Home의 나의 학습 상태/오늘의 기록/이번 주 학습 통계, 학습 분석의 과목별 학습 상태/취약 학습 영역/복습 예정/최근 학습 활동은 모두 `lib/study-stats.ts`가 워크스페이스 페이지의 `studyRecords`에서 계산한다.
+   - 과목: 페이지의 가장 가까운 상위 과목(`nearestSubject`), 없으면 "내 페이지"
+   - 나의 학습 상태 / 과목별 학습 상태: 과목별 기록 `understanding` 평균 ÷ 5 × 100 (기록 없는 과목은 숨김)
+   - 오늘의 기록: `date`가 오늘인 기록, 최신순(`createdAt`, 없으면 id의 시각, 그것도 없으면 `date`)
+   - 이번 주 학습 통계: 월요일~오늘의 `date` 기준 과목별 `durationMinutes` 합. 목표는 `WEEKLY_GOAL_MINUTES`(600분, 설정 화면과 같은 상수)
+   - 취약 학습 영역: 페이지 이해도(R1) ≤ 2 이거나 미해결 헷갈린 점 ≥ 1. 미해결 많은 순 → 이해도 낮은 순, 최대 5개
+   - 복습 예정: R2와 같은 페이지 범위(locked-on 템플릿), 상태가 완료가 아니고 다음 복습일이 있는 페이지, 날짜순 최대 5개. 오늘 이전/오늘은 "오늘", 내일은 "내일" 표시
+   - 최근 학습 활동: 전체 기록 최신순 5개
+   - `lib/learning-os.ts`의 고정값과 `dummy-data.ts`의 records/weeklyStats는 더 이상 화면에서 쓰지 않는다(파일은 남겨둠).
+3. **`StudyRecord`가 두 가지다.** `lib/types.ts`의 `StudyRecord`(title/category/type...)는 옛 형태로 과목 화면의 `RecordCard`에만 남아 있고(Home은 더 이상 쓰지 않음), 실제 학습 기록은 `lib/study-pages.ts`의 `PageStudyRecord`다. DB는 `PageStudyRecord` 기준으로 설계한다.
 4. `/subject/[id]`는 시드(`lib/study-tree.ts`의 `findSubject`)에서만 과목을 찾는다. 시드에 없는 과목(사용자가 만든 `kind: "subject"` 그룹)은 404가 날 수 있다. 과목 페이지의 주간 목표도 시드 전용이다. (확인 필요)
 5. 시드/레거시: `lib/study-tree.ts`는 초기 그룹 시드용, `lib/dummy-data.ts`의 `categories`는 일부 화면에서 아직 쓰인다. `app/ai`, `app/notes`, `app/study`는 링크가 없는 죽은 라우트다(정리 대상).
 6. 형식 불일치: 페이지 `createdAt`은 날짜 문자열, 기록 `createdAt`은 ms 숫자. 날짜는 타임존 없는 로컬 날짜 문자열이다.
