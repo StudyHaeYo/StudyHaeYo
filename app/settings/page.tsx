@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Sidebar } from "@/components/sidebar"
 import { formatDuration } from "@/lib/study-pages"
-import { WEEKLY_GOAL_MINUTES } from "@/lib/study-stats"
+import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
 
 export const metadata: Metadata = {
   title: "설정 | 스터디 해요",

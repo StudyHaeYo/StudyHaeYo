@@ -3,7 +3,8 @@
 import { BarChart3 } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
-import { WEEKLY_GOAL_MINUTES, weeklyStats } from "@/lib/study-stats"
+import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
+import { weeklyStats } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
 
 const RADIUS = 40
