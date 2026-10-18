@@ -169,8 +169,9 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
    - 복습 예정: R2와 같은 페이지 범위(locked-on 템플릿), 상태가 완료가 아니고 다음 복습일이 있는 페이지, 날짜순 최대 5개. 오늘 이전/오늘은 "오늘", 내일은 "내일" 표시
    - 최근 학습 활동: 전체 기록 최신순 5개
    - `lib/learning-os.ts`의 고정값과 `dummy-data.ts`의 records/weeklyStats는 더 이상 화면에서 쓰지 않는다(파일은 남겨둠).
-3. **`StudyRecord`가 두 가지다.** `lib/types.ts`의 `StudyRecord`(title/category/type...)는 옛 형태로 과목 화면의 `RecordCard`에만 남아 있고(Home은 더 이상 쓰지 않음), 실제 학습 기록은 `lib/study-pages.ts`의 `PageStudyRecord`다. DB는 `PageStudyRecord` 기준으로 설계한다.
-4. `/subject/[id]`는 시드(`lib/study-tree.ts`의 `findSubject`)에서만 과목을 찾는다. 시드에 없는 과목(사용자가 만든 `kind: "subject"` 그룹)은 404가 날 수 있다. 과목 페이지의 주간 목표도 시드 전용이다. (확인 필요)
+3. **`StudyRecord`가 두 가지다.** `lib/types.ts`의 `StudyRecord`(title/category/type...)는 옛 형태로 `components/record-card.tsx`에만 남아 있고(Home과 과목 화면은 더 이상 쓰지 않음), 실제 학습 기록은 `lib/study-pages.ts`의 `PageStudyRecord`다. DB는 `PageStudyRecord` 기준으로 설계한다.
+4. `/subject/[id]`는 워크스페이스의 `kind: "subject"` 그룹에서 과목을 찾는다(`page.tsx`는 id만 넘기고 `components/subject/subject-view.tsx`가 찾음). 요약/페이지 목록은 `subjectSummary`/`subjectPageRows`(R6: 하위 모든 페이지·템플릿 무관)로 계산하고, 옛 주간 목표 대신 이 과목을 target으로 한 `LearningPlan`을 보여준다. 없는 id는 404가 아니라 "과목을 찾을 수 없어요" 안내를 보여준다(새로고침으로 사용자가 만든 과목이 사라진 경우 포함).
+   - 남은 주의: UI에서 사용자가 `kind: "subject"` 그룹을 만들 방법이 아직 없다(사이드바의 그룹 추가는 항상 `folder`). `findSubject`, `weekly-goals.tsx`, `record-card.tsx`는 더 이상 이 화면에서 쓰지 않는다(파일은 남겨둠).
 5. 시드/레거시: `lib/study-tree.ts`는 초기 그룹 시드용, `lib/dummy-data.ts`의 `categories`는 일부 화면에서 아직 쓰인다. `app/ai`, `app/notes`, `app/study`는 링크가 없는 죽은 라우트다(정리 대상).
 6. 형식 불일치: 페이지 `createdAt`은 날짜 문자열, 기록 `createdAt`은 ms 숫자. 날짜는 타임존 없는 로컬 날짜 문자열이다.
 7. id는 모두 클라이언트가 만든다. DB가 id를 발급하면 프론트와 맞추는 방법을 정해야 한다.
