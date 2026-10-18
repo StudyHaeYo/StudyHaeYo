@@ -2,9 +2,7 @@ import { addDays, computePageStats, unresolvedConfusionCount, type PageStudyReco
 import { recordCreatedAt } from "@/lib/study-session"
 import { isReviewCandidate } from "@/lib/templates"
 import { nearestSubject, type WorkspaceState } from "@/lib/workspace"
-
-// Weekly study-time goal. The settings screen shows this same value ("10시간").
-export const WEEKLY_GOAL_MINUTES = 600
+import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
 
 const NO_SUBJECT = "내 페이지"
 
