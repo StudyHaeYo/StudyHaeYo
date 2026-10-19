@@ -54,6 +54,11 @@ export function removePlan(id: string) {
   store.set((plans) => plans.filter((p) => p.id !== id))
 }
 
+// A subject with plans pointing at it can't become a folder, or those plans would lose their target.
+export function plansTargetingSubject(plans: LearningPlan[], subjectId: string) {
+  return plans.filter((p) => p.target.scope === "subject" && p.target.subjectId === subjectId)
+}
+
 export function encodeTarget(target: PlanTarget) {
   if (target.scope === "all") return "all"
   return target.scope === "subject" ? `subject:${target.subjectId}` : `page:${target.pageId}`

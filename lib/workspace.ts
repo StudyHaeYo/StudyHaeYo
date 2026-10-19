@@ -139,6 +139,11 @@ export function addGroup(name: string, parentId: string | null = null, kind: Gro
   return group.id
 }
 
+// Callers must check plansTargetingSubject before turning a subject into a folder (R7).
+export function setGroupKind(id: string, kind: GroupKind) {
+  store.set((s) => ({ ...s, groups: s.groups.map((g) => (g.id === id ? { ...g, kind } : g)) }))
+}
+
 // The tree has no fixed depth: a group holds groups or pages, and a page can hold child pages.
 // Study records are page data (StudyPage.studyRecords), never tree nodes.
 export type NodeKind = GroupKind | "page"
