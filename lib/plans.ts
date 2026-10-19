@@ -45,6 +45,7 @@ const seedPlans: LearningPlan[] = [
 const store = createStore<LearningPlan[]>(seedPlans)
 
 export const usePlans = store.useStore
+export const getPlans = store.get
 
 export function addPlan(plan: Omit<LearningPlan, "id">) {
   store.set((plans) => [...plans, { ...plan, id: `plan-${Date.now().toString(36)}` }])
