@@ -25,6 +25,7 @@ import {
   type WorkspaceGroup,
 } from "@/lib/workspace"
 import { RecordItem } from "@/components/sidebar/record-item"
+import { signOut } from "@/lib/auth"
 import { resolveTreeAppearance } from "@/lib/templates"
 import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
 
@@ -35,7 +36,6 @@ const mainNav = [
 
 interface SidebarProps {
   categories?: Category[]
-  onLogout?: () => void
   user?: { name: string; email: string }
 }
 
@@ -48,7 +48,6 @@ interface TreeContext {
 }
 
 export function Sidebar({
-  onLogout,
   user = { name: "김학생", email: "student@studyhaeyo.com" },
 }: SidebarProps) {
   const pathname = usePathname()
@@ -57,6 +56,11 @@ export function Sidebar({
   const [addingGroup, setAddingGroup] = useState(false)
   const homeActive = pathname === "/"
   const settingsActive = pathname.startsWith("/settings")
+
+  const handleLogout = async () => {
+    await signOut()
+    router.push("/login")
+  }
 
   const ctx: TreeContext = {
     groups,
@@ -165,7 +169,8 @@ export function Sidebar({
             <Settings className="size-4" />
           </Link>
           <button
-            onClick={onLogout}
+            type="button"
+            onClick={handleLogout}
             aria-label="로그아웃"
             className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >

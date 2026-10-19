@@ -20,3 +20,6 @@ export async function signUp(
   void password
   return { ok: true }
 }
+
+// 지금은 지울 세션이 없어서 아무 일도 하지 않는다.
+export async function signOut(): Promise<void> {}

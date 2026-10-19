@@ -28,9 +28,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <Sidebar
-        onLogout={() => console.log("[v0] logout")}
-      />
+      <Sidebar />
 
       {/* Main column */}
       <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-10">
