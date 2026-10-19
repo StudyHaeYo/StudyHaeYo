@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next.js build output
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# environment variables (API 키, Supabase 키는 절대 올리지 않는다)
+.env
+.env*.local
+
+# vercel
+.vercel
+
+# logs and OS files
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
