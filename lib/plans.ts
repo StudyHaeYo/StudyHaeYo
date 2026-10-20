@@ -1,4 +1,6 @@
 import { createStore } from "@/lib/create-store"
+import { check, db, enqueueWrite } from "@/lib/db/queue"
+import { newId, planInsertRow } from "@/lib/db/rows"
 
 // A plan can cover all study, one subject, or one page — it never has to pick a leaf page.
 export type PlanTarget =
@@ -15,7 +17,9 @@ export interface LearningPlan {
   goal: string
 }
 
-const seedPlans: LearningPlan[] = [
+// Example plans for "예시 데이터 가져오기" (importExampleData in lib/workspace.ts). Targets are seed ids from
+// lib/study-tree.ts / lib/study-pages.ts; the import maps them to the new uuids. Never loaded on their own.
+export const examplePlans: LearningPlan[] = [
   {
     id: "plan-1",
     title: "이번 주 전공 공부",
@@ -42,17 +46,41 @@ const seedPlans: LearningPlan[] = [
   },
 ]
 
-const store = createStore<LearningPlan[]>(seedPlans)
+// The signed-in user's plans live in Supabase (learning_plans). This store is the screen cache: empty until
+// lib/db/sync.ts loads it after sign-in.
+const store = createStore<LearningPlan[]>([])
 
 export const usePlans = store.useStore
 export const getPlans = store.get
 
+export function replacePlans(plans: LearningPlan[]) {
+  store.set(() => plans)
+}
+
 export function addPlan(plan: Omit<LearningPlan, "id">) {
-  store.set((plans) => [...plans, { ...plan, id: `plan-${Date.now().toString(36)}` }])
+  const created: LearningPlan = { ...plan, id: newId() }
+  store.set((plans) => [...plans, created])
+  enqueueWrite(async (userId) => {
+    check(await db().from("learning_plans").insert(planInsertRow(created, userId)).select("id"), 1)
+  })
+}
+
+// Adds already-built plans (new ids, targets that exist) in one insert. Used by importExampleData.
+export function insertPlans(created: LearningPlan[]) {
+  if (created.length === 0) return
+  store.set((plans) => [...plans, ...created])
+  enqueueWrite(async (userId) => {
+    const rows = created.map((p) => planInsertRow(p, userId))
+    check(await db().from("learning_plans").insert(rows).select("id"), rows.length)
+  })
 }
 
 export function removePlan(id: string) {
+  if (!store.get().some((p) => p.id === id)) return
   store.set((plans) => plans.filter((p) => p.id !== id))
+  enqueueWrite(async (userId) => {
+    check(await db().from("learning_plans").delete().eq("id", id).eq("user_id", userId).select("id"), 1)
+  })
 }
 
 // A subject with plans pointing at it can't become a folder, or those plans would lose their target.

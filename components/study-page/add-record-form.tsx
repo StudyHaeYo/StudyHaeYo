@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { UnderstandingRating } from "@/components/record/understanding-rating"
-import { formatDate, todayISO, type PageStudyRecord } from "@/lib/study-pages"
+import { formatDate, newRecordId, todayISO, type PageStudyRecord } from "@/lib/study-pages"
 
 interface AddRecordFormProps {
   pageId: string
@@ -36,7 +36,7 @@ export function AddRecordForm({ pageId, initial, initialMinutes, onSubmit, onCan
     e.preventDefault()
     if (!canSubmit || understanding === null) return
     onSubmit({
-      id: initial?.id ?? `${pageId}-r-${Date.now()}`,
+      id: initial?.id ?? newRecordId(),
       pageId,
       date,
       createdAt: initial ? initial.createdAt : Date.now(),

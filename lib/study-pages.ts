@@ -154,8 +154,17 @@ export function addDays(iso: string, days: number) {
   return toISODate(date)
 }
 
+// Same date: newer createdAt first. Record ids are random uuids, so they only break exact ties.
 export function sortRecordsNewestFirst(records: PageStudyRecord[]) {
-  return [...records].sort((a, b) => (a.date === b.date ? b.id.localeCompare(a.id) : b.date.localeCompare(a.date)))
+  return [...records].sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) || (b.createdAt ?? 0) - (a.createdAt ?? 0) || b.id.localeCompare(a.id),
+  )
+}
+
+// Study record ids are uuids (study_records.id).
+export function newRecordId() {
+  return crypto.randomUUID()
 }
 
 // `today` is null during SSR/hydration (see useTodayISO); the review check waits for the browser date.

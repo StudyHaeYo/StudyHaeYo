@@ -173,8 +173,7 @@ export function PageActionsMenu({
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
           setConfirmOpen(false)
-          deletePage(pageId)
-          onDeleted?.()
+          if (deletePage(pageId)) onDeleted?.()
         }}
       />
     </div>

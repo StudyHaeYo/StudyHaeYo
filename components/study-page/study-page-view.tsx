@@ -7,11 +7,14 @@ import { ChevronRight, FileQuestion, Lock, MoreHorizontal, Paperclip, PenLine, P
 import {
   computePageStats,
   newItemId,
+  newRecordId,
   noteOf,
   todayISO,
   type PageStudyRecord,
   type StudyNoteContent,
 } from "@/lib/study-pages"
+import { useDataStatus } from "@/lib/db/sync"
+import { DataStatusView } from "@/components/data-status-notice"
 import type { ReviewResult } from "@/components/study-page/study-note-review"
 import { resolvePageLayout } from "@/lib/templates"
 import { nearestSubject, nodePath, setPageStudyEnabled, updatePage, useWorkspace } from "@/lib/workspace"
@@ -33,8 +36,9 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
   const titleRef = useRef<HTMLInputElement>(null)
   const attachRef = useRef<AttachmentHandle>(null)
   const page = pages.find((p) => p.id === pageId)
+  const dataStatus = useDataStatus()
 
-  if (!page) return <MissingPage />
+  if (!page) return dataStatus.phase === "ready" ? <MissingPage /> : <DataStatusView status={dataStatus} />
 
   // Every page type shares one column:
   // Study on:  [속성] → [본문 템플릿 or 복습 모드] → [학습 기록] → [AI 학습 도구]
@@ -82,7 +86,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
     if (newConfusions.length > 0) changeNote({ ...note, confusions: [...note.confusions, ...newConfusions] })
     const now = Date.now()
     handleAddRecord({
-      id: `${page.id}-r-${now}`,
+      id: newRecordId(),
       pageId: page.id,
       date: today ?? todayISO(),
       createdAt: now,
