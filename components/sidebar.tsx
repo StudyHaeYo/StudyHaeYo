@@ -22,6 +22,7 @@ import {
   addGroup,
   childNodes,
   flattenTree,
+  renameGroup,
   renamePage,
   useWorkspace,
   type GroupKind,
@@ -232,6 +233,7 @@ function PageNode({ page, ctx }: { page: StudyPage; ctx: TreeContext }) {
 function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) {
   const [open, setOpen] = useState(true)
   const [addingSubgroup, setAddingSubgroup] = useState(false)
+  const [renaming, setRenaming] = useState(false)
   const isEmpty =
     !ctx.groups.some((g) => g.parentId === group.id) && !ctx.pages.some((p) => p.parentId === group.id)
   const isSubject = group.kind === "subject"
@@ -264,14 +266,16 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
       >
         <Plus className="size-3.5" />
       </Link>
-      <GroupActionsMenu group={group} triggerClassName={hoverAction} />
+      <GroupActionsMenu group={group} triggerClassName={hoverAction} onRename={() => setRenaming(true)} />
     </div>
   )
   const KindIcon = isSubject ? BookMarked : Folder
 
   return (
     <li>
-      {isSubject ? (
+      {renaming ? (
+        <GroupRenameInput group={group} icon={KindIcon} onDone={() => setRenaming(false)} />
+      ) : isSubject ? (
         <div
           {...rowProps}
           className={`group/row flex items-center rounded-md transition-colors hover:bg-accent ${
@@ -331,6 +335,42 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
         </ul>
       )}
     </li>
+  )
+}
+
+function GroupRenameInput({
+  group,
+  icon: Icon,
+  onDone,
+}: {
+  group: WorkspaceGroup
+  icon: typeof Folder
+  onDone: () => void
+}) {
+  const [draft, setDraft] = useState(group.name)
+  const commit = () => {
+    if (draft.trim() && draft.trim() !== group.name) renameGroup(group.id, draft)
+    onDone()
+  }
+
+  return (
+    <div className="flex items-center gap-2 rounded-md bg-accent px-2 py-1">
+      <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <input
+        autoFocus
+        value={draft}
+        aria-label={`${group.kind === "subject" ? "과목" : "폴더"} 이름`}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={(e) => e.currentTarget.select()}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.nativeEvent.isComposing || e.keyCode === 229) return
+          if (e.key === "Enter") commit()
+          if (e.key === "Escape") onDone()
+        }}
+        className="min-w-0 flex-1 rounded border border-indigo-300 bg-card px-1.5 py-0.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-indigo-200"
+      />
+    </div>
   )
 }
 
