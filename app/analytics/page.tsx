@@ -13,7 +13,7 @@ export default function AnalyticsPage() {
   const { pages } = useWorkspace()
   const records = pages.flatMap((p) => p.studyRecords)
   const session = useStudySession()
-  const sessionMinutes = unrecordedSessionMinutes(session, records, Date.now())
+  const sessionMinutes = unrecordedSessionMinutes(session, records, Date.now(), new Set(pages.map((p) => p.id)))
   const totalMinutes = records.reduce((sum, r) => sum + r.durationMinutes, 0) + sessionMinutes
   const averageUnderstanding =
     records.length > 0 ? (records.reduce((sum, r) => sum + r.understanding, 0) / records.length).toFixed(1) : "-"

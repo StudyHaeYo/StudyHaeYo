@@ -251,7 +251,13 @@ export function hasRecordInWindow(records: TimedRecord[], pageId: string, from: 
 // Session time not yet captured by a study record. A page's time in a session is dropped as soon as
 // any record for that page was created during the session (summary button, review, or manual add);
 // that record's own minutes are what counts, even if the user lowered the prefilled value.
-export function unrecordedSessionMinutes(s: SessionState, records: TimedRecord[], now: number) {
+// Only pages that still exist count: a deleted page (or one lost on refresh) must not leave its time behind.
+export function unrecordedSessionMinutes(
+  s: SessionState,
+  records: TimedRecord[],
+  now: number,
+  existingPageIds: ReadonlySet<string>,
+) {
   const windows: { startedAt: number; endedAt: number; segments: SessionSegment[] }[] = [...s.log]
   if (s.startedAt) {
     const live = s.openSegment ? [...s.segments, { ...s.openSegment, end: Math.max(now, s.openSegment.start) }] : s.segments
@@ -260,6 +266,7 @@ export function unrecordedSessionMinutes(s: SessionState, records: TimedRecord[]
   let ms = 0
   for (const session of windows) {
     for (const { pageId, ms: pageMs } of totalsByPage(session.segments)) {
+      if (!existingPageIds.has(pageId)) continue
       if (!hasRecordInWindow(records, pageId, session.startedAt, session.endedAt)) ms += pageMs
     }
   }
