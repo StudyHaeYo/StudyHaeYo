@@ -1,7 +1,10 @@
 import {
   addDays,
   computePageStats,
+  dueLabel,
+  formatDate,
   unresolvedConfusionCount,
+  type DueTone,
   type PageStats,
   type PageStudyRecord,
   type StudyPage,
@@ -136,12 +139,11 @@ export interface UpcomingReview {
   subject: string
   date: string
   dateLabel: string
-  relative: "오늘" | "내일" | null
+  due: { label: string; tone: DueTone }
 }
 
 // Same page pool as R2 (locked-on templates only), not yet 완료, with a review date.
 export function upcomingReviews(workspace: WorkspaceState, today: string, limit = 5): UpcomingReview[] {
-  const tomorrow = addDays(today, 1)
   return workspace.pages
     .filter(isReviewCandidate)
     .map((page) => ({ page, stats: computePageStats(page, today) }))
@@ -155,8 +157,8 @@ export function upcomingReviews(workspace: WorkspaceState, today: string, limit 
         pageTitle: page.title || "제목 없음",
         subject: subjectOf(workspace, page),
         date,
-        dateLabel: monthDayLabel(date),
-        relative: date <= today ? "오늘" : date === tomorrow ? "내일" : null,
+        dateLabel: formatDate(date),
+        due: dueLabel(date, today),
       }
     })
 }
@@ -200,7 +202,3 @@ export function subjectPageRows(workspace: WorkspaceState, subjectId: string, to
     })
 }
 
-export function monthDayLabel(iso: string) {
-  const [, m, d] = iso.split("-").map(Number)
-  return `${m}월 ${d}일`
-}

@@ -4,7 +4,7 @@ import Link from "next/link"
 import { AlertTriangle, CalendarClock, History } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
-import { formatDate } from "@/lib/study-pages"
+import { dueToneClass, formatDate } from "@/lib/study-pages"
 import { recentActivity, upcomingReviews, weakAreas } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
 
@@ -104,12 +104,8 @@ export function UpcomingReviews() {
                   <span className="ml-2 text-xs text-muted-foreground">{item.subject}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
-                  {item.relative && (
-                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">
-                      {item.relative}
-                    </span>
-                  )}
-                  <span className="font-semibold text-indigo-600">{item.dateLabel}</span>
+                  <span className="text-xs text-muted-foreground">{item.dateLabel}</span>
+                  <span className={`w-14 text-right text-xs font-medium ${dueToneClass[item.due.tone]}`}>{item.due.label}</span>
                 </span>
               </Link>
             </li>

@@ -204,8 +204,35 @@ export function formatDuration(minutes: number) {
   return m === 0 ? `${h}시간` : `${h}시간 ${m}분`
 }
 
+// One date style across the app: "9월 28일". Lists that track a deadline add a relative label (dueLabel).
 export function formatDate(iso: string) {
-  return iso.replaceAll("-", ".")
+  const [, m, d] = iso.split("-").map(Number)
+  return `${m}월 ${d}일`
+}
+
+// Whole days from `fromISO` to `toISO` (local date strings, no time zone).
+export function daysBetween(fromISO: string, toISO: string) {
+  const [fy, fm, fd] = fromISO.split("-").map(Number)
+  const [ty, tm, td] = toISO.split("-").map(Number)
+  return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86_400_000)
+}
+
+export type DueTone = "overdue" | "today" | "soon" | "later"
+
+// How a review date reads next to today: "3일 지남", "오늘", "내일", "5일 후".
+export function dueLabel(dueISO: string, today: string): { label: string; tone: DueTone } {
+  const diff = daysBetween(today, dueISO)
+  if (diff < 0) return { label: `${-diff}일 지남`, tone: "overdue" }
+  if (diff === 0) return { label: "오늘", tone: "today" }
+  if (diff === 1) return { label: "내일", tone: "soon" }
+  return { label: `${diff}일 후`, tone: "later" }
+}
+
+export const dueToneClass: Record<DueTone, string> = {
+  overdue: "text-red-600",
+  today: "text-amber-600",
+  soon: "text-indigo-600",
+  later: "text-muted-foreground",
 }
 
 let blockSeq = 0

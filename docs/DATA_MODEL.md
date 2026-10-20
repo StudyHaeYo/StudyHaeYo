@@ -168,7 +168,7 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
    - 오늘의 기록: `date`가 오늘인 기록, 최신순(`createdAt`, 없으면 id의 시각, 그것도 없으면 `date`)
    - 이번 주 학습 통계: 월요일~오늘의 `date` 기준 과목별 `durationMinutes` 합. 목표는 `WEEKLY_GOAL_MINUTES`(600분, 설정 화면과 같은 상수)
    - 취약 학습 영역: 페이지 이해도(R1) ≤ 2 이거나 미해결 헷갈린 점 ≥ 1. 미해결 많은 순 → 이해도 낮은 순, 최대 5개
-   - 복습 예정: R2와 같은 페이지 범위(locked-on 템플릿), 상태가 완료가 아니고 다음 복습일이 있는 페이지, 날짜순 최대 5개. 오늘 이전/오늘은 "오늘", 내일은 "내일" 표시
+   - 복습 예정: R2와 같은 페이지 범위(locked-on 템플릿), 상태가 완료가 아니고 다음 복습일이 있는 페이지, 날짜순 최대 5개. 날짜 옆에 "3일 지남"/"오늘"/"내일"/"5일 후"(`dueLabel`, Home 복습 목록과 같은 표시)
    - 최근 학습 활동: 전체 기록 최신순 5개
    - `lib/learning-os.ts`의 고정값과 `dummy-data.ts`의 records/weeklyStats는 더 이상 화면에서 쓰지 않는다(파일은 남겨둠).
 3. **`StudyRecord`가 두 가지다.** `lib/types.ts`의 `StudyRecord`(title/category/type...)는 옛 형태로 `components/record-card.tsx`에만 남아 있고(Home과 과목 화면은 더 이상 쓰지 않음), 실제 학습 기록은 `lib/study-pages.ts`의 `PageStudyRecord`다. DB는 `PageStudyRecord` 기준으로 설계한다.
