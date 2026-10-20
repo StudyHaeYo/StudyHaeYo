@@ -7,7 +7,20 @@ export const metadata: Metadata = {
   title: "로그인 · 스터디 해요",
 }
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const query = await searchParams
+  const next = typeof query.next === "string" ? query.next : undefined
+  const notice =
+    query.verified === "1"
+      ? "이메일 인증이 끝났어요. 로그인해 주세요."
+      : query.error === "verification"
+        ? "인증 링크가 만료됐거나 올바르지 않아요. 다시 가입하거나 받은 메일을 확인해 주세요."
+        : undefined
+
   return (
     <AuthShell
       title="로그인"
@@ -21,7 +34,7 @@ export default function LoginPage() {
         </>
       }
     >
-      <LoginForm />
+      <LoginForm next={next} notice={notice} noticeTone={query.verified === "1" ? "success" : "error"} />
     </AuthShell>
   )
 }

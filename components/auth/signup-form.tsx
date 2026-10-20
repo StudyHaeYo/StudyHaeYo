@@ -27,6 +27,7 @@ export function SignupForm() {
   const [submitted, setSubmitted] = useState(false)
   const [pending, setPending] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [sentTo, setSentTo] = useState<string | null>(null)
 
   const errors = submitted ? validate(values) : {}
   const update = (key: keyof Values) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -42,11 +43,29 @@ export function SignupForm() {
     setPending(true)
     const result = await signUp(values.name.trim(), values.email.trim(), values.password)
     if (result.ok) {
-      router.push("/")
+      if (result.needsEmailVerification) {
+        setSentTo(values.email.trim())
+        setPending(false)
+        return
+      }
+      router.replace("/")
+      router.refresh()
       return
     }
     setFormError(result.message)
     setPending(false)
+  }
+
+  if (sentTo) {
+    return (
+      <div role="status" className="flex flex-col gap-2 rounded-lg bg-indigo-50 px-4 py-4 text-sm leading-relaxed text-indigo-800">
+        <p className="font-medium">인증 메일을 보냈어요</p>
+        <p>
+          <span className="font-medium">{sentTo}</span>로 보낸 메일의 인증 링크를 누르면 가입이 끝나요. 메일이 안 보이면
+          스팸함도 확인해 주세요.
+        </p>
+      </div>
+    )
   }
 
   return (

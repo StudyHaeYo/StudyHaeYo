@@ -2,20 +2,27 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { signIn } from "@/lib/auth"
-import { AuthField, EMAIL_PATTERN, MIN_PASSWORD_LENGTH, submitButtonClass } from "./auth-field"
+import { safeNextPath, signIn } from "@/lib/auth"
+import { AuthField, EMAIL_PATTERN, submitButtonClass } from "./auth-field"
 
 function validate(email: string, password: string) {
   const errors: { email?: string; password?: string } = {}
   if (!email.trim()) errors.email = "이메일을 입력해 주세요."
   else if (!EMAIL_PATTERN.test(email.trim())) errors.email = "이메일 형식이 올바르지 않아요."
+  // 가입 규칙(8자 이상)은 회원가입에서만 검사한다. 규칙이 바뀌어도 기존 사용자가 로그인할 수 있게.
   if (!password) errors.password = "비밀번호를 입력해 주세요."
-  else if (password.length < MIN_PASSWORD_LENGTH)
-    errors.password = `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 해요.`
   return errors
 }
 
-export function LoginForm() {
+export function LoginForm({
+  next,
+  notice,
+  noticeTone = "error",
+}: {
+  next?: string
+  notice?: string
+  noticeTone?: "success" | "error"
+}) {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -35,7 +42,8 @@ export function LoginForm() {
     setPending(true)
     const result = await signIn(email.trim(), password)
     if (result.ok) {
-      router.push("/")
+      router.replace(safeNextPath(next))
+      router.refresh()
       return
     }
     setFormError(result.message)
@@ -44,6 +52,16 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+      {notice && !formError && (
+        <p
+          role="status"
+          className={`rounded-lg px-3 py-2 text-sm ${
+            noticeTone === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+          }`}
+        >
+          {notice}
+        </p>
+      )}
       <AuthField
         id="login-email"
         label="이메일"
@@ -61,7 +79,7 @@ export function LoginForm() {
         label="비밀번호"
         type="password"
         autoComplete="current-password"
-        placeholder={`${MIN_PASSWORD_LENGTH}자 이상`}
+        placeholder="비밀번호"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         error={errors.password}

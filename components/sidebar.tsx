@@ -2,12 +2,15 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import { usePathname, useRouter } from "next/navigation"
 import {
   BarChart3,
+  BookMarked,
   BookOpen,
   ChevronDown,
   ChevronRight,
+  Folder,
   FolderPlus,
   Home,
   LogOut,
@@ -22,10 +25,12 @@ import {
   flattenTree,
   renamePage,
   useWorkspace,
+  type GroupKind,
   type WorkspaceGroup,
 } from "@/lib/workspace"
 import { RecordItem } from "@/components/sidebar/record-item"
-import { signOut } from "@/lib/auth"
+import { GroupActionsMenu } from "@/components/sidebar/group-actions-menu"
+import { signOut, useCurrentUser } from "@/lib/auth"
 import { resolveTreeAppearance } from "@/lib/templates"
 import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
 
@@ -36,7 +41,6 @@ const mainNav = [
 
 interface SidebarProps {
   categories?: Category[]
-  user?: { name: string; email: string }
 }
 
 interface TreeContext {
@@ -47,9 +51,8 @@ interface TreeContext {
   onPageDeleted: (id: string) => void
 }
 
-export function Sidebar({
-  user = { name: "김학생", email: "student@studyhaeyo.com" },
-}: SidebarProps) {
+export function Sidebar(_props: SidebarProps = {}) {
+  const user = useCurrentUser()
   const pathname = usePathname()
   const router = useRouter()
   const { groups, pages, order } = useWorkspace()
@@ -58,8 +61,13 @@ export function Sidebar({
   const settingsActive = pathname.startsWith("/settings")
 
   const handleLogout = async () => {
-    await signOut()
-    router.push("/login")
+    const result = await signOut()
+    if (!result.ok) {
+      toast.error("로그아웃하지 못했어요", { description: result.message })
+      return
+    }
+    router.replace("/login")
+    router.refresh()
   }
 
   const ctx: TreeContext = {
@@ -148,16 +156,19 @@ export function Sidebar({
       <div className="border-t border-border p-3">
         <div className="flex items-center gap-2 rounded-lg px-2 py-2">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
-            {user.name.charAt(0)}
+            {user?.name.charAt(0)}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">
-              {user.name}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {user.email}
-            </p>
-          </div>
+          {user ? (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
+              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+            </div>
+          ) : (
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5" aria-hidden="true">
+              <span className="h-3.5 w-16 rounded bg-muted" />
+              <span className="h-3 w-28 rounded bg-muted" />
+            </div>
+          )}
           <Link
             href="/settings"
             aria-label="설정"
@@ -265,8 +276,10 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
       >
         <Plus className="size-3.5" />
       </Link>
+      <GroupActionsMenu group={group} triggerClassName={hoverAction} />
     </div>
   )
+  const KindIcon = isSubject ? BookMarked : Folder
 
   return (
     <li>
@@ -289,9 +302,11 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
             href={`/subject/${group.id}`}
             draggable={false}
             aria-current={active ? "page" : undefined}
-            className={`flex-1 truncate py-1.5 pr-2 text-sm text-foreground ${active ? "font-medium" : ""}`}
+            className={`flex min-w-0 flex-1 items-center gap-1.5 py-1.5 pr-2 text-sm text-foreground ${active ? "font-medium" : ""}`}
           >
-            {group.name}
+            <KindIcon className="size-3.5 shrink-0 text-indigo-600" aria-hidden="true" />
+            <span className="truncate">{group.name}</span>
+            <span className="sr-only">(과목)</span>
           </Link>
           {addButton}
         </div>
@@ -303,6 +318,7 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
             className="flex min-w-0 flex-1 items-center gap-1.5 px-2 py-2 text-sm font-medium text-foreground"
           >
             <Chevron className="size-4 shrink-0 text-muted-foreground" />
+            <KindIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
             <span className="truncate">{group.name}</span>
           </button>
           {addButton}
@@ -330,30 +346,62 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
   )
 }
 
+const groupKindOptions: { kind: GroupKind; label: string; hint: string }[] = [
+  { kind: "folder", label: "폴더", hint: "묶어서 정리" },
+  { kind: "subject", label: "과목", hint: "학습 계획과 통계의 기준(과목 페이지가 생겨요)" },
+]
+
 function NewGroupInput({ parentId = null, onDone }: { parentId?: string | null; onDone: () => void }) {
   const [name, setName] = useState("")
+  const [kind, setKind] = useState<GroupKind>("folder")
+  const hint = groupKindOptions.find((o) => o.kind === kind)?.hint
 
   const commit = () => {
-    if (name.trim()) addGroup(name, parentId)
+    if (name.trim()) addGroup(name, parentId, kind)
     onDone()
   }
 
   return (
-    <li className="px-1 py-1">
+    <li
+      className="flex flex-col gap-1.5 px-1 py-1"
+      onBlur={(e) => {
+        // Moving focus between the name field and the kind picker shouldn't commit.
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) commit()
+      }}
+    >
       <input
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
-        onBlur={commit}
         onKeyDown={(e) => {
           if (e.nativeEvent.isComposing || e.keyCode === 229) return
           if (e.key === "Enter") commit()
           if (e.key === "Escape") onDone()
         }}
-        placeholder="새 그룹 이름"
+        placeholder={kind === "subject" ? "새 과목 이름" : "새 폴더 이름"}
         aria-label="새 그룹 이름"
         className="w-full rounded-md border border-indigo-300 bg-card px-2 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-indigo-200"
       />
+      <div role="radiogroup" aria-label="그룹 종류" className="flex gap-1">
+        {groupKindOptions.map((o) => (
+          <button
+            key={o.kind}
+            type="button"
+            role="radio"
+            aria-checked={kind === o.kind}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setKind(o.kind)}
+            className={`flex-1 rounded-md border px-2 py-1 text-xs transition-colors ${
+              kind === o.kind
+                ? "border-indigo-300 bg-indigo-50 font-medium text-indigo-700"
+                : "border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      <p className="px-0.5 text-xs leading-relaxed text-muted-foreground">{`${kind === "subject" ? "과목" : "폴더"} = ${hint}`}</p>
     </li>
   )
 }
