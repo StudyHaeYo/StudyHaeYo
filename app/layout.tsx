@@ -3,6 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'sonner'
 import { SessionTracker } from '@/components/study-session/session-tracker'
 import { StudySessionLayer } from '@/components/study-session/session-summary-modal'
+// Pretendard: 한국어 글꼴. 페이지에 쓰인 글자 묶음만 내려받는다(dynamic subset). 우리 서버에서 함께 배포된다.
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './globals.css'
 
 export const metadata: Metadata = {
