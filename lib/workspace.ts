@@ -140,6 +140,28 @@ export function addGroup(name: string, parentId: string | null = null, kind: Gro
   return group.id
 }
 
+export function renameGroup(id: string, name: string) {
+  const next = name.trim()
+  if (!next) return
+  store.set((s) => ({ ...s, groups: s.groups.map((g) => (g.id === id ? { ...g, name: next } : g)) }))
+}
+
+// Removes the group and everything nested under it. A subject that plans point at can't be deleted (R7),
+// same as turning it into a folder. Returns false when the delete is refused.
+export function deleteGroup(id: string) {
+  if (plansTargetingSubject(getPlans(), id).length > 0) return false
+  store.set((s) => {
+    const isUnder = (parentId: string | null) => nodePath(s, parentId).some((n) => n.id === id)
+    return {
+      ...s,
+      pages: s.pages.filter((p) => !isUnder(p.parentId)),
+      groups: s.groups.filter((g) => g.id !== id && !isUnder(g.parentId)),
+      order: s.order.filter((nodeId) => nodeId !== id),
+    }
+  })
+  return true
+}
+
 // A subject that plans point at can't become a folder (R7). Returns false when the change is refused.
 export function setGroupKind(id: string, kind: GroupKind) {
   if (kind === "folder" && plansTargetingSubject(getPlans(), id).length > 0) return false

@@ -138,7 +138,7 @@
 - 학습 기록은 트리 노드가 아니다
 - 자기 자신이나 자기 하위로는 이동할 수 없다(`canMoveNode`)
 - 그룹의 종류는 만들 때 고르고 나중에 바꿀 수 있다. 과목을 폴더로 바꾸려면 그 과목을 대상으로 한 학습 계획이 없어야 한다(`plansTargetingSubject`)
-- 페이지/그룹을 삭제하면 그 아래의 페이지와 그룹이 모두 함께 삭제된다
+- 페이지/그룹을 삭제하면 그 아래의 페이지와 그룹이 모두 함께 삭제된다. 그룹 이름 변경과 삭제는 사이드바 그룹 ⋯ 메뉴에서 한다(`renameGroup`, `deleteGroup`). 학습 계획이 대상으로 삼은 과목은 폴더로 바꿀 때와 마찬가지로 삭제할 수 없다
 - 복제하면 원본 바로 뒤에 `(사본)`이 붙은 페이지가 생기고, 기록도 새 id로 복사된다(기록의 `createdAt`은 원본 그대로)
 
 **R8. 렌더링 (hydration)**
@@ -150,7 +150,7 @@
 
 | 파일 | 함수 |
 |---|---|
-| `lib/workspace.ts` | `useWorkspace()`, `createPage`, `updatePage`, `renamePage`, `duplicatePage`, `deletePage`, `moveNode`, `canMoveNode`, `addGroup` |
+| `lib/workspace.ts` | `useWorkspace()`, `createPage`, `updatePage`, `renamePage`, `duplicatePage`, `deletePage`, `moveNode`, `canMoveNode`, `addGroup`, `renameGroup`, `deleteGroup`, `setGroupKind` |
 | `lib/plans.ts` | `usePlans()`, `addPlan`, `removePlan` |
 | `lib/study-session.ts` | 세션 함수들. localStorage 기반이라 서버로 옮길 때 별도 설계가 필요하다 |
 
