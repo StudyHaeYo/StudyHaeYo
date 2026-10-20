@@ -110,7 +110,7 @@ export function Sidebar({
       <div className="mx-4 border-t border-border" />
 
       {/* Bottom: page tree — scrolls on its own so the sidebar stays fixed */}
-      <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-3" aria-label="내 페이지">
+      <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-3" aria-label="내 페이지">
         <div className="flex items-center justify-between px-3 pb-1">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             내 페이지
@@ -136,7 +136,7 @@ export function Sidebar({
         </div>
 
         <TreeDndProvider>
-          <ul className="mt-1 flex flex-col gap-0.5">
+          <ul className="mt-1 flex flex-1 flex-col gap-0.5">
             <TreeChildren parentId={null} ctx={ctx} />
             {addingGroup && <NewGroupInput onDone={() => setAddingGroup(false)} />}
             <RootDropZone />
