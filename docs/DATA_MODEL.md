@@ -1,6 +1,6 @@
 # 데이터 모델 (프론트 ↔ 백엔드 계약)
 
-기준 시점: 2026-10-19 (`main` dbfca88 기준). DB 설계는 PR #11의 `docs/DB_SCHEMA_DRAFT.md`에서 합의 중이고, 합의되기 전까지 이 문서는 지금 코드(메모리 저장)를 설명한다.
+기준 시점: 2026-10-20 (`main` b387501 기준). DB 설계는 PR #11의 `docs/DB_SCHEMA_DRAFT.md`에서 합의 중이고, 합의되기 전까지 이 문서는 지금 코드(메모리 저장)를 설명한다.
 
 **코드와 다르면 코드가 맞다.** 이 문서는 코드를 읽어서는 알 수 없는 것(규칙, 합의, 의도, 알려진 불일치)을 적는다.
 데이터 구조나 규칙을 바꾸는 PR은 이 문서도 같은 PR에서 고친다.
@@ -147,6 +147,7 @@
 - 깊이 제한이 없다. 그룹은 그룹/페이지를 담고, 페이지도 하위 페이지를 담는다
 - 학습 기록은 트리 노드가 아니다
 - 자기 자신이나 자기 하위로는 이동할 수 없다(`canMoveNode`)
+- 그룹의 종류는 만들 때 고르고 나중에 바꿀 수 있다. 과목을 폴더로 바꾸려면 그 과목을 대상으로 한 학습 계획이 없어야 한다(`plansTargetingSubject`)
 - 페이지/그룹을 삭제하면 그 아래의 페이지와 그룹이 모두 함께 삭제된다
 - 복제하면 원본 바로 뒤에 `(사본)`이 붙은 페이지가 생기고, 기록도 새 id로 복사된다(기록의 `createdAt`은 원본 그대로)
 
@@ -178,7 +179,7 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
 
 ## 5. 알려진 불일치와 주의
 
-1. **새로고침하면 페이지, 기록, 학습 계획, 첨부, 그림이 시드 데이터로 돌아간다.** `createStore`는 메모리 전용이다. localStorage를 쓰는 것은 세션 타이머뿐이다.
+1. **새로고침하면 페이지, 기록, 학습 계획, 첨부, 그림이 시드 데이터로 돌아간다.** `createStore`는 메모리 전용이다. localStorage를 쓰는 것은 세션 타이머뿐이다. 로그인(Supabase Auth)은 붙었지만 학습 데이터는 아직 계정과 연결되지 않아서, 어느 계정으로 로그인해도 같은 시드가 보인다.
 2. **정적 더미 위젯은 체크리스트 하나만 남았다.** Home의 "오늘의 체크리스트"는 `app/page.tsx`의 `useState` + `dummy-data.ts`이고 `lib` 함수 뒤에 있지 않다. 할 일(Todo)은 아직 엔티티로 정의되지 않았다. Home의 나의 학습 상태/오늘의 기록/이번 주 학습 통계, 학습 분석의 과목별 학습 상태/취약 학습 영역/복습 예정/최근 학습 활동은 모두 `lib/study-stats.ts`가 워크스페이스 페이지의 `studyRecords`에서 계산한다.
    - 과목: 페이지의 가장 가까운 상위 과목(`nearestSubject`), 없으면 "내 페이지"
    - 나의 학습 상태 / 과목별 학습 상태: 과목별 기록 `understanding` 평균 ÷ 5 × 100 (기록 없는 과목은 숨김)
@@ -188,8 +189,9 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
    - 복습 예정: R2와 같은 페이지 범위(locked-on 템플릿), 상태가 완료가 아니고 다음 복습일이 있는 페이지, 날짜순 최대 5개. 오늘 이전/오늘은 "오늘", 내일은 "내일" 표시
    - 최근 학습 활동: 전체 기록 최신순 5개
    - `lib/learning-os.ts`의 고정값과 `dummy-data.ts`의 records/weeklyStats는 더 이상 화면에서 쓰지 않는다(파일은 남겨둠).
-3. **`StudyRecord`가 두 가지다.** `lib/types.ts`의 `StudyRecord`(title/category/type...)는 옛 형태로 과목 화면의 `RecordCard`에만 남아 있고(Home은 더 이상 쓰지 않음), 실제 학습 기록은 `lib/study-pages.ts`의 `PageStudyRecord`다. DB는 `PageStudyRecord` 기준으로 설계한다.
-4. `/subject/[id]`는 시드(`lib/study-tree.ts`의 `findSubject`)에서만 과목을 찾는다. 시드에 없는 과목(사용자가 만든 `kind: "subject"` 그룹)은 404가 난다. 과목 페이지의 주간 목표도 시드 전용이다. 실제 데이터로 바꾼 작업은 `v0/subject-page-real-data` 브랜치에 있고 아직 main에 들어가지 않았다. 사용자가 과목 종류의 그룹을 만드는 UI도 아직 없다.
+3. **`StudyRecord`가 두 가지다.** `lib/types.ts`의 `StudyRecord`(title/category/type...)는 옛 형태로 `components/record-card.tsx`에만 남아 있고(Home과 과목 화면은 더 이상 쓰지 않음), 실제 학습 기록은 `lib/study-pages.ts`의 `PageStudyRecord`다. DB는 `PageStudyRecord` 기준으로 설계한다.
+4. `/subject/[id]`는 워크스페이스의 `kind: "subject"` 그룹에서 과목을 찾는다(`page.tsx`는 id만 넘기고 `components/subject/subject-view.tsx`가 찾음). 요약/페이지 목록은 `subjectSummary`/`subjectPageRows`(R6: 하위 모든 페이지·템플릿 무관)로 계산하고, 옛 주간 목표 대신 이 과목을 target으로 한 `LearningPlan`을 보여준다. 없는 id는 404가 아니라 "과목을 찾을 수 없어요" 안내를 보여준다(새로고침으로 사용자가 만든 과목이 사라진 경우 포함).
+   - 남은 주의: `findSubject`, `weekly-goals.tsx`, `record-card.tsx`는 더 이상 이 화면에서 쓰지 않는다(파일은 남겨둠).
 5. 시드/레거시: `lib/study-tree.ts`는 초기 그룹 시드용, `lib/dummy-data.ts`의 `categories`는 일부 화면에서 아직 쓰인다. `app/ai`, `app/notes`, `app/study`는 링크가 없는 죽은 라우트다(정리 대상).
 6. 형식 불일치: 페이지 `createdAt`은 날짜 문자열, 기록 `createdAt`은 ms 숫자. 날짜는 타임존 없는 로컬 날짜 문자열이다.
 7. id는 모두 클라이언트가 만든다. DB가 id를 발급하면 프론트와 맞추는 방법을 정해야 한다.
@@ -204,7 +206,7 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
 
 DB는 Supabase(Postgres)로 가는 방향이고, 아래 항목의 추천안은 PR #11(`docs/DB_SCHEMA_DRAFT.md`)에 있다. 합의되면 `DECISIONS.md`로 옮기고 이 목록에서 지운다.
 
-- 인증 방식과 User 모델, 신규 사용자 예시 데이터
+- 신규 사용자에게 예시 데이터를 넣을지 (인증은 D-18로 결정됨)
 - 세션/구간을 서버에 저장할지 (R5의 중복 집계를 서버에서 하려면 필요하다)
 - 형제 순서 저장 방식 (지금의 전역 `order` 배열 vs 부모별 position)
 - 날짜/타임존 처리

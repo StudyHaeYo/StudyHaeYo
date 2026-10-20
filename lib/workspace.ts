@@ -2,6 +2,7 @@ import { createStore } from "@/lib/create-store"
 import { studyTree } from "@/lib/study-tree"
 import { cloneBlock, studyPages, todayISO, type StudyPage } from "@/lib/study-pages"
 import { getTemplate, type TemplateId } from "@/lib/templates"
+import { getPlans, plansTargetingSubject } from "@/lib/plans"
 
 // A folder groups pages or other groups; a subject is a group that plans and analytics can target.
 export type GroupKind = "folder" | "subject"
@@ -137,6 +138,13 @@ export function addGroup(name: string, parentId: string | null = null, kind: Gro
   const group: WorkspaceGroup = { id: uid("g"), name: name.trim(), parentId, kind }
   store.set((s) => ({ ...s, groups: [...s.groups, group] }))
   return group.id
+}
+
+// A subject that plans point at can't become a folder (R7). Returns false when the change is refused.
+export function setGroupKind(id: string, kind: GroupKind) {
+  if (kind === "folder" && plansTargetingSubject(getPlans(), id).length > 0) return false
+  store.set((s) => ({ ...s, groups: s.groups.map((g) => (g.id === id ? { ...g, kind } : g)) }))
+  return true
 }
 
 // The tree has no fixed depth: a group holds groups or pages, and a page can hold child pages.

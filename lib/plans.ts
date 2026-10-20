@@ -45,6 +45,7 @@ const seedPlans: LearningPlan[] = [
 const store = createStore<LearningPlan[]>(seedPlans)
 
 export const usePlans = store.useStore
+export const getPlans = store.get
 
 export function addPlan(plan: Omit<LearningPlan, "id">) {
   store.set((plans) => [...plans, { ...plan, id: `plan-${Date.now().toString(36)}` }])
@@ -52,6 +53,11 @@ export function addPlan(plan: Omit<LearningPlan, "id">) {
 
 export function removePlan(id: string) {
   store.set((plans) => plans.filter((p) => p.id !== id))
+}
+
+// A subject with plans pointing at it can't become a folder, or those plans would lose their target.
+export function plansTargetingSubject(plans: LearningPlan[], subjectId: string) {
+  return plans.filter((p) => p.target.scope === "subject" && p.target.subjectId === subjectId)
 }
 
 export function encodeTarget(target: PlanTarget) {

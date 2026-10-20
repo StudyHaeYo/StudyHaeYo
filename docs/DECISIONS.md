@@ -71,6 +71,11 @@ Home의 "오늘의 우선 학습/복습이 필요한 학습"은 `locked-on` 페�
 **폐기**: v0에서 Publish를 눌러 main에 바로 반영하던 방식. 검사 없이 main이 바뀌어서 2026-10-17에 main의 빌드가 깨졌다(서버 컴포넌트가 클라이언트 저장소를 import).
 모든 변경은 브랜치 → PR → PR의 Vercel 미리보기 빌드가 Ready인지 확인 → merge 순서로 한다.
 
+### D-18. 인증은 Supabase Auth 이메일 로그인으로 한다
+이메일 + 비밀번호로 가입하고, 이메일 인증을 거친다. 세션은 `@supabase/ssr` 쿠키로 유지하고, 로그인하지 않은 요청은 `proxy.ts`가 `/login?next=...`로 보낸다(PR #15). 소셜 로그인과 비밀번호 찾기는 아직 없다.
+화면은 Supabase를 직접 부르지 않고 `lib/auth.ts`의 함수(`signIn`, `signUp`, `signOut`, `useCurrentUser`)만 부른다(PR #14). `lib/workspace.ts`와 같은 원칙이다.
+**이유**: DB도 Supabase로 가므로 같은 사용자 id(`auth.users`)로 RLS를 걸 수 있다. 별도 서버 없이 가입/인증 메일/세션 갱신이 해결된다.
+
 ---
 
 ## 아직 결정하지 않은 것
