@@ -1,5 +1,4 @@
-import Link from "next/link"
-import { ChevronRight, Flame, Sparkles } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 
 interface SubjectHeaderProps {
   ancestors: string[]
@@ -28,22 +27,6 @@ export function SubjectHeader({ ancestors, subjectName }: SubjectHeaderProps) {
         </h1>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Link
-          href="/study"
-          className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-4 text-base font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
-        >
-          <Flame className="size-5" />
-          공부 시작하기
-        </Link>
-        <Link
-          href="/ai"
-          className="flex items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-4 text-base font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100"
-        >
-          <Sparkles className="size-5" />
-          AI로 요약하기
-        </Link>
-      </div>
     </header>
   )
 }
