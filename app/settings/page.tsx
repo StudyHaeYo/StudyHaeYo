@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Sidebar } from "@/components/sidebar"
+import { ProfileSection } from "@/components/settings/profile-section"
 import { formatDuration } from "@/lib/study-pages"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
 
@@ -8,13 +9,6 @@ export const metadata: Metadata = {
 }
 
 const sections = [
-  {
-    title: "프로필",
-    rows: [
-      { label: "이름", value: "김학생" },
-      { label: "이메일", value: "student@studyhaeyo.com" },
-    ],
-  },
   {
     title: "학습 설정",
     rows: [
@@ -37,6 +31,8 @@ export default function SettingsPage() {
               설정 변경 기능은 준비 중이에요. 지금은 현재 값만 확인할 수 있어요.
             </p>
           </header>
+
+          <ProfileSection />
 
           {sections.map((section) => (
             <section
