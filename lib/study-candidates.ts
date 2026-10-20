@@ -1,4 +1,4 @@
-import { addDays, computePageStats, unresolvedConfusionCount, type PageStatus } from "@/lib/study-pages"
+import { addDays, computePageStats, daysBetween, dueLabel, unresolvedConfusionCount, type DueTone, type PageStatus } from "@/lib/study-pages"
 import { isReviewCandidate } from "@/lib/templates"
 import { nearestSubject, type WorkspaceState } from "@/lib/workspace"
 
@@ -9,18 +9,12 @@ export interface StudyCandidate {
   status: PageStatus
   understanding: number | null
   lastStudied: string
-  due: "오늘" | "내일"
-  overdue: boolean
+  due: string
+  dueTone: DueTone
   unresolvedConfusions: number
 }
 
 export const reviewHref = (pageId: string) => `/record/${pageId}?mode=review`
-
-function daysBetween(fromISO: string, toISO: string) {
-  const [fy, fm, fd] = fromISO.split("-").map(Number)
-  const [ty, tm, td] = toISO.split("-").map(Number)
-  return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86_400_000)
-}
 
 function relativeDay(iso: string | null, today: string) {
   if (!iso) return "기록 없음"
@@ -50,7 +44,7 @@ export function reviewCandidates(workspace: WorkspaceState, today: string): Stud
         b.unresolved - a.unresolved,
     )
     .map(({ page, stats, unresolved }) => {
-      const dueAt = stats.nextReviewAt ?? today
+      const due = dueLabel(stats.nextReviewAt ?? today, today)
       return {
         pageId: page.id,
         topic: page.title || "제목 없음",
@@ -58,8 +52,8 @@ export function reviewCandidates(workspace: WorkspaceState, today: string): Stud
         status: stats.status,
         understanding: stats.understanding,
         lastStudied: relativeDay(stats.lastStudiedAt, today),
-        due: dueAt <= today ? "오늘" : "내일",
-        overdue: dueAt < today,
+        due: due.label,
+        dueTone: due.tone,
         unresolvedConfusions: unresolved,
       }
     })

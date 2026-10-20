@@ -42,7 +42,11 @@ export function TodayPriority() {
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               {priority.understanding !== null ? `이해도 ${priority.understanding}/5 · ` : ""}
-              {priority.overdue ? "복습 예정일이 지났어요" : priority.due === "오늘" ? "오늘 복습할 차례예요" : "내일 복습할 차례예요"}
+              {priority.dueTone === "overdue"
+                ? `복습 예정일이 ${priority.due.replace(" 지남", "")} 지났어요`
+                : priority.dueTone === "today"
+                  ? "오늘 복습할 차례예요"
+                  : "내일 복습할 차례예요"}
             </p>
           </div>
 
