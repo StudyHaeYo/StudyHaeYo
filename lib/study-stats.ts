@@ -1,7 +1,14 @@
-import { addDays, computePageStats, unresolvedConfusionCount, type PageStudyRecord, type StudyPage } from "@/lib/study-pages"
+import {
+  addDays,
+  computePageStats,
+  unresolvedConfusionCount,
+  type PageStats,
+  type PageStudyRecord,
+  type StudyPage,
+} from "@/lib/study-pages"
 import { recordCreatedAt } from "@/lib/study-session"
 import { isReviewCandidate } from "@/lib/templates"
-import { nearestSubject, type WorkspaceState } from "@/lib/workspace"
+import { descendantPages, nearestSubject, type WorkspaceState } from "@/lib/workspace"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
 
 const NO_SUBJECT = "내 페이지"
@@ -151,6 +158,45 @@ export function upcomingReviews(workspace: WorkspaceState, today: string, limit 
         dateLabel: monthDayLabel(date),
         relative: date <= today ? "오늘" : date === tomorrow ? "내일" : null,
       }
+    })
+}
+
+export interface SubjectSummary {
+  pageCount: number
+  totalMinutes: number
+  averageUnderstanding: number | null
+  lastStudiedAt: string | null
+}
+
+// R6: every page under the subject at any depth, regardless of template, with all of its records.
+export function subjectSummary(workspace: WorkspaceState, subjectId: string): SubjectSummary {
+  const pages = descendantPages(workspace, subjectId)
+  const records = pages.flatMap((p) => p.studyRecords)
+  const understandingSum = records.reduce((sum, r) => sum + r.understanding, 0)
+  return {
+    pageCount: pages.length,
+    totalMinutes: records.reduce((sum, r) => sum + r.durationMinutes, 0),
+    averageUnderstanding: records.length ? Math.round((understandingSum / records.length) * 10) / 10 : null,
+    lastStudiedAt: records.reduce<string | null>((latest, r) => (latest === null || r.date > latest ? r.date : latest), null),
+  }
+}
+
+export interface SubjectPageRow {
+  page: StudyPage
+  stats: PageStats
+}
+
+// Soonest next review first; pages without a review date go last.
+export function subjectPageRows(workspace: WorkspaceState, subjectId: string, today: string | null): SubjectPageRow[] {
+  return descendantPages(workspace, subjectId)
+    .map((page) => ({ page, stats: computePageStats(page, today) }))
+    .sort((a, b) => {
+      const x = a.stats.nextReviewAt
+      const y = b.stats.nextReviewAt
+      if (x === y) return 0
+      if (x === null) return 1
+      if (y === null) return -1
+      return x.localeCompare(y)
     })
 }
 

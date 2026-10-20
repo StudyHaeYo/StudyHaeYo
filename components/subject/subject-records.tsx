@@ -1,62 +1,79 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { FileText, Plus } from "lucide-react"
-import { RecordCard } from "@/components/record-card"
-import { computePageStats, formatDate, unresolvedConfusionCount } from "@/lib/study-pages"
-import { descendantPages, useWorkspace } from "@/lib/workspace"
+import { formatDate } from "@/lib/study-pages"
+import { subjectPageRows } from "@/lib/study-stats"
+import { resolveTreeAppearance } from "@/lib/templates"
+import { useWorkspace } from "@/lib/workspace"
 import { useTodayISO } from "@/hooks/use-today"
 
-export function SubjectRecords({ subjectId, subjectName }: { subjectId: string; subjectName: string }) {
-  const router = useRouter()
+export function SubjectRecords({ subjectId }: { subjectId: string }) {
   const today = useTodayISO()
-  const pages = descendantPages(useWorkspace(), subjectId)
+  const rows = subjectPageRows(useWorkspace(), subjectId, today)
+  const newPageHref = `/new?parent=${encodeURIComponent(subjectId)}`
 
   return (
     <section aria-labelledby="records-title" className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h2 id="records-title" className="text-base font-semibold text-foreground">
           페이지 목록
-          <span className="ml-2 text-sm font-normal text-muted-foreground">{pages.length}</span>
+          <span className="ml-2 text-sm font-normal text-muted-foreground">{rows.length}</span>
         </h2>
         <Link
-          href={`/new?parent=${subjectId}`}
+          href={newPageHref}
           className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
         >
           <Plus className="size-4" />새 페이지
         </Link>
       </div>
 
-      {pages.length > 0 ? (
-        <ul className="flex flex-col gap-3">
-          {pages.map((page) => {
-            const stats = computePageStats(page, today)
+      {rows.length > 0 ? (
+        <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+          {rows.map(({ page, stats }) => {
+            const Icon = resolveTreeAppearance(page).icon
             return (
               <li key={page.id}>
-                <RecordCard
-                  record={{
-                    id: page.id,
-                    title: page.title || "제목 없음",
-                    category: subjectName,
-                    type: page.studyType ?? "정리",
-                    createdAt: formatDate(page.createdAt),
-                    understanding: stats.understanding ?? undefined,
-                    reviewDate: stats.nextReviewAt ? formatDate(stats.nextReviewAt) : undefined,
-                  }}
-                  unresolvedConfusions={unresolvedConfusionCount(page)}
-                  onClick={(id) => router.push(`/record/${id}`)}
-                />
+                <Link
+                  href={`/record/${page.id}`}
+                  className="flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:gap-4"
+                >
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
+                    <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <span className="truncate font-medium text-foreground">{page.title || "제목 없음"}</span>
+                  </span>
+                  <dl className="grid grid-cols-4 gap-3 text-xs sm:w-96 sm:shrink-0">
+                    <Cell label="상태" value={stats.status} />
+                    <Cell label="이해도" value={stats.understanding === null ? "—" : `${stats.understanding}/5`} />
+                    <Cell label="마지막 학습" value={stats.lastStudiedAt ? formatDate(stats.lastStudiedAt) : "—"} />
+                    <Cell label="다음 복습" value={stats.nextReviewAt ? formatDate(stats.nextReviewAt) : "—"} />
+                  </dl>
+                </Link>
               </li>
             )
           })}
         </ul>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/50 px-6 py-12 text-center">
-          <FileText className="mb-3 size-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">아직 작성된 페이지가 없습니다.</p>
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-card/50 px-6 py-12 text-center">
+          <FileText className="size-6 text-muted-foreground" aria-hidden="true" />
+          <p className="text-sm text-muted-foreground">이 과목에는 아직 페이지가 없어요.</p>
+          <Link
+            href={newPageHref}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
+          >
+            <Plus className="size-4" />이 과목에 새 페이지 만들기
+          </Link>
         </div>
       )}
     </section>
+  )
+}
+
+function Cell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-medium text-foreground">{value}</dd>
+    </div>
   )
 }
