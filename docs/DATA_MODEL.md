@@ -150,7 +150,7 @@ User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유�
 - 자기 자신이나 자기 하위로는 이동할 수 없다(`canMoveNode`)
 - 그룹의 종류는 만들 때 고르고 나중에 바꿀 수 있다. 과목을 폴더로 바꾸려면 그 과목을 대상으로 한 학습 계획이 없어야 한다(`plansTargetingSubject`)
 - 페이지/그룹을 삭제하면 그 아래의 페이지와 그룹이 모두 함께 삭제된다. 그룹 이름 변경과 삭제는 사이드바 그룹 ⋯ 메뉴에서 한다(`renameGroup`, `deleteGroup`). 학습 계획이 대상으로 삼은 과목은 폴더로 바꿀 때와 마찬가지로 삭제할 수 없다
-- 복제하면 원본 바로 뒤에 `(사본)`이 붙은 페이지가 생기고, 기록도 새 id로 복사된다(기록의 `createdAt`은 원본 그대로)
+- 복제하면 원본 바로 뒤에 `(사본)`이 붙은 페이지가 생긴다. 본문과 노트는 복사하고 학습 기록은 복사하지 않는다(같은 학습 시간이 두 번 집계되지 않게)
 
 **R8. 렌더링 (hydration)**
 서버 스냅샷은 항상 시드/idle 상태이고, 브라우저 전용 값(오늘 날짜, 세션)은 마운트 이후에만 읽는다. 데이터 로딩 방식을 바꿀 때도 서버 렌더와 클라이언트 첫 렌더 결과가 같아야 한다.
@@ -187,7 +187,7 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
    - 형제 순서: `workspace_nodes.position`(형제 안의 0부터 index). 불러올 때 `position, created_at` 순으로 `order`를 만든다. 트리가 바뀌면(생성·이동·복제·삭제) 저장된 값이 화면의 형제 index와 다른 노드만 고치므로, 빈 번호나 겹친 값은 그때 0부터 다시 매겨진다
    - 삭제: 루트 행만 지운다(`parent_id`, `study_records.page_id`는 cascade). `learning_plans.target_node_id`가 `ON DELETE RESTRICT`라서 하위 트리에 계획 대상이 있으면 삭제를 거절한다(R7 확장)
    - `study_records.understanding`이 null인 행은 3으로 읽는다(앱은 항상 1~5를 쓴다)
-   - 예시 데이터: 워크스페이스가 완전히 비었을 때만 홈 안내 카드에 "예시 데이터 가져오기"가 보인다(`importExampleData`). 시드(`lib/study-tree.ts`, `lib/study-pages.ts`, `lib/plans.ts`의 `examplePlans`)를 새 uuid로 그 계정에 저장한다. 저장 직전에 그 계정의 노드가 DB에 있는지 다시 확인해 중복을 막고, 기존 데이터는 건드리지 않는다. 기록 날짜는 시드 그대로이고 `createdAt`은 공부한 날 정오다. 노드는 트리 깊이별로 나눠 부모부터 insert한다
+   - 예시 데이터: 워크스페이스가 완전히 비었을 때만 홈 안내 카드에 "예시 데이터 가져오기"가 보인다(`importExampleData`). 시드(`lib/study-tree.ts`, `lib/study-pages.ts`, `lib/plans.ts`의 `examplePlans`)를 새 uuid로 그 계정에 저장한다. 저장 직전에 그 계정의 노드가 DB에 있는지 다시 확인해 중복을 막고, 기존 데이터는 건드리지 않는다. 시드의 날짜(기록, 페이지 생성일, 계획 기간)는 모두 같은 일수만큼 옮겨서 가장 최근 기록이 가져온 날의 어제가 되게 한다. `createdAt`은 공부한 날 정오다. 노드는 트리 깊이별로 나눠 부모부터 insert한다
    - 불러온 그룹·페이지 배열은 사이드바(깊이 우선) 순서로 맞춘다. 위젯이 배열 순서대로 과목과 페이지를 나열하기 때문이다
    - 권한: 네 테이블 모두 `authenticated` 역할에 select/insert/update/delete 정책이 있고, 조건은 `auth.uid() = user_id`(`profiles`는 `= id`)다. 계획의 대상 노드 소유자는 `learning_plans`의 `check_learning_plan_owner` 트리거가 검사한다(단일 FK 보완)
    - 세션 타이머와 체크리스트는 여전히 브라우저 전용이다. 첨부 블록은 `blob:` URL째 저장되어 새로고침하면 깨진다(Storage 연동 전)

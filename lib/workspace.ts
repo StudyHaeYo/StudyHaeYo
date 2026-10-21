@@ -1,6 +1,6 @@
 import { toast } from "sonner"
 import { createStore } from "@/lib/create-store"
-import { cloneBlock, studyPages, todayISO, type PageStudyRecord, type StudyPage } from "@/lib/study-pages"
+import { addDays, cloneBlock, daysBetween, studyPages, todayISO, type PageStudyRecord, type StudyPage } from "@/lib/study-pages"
 import { studyTree } from "@/lib/study-tree"
 import { getTemplate, type TemplateId } from "@/lib/templates"
 import { examplePlans, getPlans, insertPlans, plansTargetingSubject, type LearningPlan } from "@/lib/plans"
@@ -214,8 +214,8 @@ export function duplicatePage(id: string) {
       concepts: source.note.concepts.map((c) => ({ ...c })),
       confusions: source.note.confusions.map((c) => ({ ...c })),
     },
-    // Records keep their original createdAt (R7).
-    studyRecords: source.studyRecords.map((r) => ({ ...r, id: newId(), pageId: copyId })),
+    // Records stay with the original: copying them would count the same study time twice (R7).
+    studyRecords: [],
   }
   // The copy goes right after the source in sibling order.
   store.set((s) => {
@@ -346,8 +346,8 @@ export function setGroupKind(id: string, kind: GroupKind) {
 // ---- 예시 데이터 가져오기
 // Copies the seed workspace (lib/study-tree.ts, lib/study-pages.ts) and examplePlans into the signed-in user's DB
 // with new uuids. Only for an empty workspace: it never touches existing rows, and it re-checks the DB before writing
-// so a second tab or a double click can't import twice. Record dates stay as seeded; each record's createdAt is noon
-// of its study date (the seed has none), so it never counts as part of a running timer session (R5).
+// so a second tab or a double click can't import twice. Seed dates are shifted so the newest record is yesterday; each
+// record's createdAt is noon of its study date, so it never counts as part of a running timer session (R5).
 let importing = false
 
 export type ImportResult = "imported" | "not-empty" | "busy" | "failed"
@@ -364,6 +364,13 @@ export async function importExampleData(): Promise<ImportResult> {
     if (error) throw error
     const latest = store.get()
     if ((data?.length ?? 0) > 0 || latest.groups.length > 0 || latest.pages.length > 0) return "not-empty"
+
+    // Shift every seed date by the same number of days so the newest record lands on yesterday. Review dates,
+    // "N일 전" and weekly stats then look like recent study instead of weeks-old data.
+    const seedDates = studyPages.flatMap((p) => p.studyRecords.map((r) => r.date))
+    const latestSeed = seedDates.reduce((a, b) => (b > a ? b : a), seedDates[0] ?? todayISO())
+    const shiftDays = daysBetween(latestSeed, addDays(todayISO(), -1))
+    const shift = (iso: string) => addDays(iso, shiftDays)
 
     const ids = new Map<string, string>()
     const idFor = (seedId: string) => {
@@ -382,6 +389,7 @@ export async function importExampleData(): Promise<ImportResult> {
         ...p,
         id: pageId,
         parentId: p.parentId && idFor(p.parentId),
+        createdAt: shift(p.createdAt),
         blocks: p.blocks.map(cloneBlock),
         note: p.note && {
           learned: p.note.learned.map(cloneBlock),
@@ -393,7 +401,8 @@ export async function importExampleData(): Promise<ImportResult> {
           ...r,
           id: newId(),
           pageId,
-          createdAt: r.createdAt ?? new Date(`${r.date}T12:00:00`).getTime(),
+          date: shift(r.date),
+          createdAt: new Date(`${shift(r.date)}T12:00:00`).getTime(),
           tags: [...r.tags],
         })),
       }
@@ -401,6 +410,8 @@ export async function importExampleData(): Promise<ImportResult> {
     const plans: LearningPlan[] = examplePlans.map((plan) => ({
       ...plan,
       id: newId(),
+      startDate: shift(plan.startDate),
+      endDate: shift(plan.endDate),
       target:
         plan.target.scope === "subject"
           ? { scope: "subject", subjectId: idFor(plan.target.subjectId) }
