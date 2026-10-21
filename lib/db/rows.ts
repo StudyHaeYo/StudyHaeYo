@@ -10,6 +10,7 @@ import {
 import { templateRegistry, type TemplateId } from "@/lib/templates"
 import type { StudyType } from "@/lib/types"
 import type { GroupKind, WorkspaceGroup, WorkspaceState } from "@/lib/workspace"
+import type { Todo } from "@/lib/todos"
 
 // Row shapes of the Supabase tables, column for column. The app types stay as they are;
 // these mappers are the only place that knows both sides.
@@ -249,5 +250,40 @@ export function planInsertRow(plan: LearningPlan, userId: string) {
     goal: plan.goal,
     target_scope: plan.target.scope,
     target_node_id: targetId,
+  }
+}
+
+// ---- todos (오늘의 체크리스트)
+
+export interface TodoRow {
+  id: string
+  user_id: string
+  title: string
+  due_on: string
+  done_at: string | null
+  position: number
+  created_at: string
+}
+
+export const TODO_COLUMNS = "id, user_id, title, due_on, done_at, position, created_at"
+
+export function toTodo(row: TodoRow): Todo {
+  return {
+    id: row.id,
+    title: row.title,
+    dueOn: row.due_on,
+    doneAt: row.done_at ? new Date(row.done_at).getTime() : null,
+    position: row.position,
+  }
+}
+
+export function todoInsertRow(todo: Todo, userId: string) {
+  return {
+    id: todo.id,
+    user_id: userId,
+    title: todo.title,
+    due_on: todo.dueOn,
+    done_at: todo.doneAt === null ? null : new Date(todo.doneAt).toISOString(),
+    position: todo.position,
   }
 }
