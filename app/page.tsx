@@ -15,33 +15,37 @@ import { DataStatusNotice } from "@/components/data-status-notice"
 export default function DashboardPage() {
   const todayLabel = useTodayLabel()
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <Sidebar />
 
-      {/* Main column */}
-      <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-10">
-        <div className="mx-auto max-w-2xl">
-          <TopBar date={todayLabel} />
-          <DataStatusNotice />
-          <SessionTimerCard />
+      {/* Main column + right panel (the panel moves below the main column under xl) */}
+      <div className="flex min-w-0 flex-1 flex-col xl:flex-row">
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10">
+          <div className="mx-auto max-w-2xl">
+            <TopBar date={todayLabel} />
+            <DataStatusNotice />
+            <SessionTimerCard />
 
-          <section aria-label="오늘의 학습" className="mb-8 flex flex-col gap-4">
-            <TodayPriority />
-            <div className="grid gap-4 md:grid-cols-2">
-              <ReviewQueue />
-              <SubjectMastery />
-            </div>
-          </section>
+            <section aria-label="오늘의 학습" className="mb-8 flex flex-col gap-4">
+              <TodayPriority />
+              <div className="grid gap-4 md:grid-cols-2">
+                <ReviewQueue />
+                <SubjectMastery />
+              </div>
+            </section>
 
-          <TodayRecords />
-        </div>
-      </main>
+            <TodayRecords />
+          </div>
+        </main>
 
-      {/* Right panel */}
-      <aside className="hidden w-72 shrink-0 space-y-4 overflow-y-auto border-l border-border bg-sidebar px-4 py-6 xl:block">
-        <ChecklistWidget />
-        <WeeklyStats />
-      </aside>
+        {/* Right panel */}
+        <aside className="shrink-0 border-t border-border bg-sidebar px-4 py-6 xl:w-72 xl:border-l xl:border-t-0">
+          <div className="mx-auto grid max-w-2xl gap-4 sm:grid-cols-2 xl:block xl:max-w-none xl:space-y-4">
+            <ChecklistWidget />
+            <WeeklyStats />
+          </div>
+        </aside>
+      </div>
     </div>
   )
 }

@@ -20,9 +20,9 @@ const sections = [
 
 export default function SettingsPage() {
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <Sidebar />
-      <main className="h-screen flex-1 overflow-y-auto px-6 py-8 lg:px-10">
+      <main className="min-w-0 flex-1 md:h-screen md:overflow-y-auto px-6 py-8 lg:px-10">
         <div className="mx-auto flex max-w-2xl flex-col gap-6">
           <header className="flex flex-col gap-1">
             <h1 className="text-xl font-semibold tracking-tight">설정</h1>

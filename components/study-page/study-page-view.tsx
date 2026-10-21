@@ -156,7 +156,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
 
   return (
     <div className="flex flex-col">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
+      <header className="sticky top-12 z-10 border-b md:top-0 border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-3 lg:px-10">
           <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
             <span className="shrink-0 text-muted-foreground">내 페이지</span>

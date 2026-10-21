@@ -18,9 +18,9 @@ export default async function StudyPageRoute({
   }
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <Sidebar />
-      <main className="h-screen flex-1 overflow-y-auto">
+      <main className="min-w-0 flex-1 md:h-screen md:overflow-y-auto">
         <StudyPageView key={id} pageId={id} mode={query.mode === "review" ? "review" : undefined} />
       </main>
     </div>
