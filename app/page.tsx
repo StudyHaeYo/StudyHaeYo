@@ -3,9 +3,7 @@
 import { Sidebar } from "@/components/sidebar"
 import { TopBar } from "@/components/top-bar"
 import { SessionTimerCard } from "@/components/study-session/session-timer"
-import { ChecklistWidget } from "@/components/checklist-widget"
-import { TodayPriority } from "@/components/learning-os/today-priority"
-import { ReviewQueue } from "@/components/learning-os/review-queue"
+import { TodayAgenda } from "@/components/learning-os/today-agenda"
 import { SubjectMastery } from "@/components/learning-os/subject-mastery"
 import { TodayRecords } from "@/components/learning-os/today-records"
 import { WeeklyStats } from "@/components/learning-os/weekly-stats"
@@ -24,14 +22,11 @@ export default function DashboardPage() {
           <div className="mx-auto max-w-2xl">
             <TopBar date={todayLabel} />
             <DataStatusNotice />
+            <TodayAgenda />
             <SessionTimerCard />
 
-            <section aria-label="오늘의 학습" className="mb-8 flex flex-col gap-4">
-              <TodayPriority />
-              <div className="grid gap-4 md:grid-cols-2">
-                <ReviewQueue />
-                <SubjectMastery />
-              </div>
+            <section aria-label="학습 상태" className="mb-8">
+              <SubjectMastery />
             </section>
 
             <TodayRecords />
@@ -40,8 +35,7 @@ export default function DashboardPage() {
 
         {/* Right panel */}
         <aside className="shrink-0 border-t border-border bg-sidebar px-4 py-6 xl:w-72 xl:border-l xl:border-t-0">
-          <div className="mx-auto grid max-w-2xl gap-4 sm:grid-cols-2 xl:block xl:max-w-none xl:space-y-4">
-            <ChecklistWidget />
+          <div className="mx-auto max-w-2xl xl:max-w-none xl:space-y-4">
             <WeeklyStats />
           </div>
         </aside>

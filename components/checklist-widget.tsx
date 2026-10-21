@@ -1,20 +1,23 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { Check, ListTodo, Plus, X } from "lucide-react"
+import { Check, Plus, X } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { addTodo, removeTodo, renameTodo, todayChecklist, toggleTodo, useTodos, useTodosStatus, type Todo } from "@/lib/todos"
 
-// 오늘의 체크리스트: today's todos plus unfinished ones from earlier days (lib/todos.ts todayChecklist).
-export function ChecklistWidget() {
+function useChecklist() {
   const todos = useTodos()
   const status = useTodosStatus()
   const today = useTodayISO()
-  const [draft, setDraft] = useState("")
-
   const items = today ? todayChecklist(todos, today) : []
-  const doneCount = items.filter((t) => t.doneAt !== null).length
-  const ready = status === "ready" && today !== null
+  return { status, today, items, ready: status === "ready" && today !== null }
+}
+
+// 오늘의 체크리스트: today's todos plus unfinished ones from earlier days (lib/todos.ts todayChecklist).
+// The list and the add field; the home "오늘" card embeds this, ChecklistWidget wraps it in its own card.
+export function ChecklistBody() {
+  const { status, today, items, ready } = useChecklist()
+  const [draft, setDraft] = useState("")
 
   const handleAdd = (e: FormEvent) => {
     e.preventDefault()
@@ -23,58 +26,45 @@ export function ChecklistWidget() {
     setDraft("")
   }
 
+  if (status === "unavailable") {
+    return <p className="px-2 py-1 text-xs leading-relaxed text-muted-foreground">할 일을 저장할 곳을 준비하고 있어요.</p>
+  }
+  if (!ready || today === null) return <div className="h-10" aria-hidden="true" />
+
   return (
-    <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-sm font-semibold text-card-foreground">
-          <ListTodo className="size-4 text-indigo-600" />
-          오늘의 체크리스트
-        </h2>
-        {status === "unavailable" ? (
-          <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">준비 중</span>
-        ) : (
-          ready &&
-          items.length > 0 && (
-            <span className="text-xs font-medium text-muted-foreground">
-              {doneCount}/{items.length}
-            </span>
-          )
-        )}
-      </div>
-
-      {status === "unavailable" ? (
-        <p className="px-2 py-2 text-xs leading-relaxed text-muted-foreground">할 일을 저장할 곳을 준비하고 있어요.</p>
-      ) : !ready ? (
-        <div className="h-16" aria-hidden="true" />
+    <>
+      {items.length === 0 ? (
+        <p className="px-2 pb-1 text-xs leading-relaxed text-muted-foreground">
+          오늘 할 일을 적어 두세요. 못 끝낸 일은 다음 날에도 보여요.
+        </p>
       ) : (
-        <>
-          {items.length === 0 ? (
-            <p className="px-2 pb-2 text-xs leading-relaxed text-muted-foreground">
-              오늘 할 일을 적어 두세요. 못 끝낸 일은 다음 날에도 보여요.
-            </p>
-          ) : (
-            <ul className="mb-2 space-y-0.5">
-              {items.map((todo) => (
-                <TodoRow key={todo.id} todo={todo} today={today} />
-              ))}
-            </ul>
-          )}
-
-          <form onSubmit={handleAdd} className="flex items-center gap-1.5 px-1">
-            <Plus className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              maxLength={200}
-              placeholder="할 일 추가"
-              aria-label="할 일 추가"
-              className="min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus:bg-muted/50"
-            />
-          </form>
-        </>
+        <ul className="mb-1 space-y-0.5">
+          {items.map((todo) => (
+            <TodoRow key={todo.id} todo={todo} today={today} />
+          ))}
+        </ul>
       )}
-    </section>
+
+      <form onSubmit={handleAdd} className="flex items-center gap-1.5 px-1">
+        <Plus className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          maxLength={200}
+          placeholder="할 일 추가"
+          aria-label="할 일 추가"
+          className="min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus:bg-muted/50"
+        />
+      </form>
+    </>
   )
+}
+
+export function useChecklistCount() {
+  const { status, items, ready } = useChecklist()
+  if (status === "unavailable") return "준비 중"
+  if (!ready || items.length === 0) return null
+  return `${items.filter((t) => t.doneAt !== null).length}/${items.length}`
 }
 
 function TodoRow({ todo, today }: { todo: Todo; today: string }) {
