@@ -8,6 +8,7 @@ import {
   BarChart3,
   BookMarked,
   BookOpen,
+  CalendarRange,
   ChevronDown,
   ChevronRight,
   Folder,
@@ -38,6 +39,7 @@ import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "
 const mainNav = [
   { href: "/", label: "홈", icon: Home },
   { href: "/analytics", label: "학습 분석", icon: BarChart3 },
+  { href: "/plan", label: "학습 계획", icon: CalendarRange },
 ]
 
 interface SidebarProps {
