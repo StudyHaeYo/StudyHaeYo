@@ -1,6 +1,7 @@
 import {
   addDays,
   computePageStats,
+  daysBetween,
   dueLabel,
   formatDate,
   unresolvedConfusionCount,
@@ -13,6 +14,7 @@ import { recordCreatedAt } from "@/lib/study-session"
 import { isReviewCandidate } from "@/lib/templates"
 import { descendantPages, nearestSubject, type WorkspaceState } from "@/lib/workspace"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
+import type { LearningPlan } from "@/lib/plans"
 
 const NO_SUBJECT = "내 페이지"
 
@@ -202,3 +204,41 @@ export function subjectPageRows(workspace: WorkspaceState, subjectId: string, to
     })
 }
 
+
+export interface ActivePlan {
+  plan: LearningPlan
+  targetLabel: string
+  targetHref: string | null
+  // Study minutes recorded on the plan's target between its start date and today.
+  studiedMinutes: number
+  // Days from today to the end date (0 = ends today).
+  daysLeft: number
+}
+
+// Plans whose period includes today, ending soonest first. Progress comes from study records only (no stored goal).
+export function activePlans(workspace: WorkspaceState, plans: LearningPlan[], today: string): ActivePlan[] {
+  return plans
+    .filter((plan) => plan.startDate <= today && today <= plan.endDate)
+    .sort((a, b) => a.endDate.localeCompare(b.endDate))
+    .map((plan) => {
+      const { target } = plan
+      let pages: StudyPage[] = workspace.pages
+      let targetLabel = "전체 학습"
+      let targetHref: string | null = null
+      if (target.scope === "subject") {
+        pages = descendantPages(workspace, target.subjectId)
+        targetLabel = workspace.groups.find((g) => g.id === target.subjectId)?.name ?? "삭제된 과목"
+        targetHref = `/subject/${target.subjectId}`
+      } else if (target.scope === "page") {
+        const page = workspace.pages.find((p) => p.id === target.pageId)
+        pages = page ? [page, ...descendantPages(workspace, page.id)] : []
+        targetLabel = page ? page.title || "제목 없음" : "삭제된 페이지"
+        targetHref = page ? `/record/${page.id}` : null
+      }
+      const studiedMinutes = pages
+        .flatMap((p) => p.studyRecords)
+        .filter((r) => r.date >= plan.startDate && r.date <= today)
+        .reduce((sum, r) => sum + r.durationMinutes, 0)
+      return { plan, targetLabel, targetHref, studiedMinutes, daysLeft: daysBetween(today, plan.endDate) }
+    })
+}
