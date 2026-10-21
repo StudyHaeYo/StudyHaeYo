@@ -75,6 +75,17 @@ export function insertPlans(created: LearningPlan[]) {
   })
 }
 
+// Deletes several plans in one write. Used when the node they target is deleted (lib/workspace.ts removeSubtree).
+export function removePlans(ids: string[]) {
+  const existing = new Set(store.get().filter((p) => ids.includes(p.id)).map((p) => p.id))
+  if (existing.size === 0) return
+  store.set((plans) => plans.filter((p) => !existing.has(p.id)))
+  const targets = [...existing]
+  enqueueWrite(async (userId) => {
+    check(await db().from("learning_plans").delete().in("id", targets).eq("user_id", userId).select("id"), targets.length)
+  })
+}
+
 export function removePlan(id: string) {
   if (!store.get().some((p) => p.id === id)) return
   store.set((plans) => plans.filter((p) => p.id !== id))

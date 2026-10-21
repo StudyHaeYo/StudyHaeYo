@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { BookMarked, Folder, Lock, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
-import { deleteGroup, flattenTree, setGroupKind, useWorkspace, type WorkspaceGroup } from "@/lib/workspace"
+import { deleteGroup, flattenTree, plansInSubtree, setGroupKind, useWorkspace, type WorkspaceGroup } from "@/lib/workspace"
 import { plansTargetingSubject, usePlans } from "@/lib/plans"
-import { menuItemClass } from "@/components/page-actions-menu"
+import { deleteNoteText, menuItemClass } from "@/components/page-actions-menu"
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
 
 export function GroupActionsMenu({
@@ -103,7 +103,7 @@ export function GroupActionsMenu({
           </button>
 
           {blockingPlans > 0 ? (
-            blockedNote("폴더로 바꾸거나 삭제할 수 없어요")
+            blockedNote("폴더로 바꿀 수 없어요")
           ) : (
             <button
               role="menuitem"
@@ -123,23 +123,19 @@ export function GroupActionsMenu({
             </button>
           )}
 
-          {blockingPlans === 0 && (
-            <>
-              <div role="separator" className="my-1 border-t border-border" />
-              <button
-                role="menuitem"
-                type="button"
-                className={`${menuItemClass} text-destructive hover:bg-destructive/10 focus-visible:bg-destructive/10`}
-                onClick={() => {
-                  setOpen(false)
-                  setConfirmOpen(true)
-                }}
-              >
-                <Trash2 className="size-4" />
-                삭제하기
-              </button>
-            </>
-          )}
+          <div role="separator" className="my-1 border-t border-border" />
+          <button
+            role="menuitem"
+            type="button"
+            className={`${menuItemClass} text-destructive hover:bg-destructive/10 focus-visible:bg-destructive/10`}
+            onClick={() => {
+              setOpen(false)
+              setConfirmOpen(true)
+            }}
+          >
+            <Trash2 className="size-4" />
+            삭제하기
+          </button>
         </div>
       )}
 
@@ -147,7 +143,7 @@ export function GroupActionsMenu({
         open={confirmOpen}
         title={group.name}
         targetLabel={kindLabel}
-        note={nested.length > 0 ? `하위 항목 ${nested.length}개와 그 학습 기록도 함께 삭제됩니다.` : undefined}
+        note={deleteNoteText(nested.length, plansInSubtree(workspace, group.id).length)}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
           setConfirmOpen(false)
