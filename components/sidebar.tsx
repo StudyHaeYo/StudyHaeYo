@@ -15,8 +15,10 @@ import {
   FolderPlus,
   Home,
   LogOut,
+  Menu,
   Plus,
   Settings,
+  X,
 } from "lucide-react"
 import type { Category } from "@/lib/types"
 import type { StudyPage } from "@/lib/study-pages"
@@ -60,6 +62,17 @@ export function Sidebar(_props: SidebarProps = {}) {
   const router = useRouter()
   const { groups, pages, order } = useWorkspace()
   const [addingGroup, setAddingGroup] = useState(false)
+  // Phones and narrow tablets: the sidebar is a drawer opened from the top bar (md and up: always visible).
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [openedAt, setOpenedAt] = useState(pathname)
+  if (mobileOpen && openedAt !== pathname) {
+    // Navigating closes the drawer (state adjusted during render, no effect needed).
+    setMobileOpen(false)
+  }
+  const openDrawer = () => {
+    setOpenedAt(pathname)
+    setMobileOpen(true)
+  }
   const homeActive = pathname === "/"
   const settingsActive = pathname.startsWith("/settings")
 
@@ -84,15 +97,55 @@ export function Sidebar(_props: SidebarProps = {}) {
   }
 
   return (
-    <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-border bg-sidebar">
+    <>
+      <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background/95 px-2 backdrop-blur md:hidden">
+        <button
+          type="button"
+          onClick={openDrawer}
+          aria-label="메뉴 열기"
+          aria-expanded={mobileOpen}
+          aria-controls="app-sidebar"
+          className="flex size-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent"
+        >
+          <Menu className="size-5" />
+        </button>
+        <Link href="/" className="flex items-center gap-2">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-indigo-600 text-white">
+            <BookOpen className="size-3.5" />
+          </span>
+          <span className="text-sm font-semibold tracking-tight text-foreground">스터디 해요</span>
+        </Link>
+      </header>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-foreground/30 md:hidden" aria-hidden="true" onClick={() => setMobileOpen(false)} />
+      )}
+
+    <aside
+      id="app-sidebar"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") setMobileOpen(false)
+      }}
+      className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-border bg-sidebar shadow-xl transition-transform duration-200 md:visible md:sticky md:inset-auto md:top-0 md:z-auto md:h-screen md:w-60 md:max-w-none md:translate-x-0 md:shadow-none ${
+        mobileOpen ? "visible translate-x-0" : "invisible -translate-x-full"
+      }`}
+    >
       {/* Logo */}
       <div className="flex items-center gap-2 px-5 py-5">
         <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
           <BookOpen className="size-4" />
         </div>
-        <span className="text-base font-semibold tracking-tight text-foreground">
+        <span className="flex-1 text-base font-semibold tracking-tight text-foreground">
           스터디 해요
         </span>
+        <button
+          type="button"
+          onClick={() => setMobileOpen(false)}
+          aria-label="메뉴 닫기"
+          className="-mr-2 flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
+        >
+          <X className="size-4" />
+        </button>
       </div>
 
       {/* Top: main navigation */}
@@ -193,6 +246,7 @@ export function Sidebar(_props: SidebarProps = {}) {
         </div>
       </div>
     </aside>
+    </>
   )
 }
 
