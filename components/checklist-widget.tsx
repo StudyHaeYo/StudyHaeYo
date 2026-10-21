@@ -87,11 +87,11 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
         aria-checked={done}
         aria-label={`${todo.title} ${done ? "완료 취소" : "완료"}`}
         onClick={() => toggleTodo(todo.id)}
-        className={`flex size-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
+        className={`flex size-5 shrink-0 items-center justify-center rounded-md border transition-[colors,transform] active:scale-90 ${
           done ? "border-indigo-600 bg-indigo-600 text-white" : "border-border bg-background hover:border-indigo-400"
         }`}
       >
-        {done && <Check className="size-3.5" />}
+        {done && <Check className="size-3.5 animate-in zoom-in-50 duration-150" />}
       </button>
 
       {editing ? (
@@ -135,7 +135,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
           type="button"
           onClick={() => removeTodo(todo.id)}
           aria-label={`${todo.title} 삭제`}
-          className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+          className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
         >
           <X className="size-3.5" />
         </button>

@@ -134,7 +134,7 @@ export function RecordItem({
               href={addChildHref}
               aria-label={`${record.title}에 하위 페이지`}
               title="하위 페이지 추가"
-              className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-border hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+              className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:bg-border hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
             >
               <Plus className="size-3.5" />
             </Link>
@@ -151,7 +151,7 @@ export function RecordItem({
             className="mr-1 shrink-0"
             triggerClassName={(open) =>
               `flex size-6 items-center justify-center rounded text-muted-foreground transition-opacity hover:bg-border hover:text-foreground focus-visible:opacity-100 ${
-                open ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                open ? "opacity-100" : "opacity-0 [@media(hover:none)]:opacity-100 group-hover:opacity-100"
               }`
             }
             extraItems={(close) => (

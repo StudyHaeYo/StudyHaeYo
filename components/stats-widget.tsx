@@ -16,7 +16,7 @@ export function StatsWidget({ stats, goal }: StatsWidgetProps) {
   const offset = circumference - (percent / 100) * circumference
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <section className="rounded-xl border border-border bg-card p-4">
       <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-card-foreground">
         <BarChart3 className="size-4 text-indigo-600" />
         이번 주 학습 통계

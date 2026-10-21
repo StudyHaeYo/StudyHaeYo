@@ -63,7 +63,7 @@ function QuestionCard({ number, question }: { number: number; question: Question
   const [showAnswer, setShowAnswer] = useState(false)
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+    <section className="rounded-xl border border-border bg-card p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <h3 className="text-sm font-semibold leading-relaxed text-card-foreground">
           <span className="mr-1.5 text-indigo-600">Q{number}.</span>

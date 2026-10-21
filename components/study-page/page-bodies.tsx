@@ -182,7 +182,7 @@ function ItemList<T extends { id: string; text: string }>({
                 type="button"
                 onClick={() => remove(item.id)}
                 aria-label={`${label} ${index + 1} 삭제`}
-                className="mt-0.5 rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+                className="mt-0.5 rounded p-0.5 text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
               >
                 <X className="size-3.5" />
               </button>

@@ -28,10 +28,10 @@ export function StudyHeatmap() {
   const studiedDays = weeks?.flat().filter((d) => d.minutes > 0).length ?? 0
 
   return (
-    <section aria-labelledby="study-heatmap-title" className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <section aria-labelledby="study-heatmap-title" className="rounded-xl border border-border bg-card p-5">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <h2 id="study-heatmap-title" className="text-sm font-semibold text-card-foreground">
+          <h2 id="study-heatmap-title" className="text-[15px] font-semibold text-foreground">
             학습 잔디
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">최근 {WEEKS}주 · 공부한 날 {studiedDays}일</p>

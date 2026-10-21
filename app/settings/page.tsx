@@ -25,7 +25,7 @@ export default function SettingsPage() {
       <main className="min-w-0 flex-1 md:h-screen md:overflow-y-auto px-6 py-8 lg:px-10">
         <div className="mx-auto flex max-w-2xl flex-col gap-6">
           <header className="flex flex-col gap-1">
-            <h1 className="text-xl font-semibold tracking-tight">설정</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">설정</h1>
             <p className="text-sm text-muted-foreground">
               설정 변경 기능은 준비 중이에요. 지금은 현재 값만 확인할 수 있어요.
             </p>
@@ -37,7 +37,7 @@ export default function SettingsPage() {
             <section
               key={section.title}
               aria-labelledby={`settings-${section.title}`}
-              className="rounded-xl border border-border bg-card shadow-sm"
+              className="rounded-xl border border-border bg-card"
             >
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
                 <h2 id={`settings-${section.title}`} className="text-sm font-semibold text-card-foreground">

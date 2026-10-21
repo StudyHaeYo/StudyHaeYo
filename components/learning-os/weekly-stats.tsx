@@ -1,6 +1,5 @@
 "use client"
 
-import { BarChart3 } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
@@ -20,11 +19,8 @@ export function WeeklyStats() {
   const max = Math.max(...(stats?.subjects.map((s) => s.minutes) ?? []), 1)
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold text-card-foreground">
-        <BarChart3 className="size-4 text-indigo-600" />
-        이번 주 학습 통계
-      </h2>
+    <section className="rounded-xl border border-border bg-card p-5">
+      <h2 className="mb-1 text-[15px] font-semibold text-foreground">이번 주 학습 통계</h2>
       <p className="mb-4 text-xs text-muted-foreground">월요일부터 오늘까지 · 과목별 학습 시간</p>
 
       {stats === null ? (

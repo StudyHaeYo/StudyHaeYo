@@ -56,7 +56,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
             return (
               <label
                 key={id}
-                className={`relative flex h-full cursor-pointer flex-col items-start gap-3 rounded-xl border bg-card p-5 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${
+                className={`relative flex h-full cursor-pointer flex-col items-start gap-3 rounded-xl border bg-card p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${
                   selected ? "border-indigo-400 ring-1 ring-indigo-400" : "border-border hover:border-indigo-300"
                 }`}
               >
@@ -90,7 +90,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
         </div>
       </fieldset>
 
-      <div className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="page-title" className="text-sm font-medium text-card-foreground">
             페이지 제목
@@ -171,7 +171,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
         </button>
         <button
           type="submit"
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
         >
           페이지 만들기
         </button>

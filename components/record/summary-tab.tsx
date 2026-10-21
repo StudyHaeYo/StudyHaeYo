@@ -30,7 +30,7 @@ export function SummaryTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <section className="rounded-xl border border-border bg-card p-6">
         <div className="mb-4 flex items-center gap-2">
           <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
             <Sparkles className="size-4" />
@@ -52,7 +52,7 @@ export function SummaryTab() {
       <button
         onClick={handleRegenerate}
         disabled={loading}
-        className="inline-flex items-center justify-center gap-1.5 self-start rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent disabled:opacity-60"
+        className="inline-flex items-center justify-center gap-1.5 self-start rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-60"
       >
         <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
         다시 요약하기

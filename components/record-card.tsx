@@ -21,7 +21,7 @@ export function RecordCard({ record, unresolvedConfusions = 0, onClick }: Record
   return (
     <button
       onClick={() => onClick?.(record.id)}
-      className="group flex w-full flex-col gap-3 rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+      className="group flex w-full flex-col gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base font-medium text-card-foreground">

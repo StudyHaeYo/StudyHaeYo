@@ -59,7 +59,7 @@ export function SessionTimerCard() {
         <button
           type="button"
           onClick={startSession}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
         >
           <Play className="size-3.5" aria-hidden="true" />
           학습 시작
@@ -79,7 +79,7 @@ export function SessionIndicator({ floating = false }: { floating?: boolean }) {
       href="/"
       aria-label={`학습 세션 진행 중, ${formatElapsed(elapsed)} 경과. 홈에서 종료하기`}
       className={`inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent ${
-        floating ? "fixed right-4 top-4 z-40 shadow-sm" : ""
+        floating ? "fixed right-4 top-4 z-40" : ""
       }`}
     >
       <span className="relative flex size-2" aria-hidden="true">
