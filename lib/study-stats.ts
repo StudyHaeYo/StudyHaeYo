@@ -242,3 +242,49 @@ export function activePlans(workspace: WorkspaceState, plans: LearningPlan[], to
       return { plan, targetLabel, targetHref, studiedMinutes, daysLeft: daysBetween(today, plan.endDate) }
     })
 }
+
+export interface StudyDay {
+  date: string
+  minutes: number
+  future: boolean
+}
+
+// Study minutes per day for the last `weeks` weeks, Monday-first columns ending with the current week.
+// Days after today are included (future: true) so the last column is a full week.
+export function studyCalendar(workspace: WorkspaceState, today: string, weeks = 12): StudyDay[][] {
+  const minutes = new Map<string, number>()
+  for (const record of workspace.pages.flatMap((p) => p.studyRecords)) {
+    minutes.set(record.date, (minutes.get(record.date) ?? 0) + record.durationMinutes)
+  }
+  const first = addDays(weekStart(today), -7 * (weeks - 1))
+  return Array.from({ length: weeks }, (_, w) =>
+    Array.from({ length: 7 }, (_, d) => {
+      const date = addDays(first, w * 7 + d)
+      return { date, minutes: minutes.get(date) ?? 0, future: date > today }
+    }),
+  )
+}
+
+export interface StudyStreak {
+  // Consecutive days with a study record, ending today (or yesterday if today has none yet).
+  current: number
+  best: number
+  studiedToday: boolean
+}
+
+export function studyStreak(workspace: WorkspaceState, today: string): StudyStreak {
+  const days = new Set(workspace.pages.flatMap((p) => p.studyRecords.filter((r) => r.date <= today).map((r) => r.date)))
+  const studiedToday = days.has(today)
+  let current = 0
+  for (let day = studiedToday ? today : addDays(today, -1); days.has(day); day = addDays(day, -1)) current += 1
+
+  let best = 0
+  let run = 0
+  let prev: string | null = null
+  for (const day of [...days].sort()) {
+    run = prev !== null && addDays(prev, 1) === day ? run + 1 : 1
+    best = Math.max(best, run)
+    prev = day
+  }
+  return { current, best, studiedToday }
+}

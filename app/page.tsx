@@ -7,6 +7,7 @@ import { TodayAgenda } from "@/components/learning-os/today-agenda"
 import { SubjectMastery } from "@/components/learning-os/subject-mastery"
 import { TodayRecords } from "@/components/learning-os/today-records"
 import { WeeklyStats } from "@/components/learning-os/weekly-stats"
+import { StudyHeatmap } from "@/components/learning-os/study-heatmap"
 import { useTodayLabel } from "@/hooks/use-today"
 import { DataStatusNotice } from "@/components/data-status-notice"
 
@@ -35,7 +36,8 @@ export default function DashboardPage() {
 
         {/* Right panel */}
         <aside className="shrink-0 border-t border-border bg-sidebar px-4 py-6 xl:w-72 xl:border-l xl:border-t-0">
-          <div className="mx-auto max-w-2xl xl:max-w-none xl:space-y-4">
+          <div className="mx-auto grid max-w-2xl gap-4 sm:grid-cols-2 xl:block xl:max-w-none xl:space-y-4">
+            <StudyHeatmap />
             <WeeklyStats />
           </div>
         </aside>
