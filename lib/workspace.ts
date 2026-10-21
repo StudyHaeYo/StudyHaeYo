@@ -3,7 +3,7 @@ import { createStore } from "@/lib/create-store"
 import { addDays, cloneBlock, daysBetween, studyPages, todayISO, type PageStudyRecord, type StudyPage } from "@/lib/study-pages"
 import { studyTree } from "@/lib/study-tree"
 import { getTemplate, type TemplateId } from "@/lib/templates"
-import { examplePlans, getPlans, insertPlans, plansTargetingSubject, type LearningPlan } from "@/lib/plans"
+import { examplePlans, getPlans, insertPlans, plansTargetingSubject, removePlans, type LearningPlan } from "@/lib/plans"
 import { check, currentUserId, db, dropScheduled, enqueueWrite, schedulePatch } from "@/lib/db/queue"
 import {
   changedPageColumns,
@@ -227,25 +227,30 @@ export function duplicatePage(id: string) {
   syncPositions()
 }
 
-// Removes a node and everything under it. In the DB only the root row is deleted: workspace_nodes.parent_id and
-// study_records.page_id cascade. learning_plans.target_node_id is ON DELETE RESTRICT, so a subtree that any plan
-// points at is refused up front instead of failing in the DB. Returns false when refused.
+function subtreeIds(s: TreeSource, rootId: string) {
+  const isUnder = (parentId: string | null) => nodePath(s, parentId).some((n) => n.id === rootId)
+  return new Set([...s.pages, ...s.groups].filter((n) => n.id === rootId || isUnder(n.parentId)).map((n) => n.id))
+}
+
+// Plans whose target (a subject or a page) is the node or anything under it. Deleting the node deletes these too;
+// the delete confirmation says how many (R7).
+export function plansInSubtree(tree: TreeSource, rootId: string) {
+  const ids = subtreeIds(tree, rootId)
+  return getPlans().filter((p) => {
+    const target = p.target.scope === "subject" ? p.target.subjectId : p.target.scope === "page" ? p.target.pageId : null
+    return target !== null && ids.has(target)
+  })
+}
+
+// Removes a node and everything under it, and the plans that target any of it. In the DB the plans go first
+// (learning_plans.target_node_id is ON DELETE RESTRICT), then only the root row: workspace_nodes.parent_id and
+// study_records.page_id cascade. Writes run in call order, so the plan deletes land before the node delete.
 function removeSubtree(rootId: string) {
   const s = store.get()
-  const isUnder = (parentId: string | null) => nodePath(s, parentId).some((n) => n.id === rootId)
-  const removed = new Set(
-    [...s.pages, ...s.groups].filter((n) => n.id === rootId || isUnder(n.parentId)).map((n) => n.id),
-  )
+  const removed = subtreeIds(s, rootId)
   if (removed.size === 0) return false
 
-  const blocking = getPlans().filter((p) => {
-    const target = p.target.scope === "subject" ? p.target.subjectId : p.target.scope === "page" ? p.target.pageId : null
-    return target !== null && removed.has(target)
-  })
-  if (blocking.length > 0) {
-    toast.error(`이 항목이나 하위 항목을 대상으로 한 학습 계획이 ${blocking.length}개 있어서 삭제할 수 없어요. 계획을 먼저 삭제해 주세요.`)
-    return false
-  }
+  removePlans(plansInSubtree(s, rootId).map((p) => p.id))
 
   store.set((state) => ({
     pages: state.pages.filter((p) => !removed.has(p.id)),
@@ -264,7 +269,7 @@ function removeSubtree(rootId: string) {
   return true
 }
 
-// Removes the page and everything nested under it, including groups. Returns false when refused (see removeSubtree).
+// Removes the page and everything nested under it, including groups and the plans that target them.
 export function deletePage(id: string) {
   return removeSubtree(id)
 }
@@ -325,10 +330,8 @@ export function renameGroup(id: string, name: string) {
   updateGroupRow(id, { title: next })
 }
 
-// Removes the group and everything nested under it. A subject that plans point at can't be deleted (R7),
-// same as turning it into a folder. Returns false when the delete is refused.
+// Removes the group and everything nested under it, including the plans that target any of it (R7).
 export function deleteGroup(id: string) {
-  if (plansTargetingSubject(getPlans(), id).length > 0) return false
   return removeSubtree(id)
 }
 
