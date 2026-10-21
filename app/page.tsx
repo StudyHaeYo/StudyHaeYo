@@ -1,6 +1,5 @@
 "use client"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+
 import { useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { TopBar } from "@/components/top-bar"
@@ -15,26 +14,9 @@ import { checklist as initialChecklist } from "@/lib/dummy-data"
 import type { ChecklistItem } from "@/lib/types"
 import { useTodayLabel } from "@/hooks/use-today"
 import { DataStatusNotice } from "@/components/data-status-notice"
-import { settleWrites } from "@/lib/db/queue"
 
 export default function DashboardPage() {
   const todayLabel = useTodayLabel()
-  const router = useRouter()
-
-const handleLogout = async () => {
-  // Finish pending saves while the session is still valid.
-  await settleWrites()
-  const supabase = createClient()
-  const { error } = await supabase.auth.signOut()
-
-  if (error) {
-    console.error("로그아웃 실패:", error.message)
-    return
-  }
-
-  router.replace("/login")
-  router.refresh()
-}
   const [checklist, setChecklist] = useState<ChecklistItem[]>(initialChecklist)
 
   const handleToggleCheck = (id: string) => {
@@ -47,7 +29,7 @@ const handleLogout = async () => {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <Sidebar onLogout={handleLogout} />
+      <Sidebar />
 
       {/* Main column */}
       <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-10">

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import { usePathname, useRouter } from "next/navigation"
 import {
   BarChart3,
@@ -30,6 +31,7 @@ import {
 } from "@/lib/workspace"
 import { RecordItem } from "@/components/sidebar/record-item"
 import { GroupActionsMenu } from "@/components/sidebar/group-actions-menu"
+import { signOut, useCurrentUser } from "@/lib/auth"
 import { resolveTreeAppearance } from "@/lib/templates"
 import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
 
@@ -40,8 +42,6 @@ const mainNav = [
 
 interface SidebarProps {
   categories?: Category[]
-  onLogout?: () => void
-  user?: { name: string; email: string }
 }
 
 interface TreeContext {
@@ -52,16 +52,24 @@ interface TreeContext {
   onPageDeleted: (id: string) => void
 }
 
-export function Sidebar({
-  onLogout,
-  user = { name: "김학생", email: "student@studyhaeyo.com" },
-}: SidebarProps) {
+export function Sidebar(_props: SidebarProps = {}) {
+  const user = useCurrentUser()
   const pathname = usePathname()
   const router = useRouter()
   const { groups, pages, order } = useWorkspace()
   const [addingGroup, setAddingGroup] = useState(false)
   const homeActive = pathname === "/"
   const settingsActive = pathname.startsWith("/settings")
+
+  const handleLogout = async () => {
+    const result = await signOut()
+    if (!result.ok) {
+      toast.error("로그아웃하지 못했어요", { description: result.message })
+      return
+    }
+    router.replace("/login")
+    router.refresh()
+  }
 
   const ctx: TreeContext = {
     groups,
@@ -149,16 +157,19 @@ export function Sidebar({
       <div className="border-t border-border p-3">
         <div className="flex items-center gap-2 rounded-lg px-2 py-2">
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
-            {user.name.charAt(0)}
+            {user?.name.charAt(0)}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">
-              {user.name}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {user.email}
-            </p>
-          </div>
+          {user ? (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
+              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+            </div>
+          ) : (
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5" aria-hidden="true">
+              <span className="h-3.5 w-16 rounded bg-muted" />
+              <span className="h-3 w-28 rounded bg-muted" />
+            </div>
+          )}
           <Link
             href="/settings"
             aria-label="설정"
@@ -170,7 +181,8 @@ export function Sidebar({
             <Settings className="size-4" />
           </Link>
           <button
-            onClick={onLogout}
+            type="button"
+            onClick={handleLogout}
             aria-label="로그아웃"
             className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >

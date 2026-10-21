@@ -89,7 +89,7 @@
 - `studyMode`는 템플릿에서 정해지므로 페이지에 따로 저장하지 않는다.
 
 ### 없는 것
-User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유자를 가리키고, 앱은 `user_id`를 `auth.getUser()`로 검증한 값으로만 채운다. `profiles`는 아직 화면에서 쓰지 않는다(사이드바 프로필은 하드코딩).
+User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유자를 가리키고, 앱은 `user_id`를 `auth.getUser()`로 검증한 값으로만 채운다. `profiles`는 아직 화면에서 쓰지 않는다. 사이드바와 설정 화면의 이름·이메일은 `lib/auth.ts`의 `useCurrentUser`(가입 때 넣은 `display_name`, 없으면 이메일 앞부분)에서 온다. 로그아웃(`signOut`)은 대기 중인 저장을 먼저 끝낸다(`settleWrites`).
 
 ---
 
