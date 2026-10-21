@@ -89,7 +89,7 @@
 - `studyMode`는 템플릿에서 정해지므로 페이지에 따로 저장하지 않는다.
 
 ### 없는 것
-**User 엔티티가 없다.** 단일 사용자를 가정하고 있고 프로필은 하드코딩이다.
+User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유자를 가리키고, 앱은 `user_id`를 `auth.getUser()`로 검증한 값으로만 채운다. `profiles`는 아직 화면에서 쓰지 않는다(사이드바 프로필은 하드코딩).
 
 ---
 
@@ -149,8 +149,8 @@
 - 학습 기록은 트리 노드가 아니다
 - 자기 자신이나 자기 하위로는 이동할 수 없다(`canMoveNode`)
 - 그룹의 종류는 만들 때 고르고 나중에 바꿀 수 있다. 과목을 폴더로 바꾸려면 그 과목을 대상으로 한 학습 계획이 없어야 한다(`plansTargetingSubject`)
-- 페이지/그룹을 삭제하면 그 아래의 페이지와 그룹이 모두 함께 삭제된다. 그룹 이름 변경과 삭제는 사이드바 그룹 ⋯ 메뉴에서 한다(`renameGroup`, `deleteGroup`). 학습 계획이 대상으로 삼은 과목은 폴더로 바꿀 때와 마찬가지로 삭제할 수 없다
-- 복제하면 원본 바로 뒤에 `(사본)`이 붙은 페이지가 생기고, 기록도 새 id로 복사된다(기록의 `createdAt`은 원본 그대로)
+- 페이지/그룹을 삭제하면 그 아래의 페이지와 그룹이 모두 함께 삭제된다. 그룹 이름 변경과 삭제는 사이드바 그룹 ⋯ 메뉴에서 한다(`renameGroup`, `deleteGroup`). 삭제하는 항목이나 그 하위를 대상으로 한 학습 계획도 함께 삭제되고, 확인 창에 그 개수를 보여준다(`plansInSubtree`). 과목을 폴더로 바꾸는 것은 계획이 있으면 여전히 막는다(계획이 대상을 잃기 때문)
+- 복제하면 원본 바로 뒤에 `(사본)`이 붙은 페이지가 생긴다. 본문과 노트는 복사하고 학습 기록은 복사하지 않는다(같은 학습 시간이 두 번 집계되지 않게)
 
 **R8. 렌더링 (hydration)**
 서버 스냅샷은 항상 시드/idle 상태이고, 브라우저 전용 값(오늘 날짜, 세션)은 마운트 이후에만 읽는다. 데이터 로딩 방식을 바꿀 때도 서버 렌더와 클라이언트 첫 렌더 결과가 같아야 한다.
@@ -180,7 +180,17 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
 
 ## 5. 알려진 불일치와 주의
 
-1. **새로고침하면 페이지, 기록, 학습 계획, 첨부, 그림이 시드 데이터로 돌아간다.** `createStore`는 메모리 전용이다. localStorage를 쓰는 것은 세션 타이머뿐이다. 로그인(Supabase Auth)은 붙었지만 학습 데이터는 아직 계정과 연결되지 않아서, 어느 계정으로 로그인해도 같은 시드가 보인다.
+1. **페이지, 기록, 학습 계획은 Supabase에 저장한다.** `createStore`는 화면 캐시이고, 접근은 `lib/workspace.ts`/`lib/plans.ts` 함수 뒤의 `lib/db/`에만 있다.
+   - 매핑: 그룹·페이지 → `workspace_nodes`(`kind` folder/subject/page, 페이지 전용 컬럼은 그룹에서 null), 기록 → `study_records`, 계획 → `learning_plans`(`target_scope` + `target_node_id`). 행 ↔ 타입 변환은 `lib/db/rows.ts`
+   - 불러오기: 로그인 후 마운트 시점에 한 번(`lib/db/sync.ts`). 캐시의 서버 스냅샷은 빈 상태, 상태는 "loading"이라 hydration이 맞는다(R8). 로그아웃·계정 전환 시 캐시와 대기 중 쓰기를 비운다
+   - 쓰기: 캐시를 먼저 바꾸고 쓰기를 순서대로 하나씩 실행한다(`lib/db/queue.ts`). 제목·본문은 0.6초 디바운스. 실패하거나 0행이 바뀌면(RLS) 토스트 후 DB에서 다시 불러온다
+   - 형제 순서: `workspace_nodes.position`(형제 안의 0부터 index). 불러올 때 `position, created_at` 순으로 `order`를 만든다. 트리가 바뀌면(생성·이동·복제·삭제) 저장된 값이 화면의 형제 index와 다른 노드만 고치므로, 빈 번호나 겹친 값은 그때 0부터 다시 매겨진다
+   - 삭제: 루트 행만 지운다(`parent_id`, `study_records.page_id`는 cascade). `learning_plans.target_node_id`가 `ON DELETE RESTRICT`라서, 하위 트리를 대상으로 한 계획을 먼저 지우고(`removePlans`) 그다음 노드를 지운다. 쓰기는 호출 순서대로 실행된다(R7)
+   - `study_records.understanding`이 null인 행은 3으로 읽는다(앱은 항상 1~5를 쓴다)
+   - 예시 데이터: 워크스페이스가 완전히 비었을 때만 홈 안내 카드에 "예시 데이터 가져오기"가 보인다(`importExampleData`). 시드(`lib/study-tree.ts`, `lib/study-pages.ts`, `lib/plans.ts`의 `examplePlans`)를 새 uuid로 그 계정에 저장한다. 저장 직전에 그 계정의 노드가 DB에 있는지 다시 확인해 중복을 막고, 기존 데이터는 건드리지 않는다. 시드의 날짜(기록, 페이지 생성일, 계획 기간)는 모두 같은 일수만큼 옮겨서 가장 최근 기록이 가져온 날의 어제가 되게 한다. `createdAt`은 공부한 날 정오다. 노드는 트리 깊이별로 나눠 부모부터 insert한다
+   - 불러온 그룹·페이지 배열은 사이드바(깊이 우선) 순서로 맞춘다. 위젯이 배열 순서대로 과목과 페이지를 나열하기 때문이다
+   - 권한: 네 테이블 모두 `authenticated` 역할에 select/insert/update/delete 정책이 있고, 조건은 `auth.uid() = user_id`(`profiles`는 `= id`)다. 계획의 대상 노드 소유자는 `learning_plans`의 `check_learning_plan_owner` 트리거가 검사한다(단일 FK 보완)
+   - 세션 타이머와 체크리스트는 여전히 브라우저 전용이다. 첨부 블록은 `blob:` URL째 저장되어 새로고침하면 깨진다(Storage 연동 전)
 2. **정적 더미 위젯은 체크리스트 하나만 남았다.** Home의 "오늘의 체크리스트"는 `app/page.tsx`의 `useState` + `dummy-data.ts`이고 `lib` 함수 뒤에 있지 않다. 할 일(Todo)은 아직 엔티티로 정의되지 않았다. Home의 나의 학습 상태/오늘의 기록/이번 주 학습 통계, 학습 분석의 과목별 학습 상태/취약 학습 영역/복습 예정/최근 학습 활동은 모두 `lib/study-stats.ts`가 워크스페이스 페이지의 `studyRecords`에서 계산한다.
    - 과목: 페이지의 가장 가까운 상위 과목(`nearestSubject`), 없으면 "내 페이지"
    - 나의 학습 상태 / 과목별 학습 상태: 과목별 기록 `understanding` 평균 ÷ 5 × 100 (기록 없는 과목은 숨김)
@@ -191,11 +201,11 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
    - 최근 학습 활동: 전체 기록 최신순 5개
    - `lib/learning-os.ts`의 고정값과 `dummy-data.ts`의 records/weeklyStats는 더 이상 화면에서 쓰지 않는다(파일은 남겨둠).
 3. **`StudyRecord`가 두 가지다.** `lib/types.ts`의 `StudyRecord`(title/category/type...)는 옛 형태로 `components/record-card.tsx`에만 남아 있고(Home과 과목 화면은 더 이상 쓰지 않음), 실제 학습 기록은 `lib/study-pages.ts`의 `PageStudyRecord`다. DB는 `PageStudyRecord` 기준으로 설계한다.
-4. `/subject/[id]`는 워크스페이스의 `kind: "subject"` 그룹에서 과목을 찾는다(`page.tsx`는 id만 넘기고 `components/subject/subject-view.tsx`가 찾음). 요약/페이지 목록은 `subjectSummary`/`subjectPageRows`(R6: 하위 모든 페이지·템플릿 무관)로 계산하고, 옛 주간 목표 대신 이 과목을 target으로 한 `LearningPlan`을 보여준다. 없는 id는 404가 아니라 "과목을 찾을 수 없어요" 안내를 보여준다(새로고침으로 사용자가 만든 과목이 사라진 경우 포함).
+4. `/subject/[id]`는 워크스페이스의 `kind: "subject"` 그룹에서 과목을 찾는다(`page.tsx`는 id만 넘기고 `components/subject/subject-view.tsx`가 찾음). 요약/페이지 목록은 `subjectSummary`/`subjectPageRows`(R6: 하위 모든 페이지·템플릿 무관)로 계산하고, 옛 주간 목표 대신 이 과목을 target으로 한 `LearningPlan`을 보여준다. 없는 id는 404가 아니라 "과목을 찾을 수 없어요" 안내를 보여준다(데이터를 불러오는 중에는 로딩 표시).
    - 남은 주의: `findSubject`, `weekly-goals.tsx`, `record-card.tsx`는 더 이상 이 화면에서 쓰지 않는다(파일은 남겨둠).
 5. 시드/레거시: `lib/study-tree.ts`는 초기 그룹 시드용, `lib/dummy-data.ts`의 `categories`는 일부 화면에서 아직 쓰인다. `app/ai`, `app/notes`, `app/study`는 링크가 없는 죽은 라우트다(정리 대상).
 6. 형식 불일치: 페이지 `createdAt`은 날짜 문자열, 기록 `createdAt`은 ms 숫자. 날짜는 타임존 없는 로컬 날짜 문자열이다.
-7. id는 모두 클라이언트가 만든다. DB가 id를 발급하면 프론트와 맞추는 방법을 정해야 한다.
+7. 페이지·그룹·기록·계획 id는 클라이언트가 `crypto.randomUUID()`로 만든다(DB 컬럼에 기본값 없음). 같은 날짜 기록의 정렬 동률은 `createdAt`으로 깬다. 시드의 `ds-1` 같은 id와 옛 `<pageId>-r-<ms>` 기록 id는 DB에 없다.
 8. `app/page/new/page.tsx`의 옛 경로 리다이렉트는 쿼리 값을 인코딩하지 않는다(`app/record/[id]`는 수정됨).
 9. 세션 로그는 localStorage에만 쌓이고 정리 기준이 없다.
 10. 첨부를 복제하면 복제본이 원본과 같은 파일을 가리킨다. 서버 저장을 붙이면 블록을 지울 때 파일을 바로 지우면 안 된다(다른 페이지가 쓰고 있을 수 있다).
@@ -205,14 +215,12 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
 
 ## 6. 아직 정하지 않은 것
 
-DB는 Supabase(Postgres)로 가는 방향이고, 아래 항목의 추천안은 PR #11(`docs/DB_SCHEMA_DRAFT.md`)에 있다. 합의되면 `DECISIONS.md`로 옮기고 이 목록에서 지운다.
+신규 사용자는 빈 상태로 시작하고, 원하면 홈에서 예시 데이터를 가져온다(인증은 D-18로 결정됨).
 
-- 신규 사용자에게 예시 데이터를 넣을지 (인증은 D-18로 결정됨)
 - 세션/구간을 서버에 저장할지 (R5의 중복 집계를 서버에서 하려면 필요하다)
-- 형제 순서 저장 방식 (지금의 전역 `order` 배열 vs 부모별 position)
 - 날짜/타임존 처리
 - 파생값(status, 다음 복습일 등)을 저장할지 계산할지
-- id를 누가 발급할지
 - 파일 저장소, 복제 시 파일을 공유할지 복사할지, 파일을 언제 지울지, 서버 쪽 형식/크기 검증
 - 할 일(Todo)의 데이터와 "오늘의 체크리스트" 규칙
 - 퀴즈: 기존 OX 채점 작업(`v0/quiz-ox-grading`)은 main에 들어가지 않았고 폐기한다. 새로 설계하며 방향은 아직 정하지 않았다
+- `workspace_nodes.updated_at`을 갱신할지(기본값 `now()`만 있고 갱신 트리거가 없어 생성 시각에 머문다)

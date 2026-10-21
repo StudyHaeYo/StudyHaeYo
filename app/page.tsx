@@ -14,12 +14,16 @@ import { WeeklyStats } from "@/components/learning-os/weekly-stats"
 import { checklist as initialChecklist } from "@/lib/dummy-data"
 import type { ChecklistItem } from "@/lib/types"
 import { useTodayLabel } from "@/hooks/use-today"
+import { DataStatusNotice } from "@/components/data-status-notice"
+import { settleWrites } from "@/lib/db/queue"
 
 export default function DashboardPage() {
   const todayLabel = useTodayLabel()
   const router = useRouter()
 
 const handleLogout = async () => {
+  // Finish pending saves while the session is still valid.
+  await settleWrites()
   const supabase = createClient()
   const { error } = await supabase.auth.signOut()
 
@@ -49,6 +53,7 @@ const handleLogout = async () => {
       <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-10">
         <div className="mx-auto max-w-2xl">
           <TopBar date={todayLabel} />
+          <DataStatusNotice />
           <SessionTimerCard />
 
           <section aria-label="오늘의 학습" className="mb-8 flex flex-col gap-4">

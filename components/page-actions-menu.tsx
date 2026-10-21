@@ -3,8 +3,17 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Copy, Lock, MoreHorizontal, Pencil, Power, PowerOff, Trash2 } from "lucide-react"
 import { resolvePageLayout } from "@/lib/templates"
-import { deletePage, duplicatePage, flattenTree, setPageStudyEnabled, useWorkspace } from "@/lib/workspace"
+import { deletePage, duplicatePage, flattenTree, plansInSubtree, setPageStudyEnabled, useWorkspace } from "@/lib/workspace"
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
+
+// Confirmation line for deleting a page or group: what else goes with it.
+export function deleteNoteText(nestedCount: number, planCount: number) {
+  const parts = [
+    nestedCount > 0 ? `하위 항목 ${nestedCount}개와 그 학습 기록` : null,
+    planCount > 0 ? `이 항목을 대상으로 한 학습 계획 ${planCount}개` : null,
+  ].filter(Boolean)
+  return parts.length > 0 ? `${parts.join(", ")}도 함께 삭제됩니다.` : undefined
+}
 
 export const menuItemClass =
   "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
@@ -43,7 +52,8 @@ export function PageActionsMenu({
 
   const page = workspace.pages.find((p) => p.id === pageId)
   const nested = flattenTree(workspace, pageId).length
-  const deleteNote = nested > 0 ? `하위 항목 ${nested}개도 함께 삭제됩니다.` : undefined
+  const planCount = plansInSubtree(workspace, pageId).length
+  const deleteNote = deleteNoteText(nested, planCount)
   const layout = page ? resolvePageLayout(page) : null
 
   const setOpen = (next: boolean) => {
@@ -173,8 +183,7 @@ export function PageActionsMenu({
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
           setConfirmOpen(false)
-          deletePage(pageId)
-          onDeleted?.()
+          if (deletePage(pageId)) onDeleted?.()
         }}
       />
     </div>
