@@ -13,7 +13,6 @@ const sections = [
     title: "학습 설정",
     rows: [
       { label: "기본 템플릿", value: "학습 노트" },
-      { label: "복습 알림", value: "켜짐 · 오전 9시" },
       { label: "주간 목표 시간", value: formatDuration(WEEKLY_GOAL_MINUTES) },
     ],
   },

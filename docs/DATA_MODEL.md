@@ -203,7 +203,7 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
 3. **`StudyRecord`가 두 가지다.** `lib/types.ts`의 `StudyRecord`(title/category/type...)는 옛 형태로 `components/record-card.tsx`에만 남아 있고(Home과 과목 화면은 더 이상 쓰지 않음), 실제 학습 기록은 `lib/study-pages.ts`의 `PageStudyRecord`다. DB는 `PageStudyRecord` 기준으로 설계한다.
 4. `/subject/[id]`는 워크스페이스의 `kind: "subject"` 그룹에서 과목을 찾는다(`page.tsx`는 id만 넘기고 `components/subject/subject-view.tsx`가 찾음). 요약/페이지 목록은 `subjectSummary`/`subjectPageRows`(R6: 하위 모든 페이지·템플릿 무관)로 계산하고, 옛 주간 목표 대신 이 과목을 target으로 한 `LearningPlan`을 보여준다. 없는 id는 404가 아니라 "과목을 찾을 수 없어요" 안내를 보여준다(데이터를 불러오는 중에는 로딩 표시).
    - 남은 주의: `findSubject`, `weekly-goals.tsx`, `record-card.tsx`는 더 이상 이 화면에서 쓰지 않는다(파일은 남겨둠).
-5. 시드/레거시: `lib/study-tree.ts`는 초기 그룹 시드용, `lib/dummy-data.ts`의 `categories`는 일부 화면에서 아직 쓰인다. `app/ai`, `app/notes`, `app/study`는 링크가 없는 죽은 라우트다(정리 대상).
+5. 시드/레거시: `lib/study-tree.ts`는 초기 그룹 시드용, `lib/dummy-data.ts`의 `categories`는 일부 화면에서 아직 쓰인다. 옛 더미 화면 `app/ai`, `app/notes`, `app/study`는 지웠다. `/plan`은 학습 계획 목록만 남기고 사이드바에 연결했다.
 6. 형식 불일치: 페이지 `createdAt`은 날짜 문자열, 기록 `createdAt`은 ms 숫자. 날짜는 타임존 없는 로컬 날짜 문자열이다.
 7. 페이지·그룹·기록·계획 id는 클라이언트가 `crypto.randomUUID()`로 만든다(DB 컬럼에 기본값 없음). 같은 날짜 기록의 정렬 동률은 `createdAt`으로 깬다. 시드의 `ds-1` 같은 id와 옛 `<pageId>-r-<ms>` 기록 id는 DB에 없다.
 8. `app/page/new/page.tsx`의 옛 경로 리다이렉트는 쿼리 값을 인코딩하지 않는다(`app/record/[id]`는 수정됨).
