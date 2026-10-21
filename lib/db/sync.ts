@@ -2,16 +2,20 @@ import { toast } from "sonner"
 import { createStore } from "@/lib/create-store"
 import { replacePlans } from "@/lib/plans"
 import { replaceWorkspace } from "@/lib/workspace"
+import { replaceTodos } from "@/lib/todos"
 import { db, resetWrites, setCurrentUserId, setWriteFailureHandler } from "@/lib/db/queue"
 import {
   NODE_COLUMNS,
   PLAN_COLUMNS,
   RECORD_COLUMNS,
+  TODO_COLUMNS,
   toPlan,
+  toTodo,
   toWorkspaceState,
   type NodeRow,
   type PlanRow,
   type RecordRow,
+  type TodoRow,
 } from "@/lib/db/rows"
 
 export type DataStatus = { phase: "loading" } | { phase: "ready" } | { phase: "error"; message: string }
@@ -64,9 +68,20 @@ export async function loadUserData() {
     )
     replacePlans(plans.map(toPlan))
     statusStore.set(() => ({ phase: "ready" }))
+    void loadTodos(userId, seq)
   } catch (error) {
     if (seq !== loadSeq) return
     statusStore.set(() => ({ phase: "error", message: messageOf(error) }))
+  }
+}
+
+// Todos load separately so a missing todos table (not created yet) only turns the checklist off, not the app.
+async function loadTodos(userId: string, seq: number) {
+  try {
+    const rows = await selectAll<TodoRow>("todos", TODO_COLUMNS, userId, ["position", "created_at", "id"])
+    if (seq === loadSeq) replaceTodos(rows.map(toTodo), "ready")
+  } catch {
+    if (seq === loadSeq) replaceTodos([], "unavailable")
   }
 }
 
@@ -77,6 +92,7 @@ function clearUserData() {
   setCurrentUserId(null)
   replaceWorkspace(null)
   replacePlans([])
+  replaceTodos([], "loading")
   statusStore.set(() => ({ phase: "loading" }))
 }
 

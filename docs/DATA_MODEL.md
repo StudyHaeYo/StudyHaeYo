@@ -79,6 +79,12 @@
 `{id, title, target, startDate, endDate, goal}`
 - `target`은 `{scope:"all"}` \| `{scope:"subject", subjectId}` \| `{scope:"page", pageId}`
 
+### Todo (오늘의 체크리스트, `lib/todos.ts`, 테이블 `todos`)
+`{id, title, dueOn, doneAt, position}`
+- `dueOn`은 할 날짜(로컬 날짜 문자열), `doneAt`은 완료 시각(ms, 안 했으면 null)
+- 페이지나 계획과 연결하지 않는다
+- 테이블 정의와 RLS는 `supabase/migrations/20261021_todos.sql`
+
 ### 세션 (브라우저 전용, localStorage `studyhaeyo:study-session`)
 - `startedAt`, `segments[{pageId,start,end}]`, `openSegment`, `lastActiveAt`, `log: FinishedSession[]`
 - `FinishedSession = {id, startedAt, endedAt, segments, autoEnded?}`
@@ -164,6 +170,15 @@ User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유�
 
 ---
 
+**R10. 오늘의 체크리스트** (`todayChecklist`)
+- 오늘 목록 = `dueOn`이 오늘인 할 일 + 그 전 날짜인데 아직 안 끝낸 할 일(넘어온 것, "이월" 표시) + 오늘 끝낸 할 일
+- 전날 이전에 끝낸 할 일은 목록에서 빠진다(DB에는 남는다)
+- 순서: 안 끝낸 것 먼저, 그다음 `position`
+- 새 할 일은 오늘 날짜로 만든다. 이름은 눌러서 바꾸고, ✕로 지운다
+- `todos` 테이블을 읽지 못하면(아직 안 만들었으면) 체크리스트만 "준비 중"으로 보이고 나머지 화면은 그대로 동작한다
+
+---
+
 ## 4. 프론트가 의존하는 함수 (DB 전환 시 교체 지점)
 
 | 파일 | 함수 |
@@ -190,8 +205,8 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
    - 예시 데이터: 워크스페이스가 완전히 비었을 때만 홈 안내 카드에 "예시 데이터 가져오기"가 보인다(`importExampleData`). 시드(`lib/study-tree.ts`, `lib/study-pages.ts`, `lib/plans.ts`의 `examplePlans`)를 새 uuid로 그 계정에 저장한다. 저장 직전에 그 계정의 노드가 DB에 있는지 다시 확인해 중복을 막고, 기존 데이터는 건드리지 않는다. 시드의 날짜(기록, 페이지 생성일, 계획 기간)는 모두 같은 일수만큼 옮겨서 가장 최근 기록이 가져온 날의 어제가 되게 한다. `createdAt`은 공부한 날 정오다. 노드는 트리 깊이별로 나눠 부모부터 insert한다
    - 불러온 그룹·페이지 배열은 사이드바(깊이 우선) 순서로 맞춘다. 위젯이 배열 순서대로 과목과 페이지를 나열하기 때문이다
    - 권한: 네 테이블 모두 `authenticated` 역할에 select/insert/update/delete 정책이 있고, 조건은 `auth.uid() = user_id`(`profiles`는 `= id`)다. 계획의 대상 노드 소유자는 `learning_plans`의 `check_learning_plan_owner` 트리거가 검사한다(단일 FK 보완)
-   - 세션 타이머와 체크리스트는 여전히 브라우저 전용이다. 첨부 블록은 `blob:` URL째 저장되어 새로고침하면 깨진다(Storage 연동 전)
-2. **정적 더미 위젯은 체크리스트 하나만 남았다.** Home의 "오늘의 체크리스트"는 `app/page.tsx`의 `useState` + `dummy-data.ts`이고 `lib` 함수 뒤에 있지 않다. 할 일(Todo)은 아직 엔티티로 정의되지 않았다. Home의 나의 학습 상태/오늘의 기록/이번 주 학습 통계, 학습 분석의 과목별 학습 상태/취약 학습 영역/복습 예정/최근 학습 활동은 모두 `lib/study-stats.ts`가 워크스페이스 페이지의 `studyRecords`에서 계산한다.
+   - 세션 타이머는 여전히 브라우저 전용이다. 체크리스트는 `todos` 테이블에 저장한다(R10). 첨부 블록은 `blob:` URL째 저장되어 새로고침하면 깨진다(Storage 연동 전)
+2. **정적 더미 위젯은 없다.** Home의 나의 학습 상태/오늘의 기록/이번 주 학습 통계, 학습 분석의 과목별 학습 상태/취약 학습 영역/복습 예정/최근 학습 활동은 모두 `lib/study-stats.ts`가 워크스페이스 페이지의 `studyRecords`에서 계산한다.
    - 과목: 페이지의 가장 가까운 상위 과목(`nearestSubject`), 없으면 "내 페이지"
    - 나의 학습 상태 / 과목별 학습 상태: 과목별 기록 `understanding` 평균 ÷ 5 × 100 (기록 없는 과목은 숨김)
    - 오늘의 기록: `date`가 오늘인 기록, 최신순(`createdAt`, 없으면 id의 시각, 그것도 없으면 `date`)
@@ -221,6 +236,5 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
 - 날짜/타임존 처리
 - 파생값(status, 다음 복습일 등)을 저장할지 계산할지
 - 파일 저장소, 복제 시 파일을 공유할지 복사할지, 파일을 언제 지울지, 서버 쪽 형식/크기 검증
-- 할 일(Todo)의 데이터와 "오늘의 체크리스트" 규칙
 - 퀴즈: 기존 OX 채점 작업(`v0/quiz-ox-grading`)은 main에 들어가지 않았고 폐기한다. 새로 설계하며 방향은 아직 정하지 않았다
 - `workspace_nodes.updated_at`을 갱신할지(기본값 `now()`만 있고 갱신 트리거가 없어 생성 시각에 머문다)
