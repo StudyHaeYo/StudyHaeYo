@@ -28,7 +28,7 @@ Notion처럼 학습 페이지를 자유롭게 만들고, 그 페이지에서 쌓
 - 김준혁: 백엔드/DB/API/분석 로직.
 - 코드: GitHub `StudyHaeYo/StudyHaeYo`. `main`이 공식 코드이고, 배포는 `main` → Vercel(studyhaeyo.vercel.app).
 - 스택: Next.js(App Router), TypeScript, Tailwind, shadcn/ui, lucide-react.
-- 협업: `main`에 직접 작업하지 않는다. 기능별 브랜치 → PR → 리뷰 → merge. v0는 `v0/...` 브랜치에 올리고 Publish로 main에 바로 반영하지 않는다(D-17). Claude Code로도 작업한다.
+- 협업: `main`에 직접 작업하지 않는다. 기능별 브랜치 → PR → 리뷰 → merge. v0는 `v0/...` 브랜치에 올리고 Publish로 main에 바로 반영하지 않는다(D-17). merge 버튼은 Vercel 프로젝트 주인인 이재윤이 누른다(D-19). Claude Code로도 작업한다.
 
 ## 현재 구현 상태 (코드로 확인한 것)
 

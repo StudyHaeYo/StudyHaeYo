@@ -76,6 +76,12 @@ Home의 "오늘의 우선 학습/복습이 필요한 학습"은 `locked-on` 페�
 화면은 Supabase를 직접 부르지 않고 `lib/auth.ts`의 함수(`signIn`, `signUp`, `signOut`, `useCurrentUser`)만 부른다(PR #14). `lib/workspace.ts`와 같은 원칙이다.
 **이유**: DB도 Supabase로 가므로 같은 사용자 id(`auth.users`)로 RLS를 걸 수 있다. 별도 서버 없이 가입/인증 메일/세션 갱신이 해결된다.
 
+### D-19. merge는 Vercel 프로젝트 주인(이재윤)이 누른다
+Vercel 프로젝트는 이재윤의 Hobby(무료) 계정에 있다. Hobby는 비공개 저장소에서 계정 주인이 만든 커밋만 배포하고, 다른 사람의 커밋은 "Deployment was blocked"가 된다. merge 커밋의 작성자는 merge 버튼을 누른 사람이다.
+2026-10-20~21에 김준혁이 merge한 PR #16~#22가 모두 배포되지 않았고, 대시보드의 Redeploy도 같은 이유로 막혔다. 이재윤이 #12를 merge해서 그 시점의 main 전체가 배포됐다.
+그래서 리뷰와 승인은 둘 다 하고, merge 버튼은 이재윤이 누른다.
+**대안(지금은 안 함)**: 저장소를 공개로 바꾸기(누가 merge해도 배포됨), Vercel Pro로 올리고 팀원 추가(유료).
+
 ---
 
 ## 아직 결정하지 않은 것

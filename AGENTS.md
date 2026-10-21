@@ -21,6 +21,7 @@
 - PR 전에 `pnpm run build`가 통과해야 한다(타입 검사만으로는 서버/클라이언트 경계 오류를 못 잡는다). 빌드는 타입 오류를 건너뛰도록 설정돼 있으니(`ignoreBuildErrors`) `npx tsc --noEmit`도 같이 돌린다.
 - 서버 컴포넌트(`page.tsx`, `layout.tsx` 등)에서는 `lib/workspace.ts`, `lib/plans.ts`, `lib/create-store.ts`, `lib/study-stats.ts`를 직접·간접으로 import하지 않는다. 서버와 클라이언트가 같이 쓰는 상수나 함수는 `lib/goals.ts`처럼 import가 없는 파일에 둔다.
 - v0의 Publish로 main에 바로 반영하지 않는다. PR의 Vercel 미리보기 빌드가 Ready인지 확인하고 merge한다.
+- PR의 merge 버튼은 이재윤이 누른다. Vercel 프로젝트가 이재윤의 Hobby 계정이라, 다른 사람이 만든 merge 커밋은 배포가 막힌다(D-19). 김준혁은 리뷰와 승인(Approve)을 남긴다.
 - 비밀값(API 키, Supabase `service_role` 키 등)은 코드와 저장소에 넣지 않는다. 로컬은 `.env.local`(git에 올라가지 않음), 배포는 Vercel 환경 변수를 쓴다.
 - 구현되지 않은 기능을 구현된 것처럼 쓰지 않는다. AI 요약/문제 생성은 현재 UI 목업이다.
 - 문서에는 코드로 알 수 없는 것(이유, 합의, 규칙, 폐기한 방향)만 쓴다. 파일 목록이나 필드 나열을 복사해 두지 않는다.
