@@ -14,7 +14,7 @@ export function TodayRecords() {
 
   return (
     <section aria-labelledby="today-records-heading">
-      <h2 id="today-records-heading" className="mb-3 text-sm font-medium text-foreground">
+      <h2 id="today-records-heading" className="mb-3 text-[15px] font-semibold text-foreground">
         오늘의 기록
       </h2>
       {entries === null ? (
@@ -50,7 +50,7 @@ function TodayRecordCard({ entry }: { entry: RecordEntry }) {
   return (
     <Link
       href={`/record/${entry.pageId}`}
-      className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex flex-col gap-1">
         <h3 className="text-base font-medium text-card-foreground">{entry.pageTitle}</h3>

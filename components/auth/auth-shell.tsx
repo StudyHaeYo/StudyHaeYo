@@ -22,7 +22,7 @@ export function AuthShell({
           <span className="text-base font-semibold tracking-tight text-foreground">스터디 해요</span>
         </Link>
 
-        <section className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+        <section className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6">
           <header className="flex flex-col gap-1">
             <h1 className="text-xl font-semibold tracking-tight text-card-foreground text-balance">
               {title}

@@ -36,7 +36,7 @@ export function TagInput({ tags, onChange }: TagInputProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-3 shadow-sm">
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card p-3">
       <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
         <Hash className="size-4" />
       </span>

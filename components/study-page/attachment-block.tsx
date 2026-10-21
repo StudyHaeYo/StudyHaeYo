@@ -21,7 +21,7 @@ export function AttachmentBlockView({ block, onRemove }: AttachmentBlockViewProp
       onClick={onRemove}
       aria-label={`${block.name} 첨부 삭제`}
       title="첨부 삭제"
-      className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground opacity-0 shadow-sm transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+      className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
     >
       <X className="size-4" />
     </button>

@@ -154,7 +154,7 @@ export function PageProperties({
                   type="button"
                   onClick={() => onChangeTags(tags.filter((t) => t !== tag))}
                   aria-label={`${tag} 태그 삭제`}
-                  className="rounded text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+                  className="rounded text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
                 >
                   <X className="size-3" />
                 </button>

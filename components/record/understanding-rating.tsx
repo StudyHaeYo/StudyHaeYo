@@ -17,7 +17,7 @@ interface UnderstandingRatingProps {
 
 export function UnderstandingRating({ value, onChange }: UnderstandingRatingProps) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
@@ -40,7 +40,7 @@ export function UnderstandingRating({ value, onChange }: UnderstandingRatingProp
                 onClick={() => onChange(level)}
                 className={`flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                   selected
-                    ? "bg-indigo-600 text-white shadow-sm"
+                    ? "bg-indigo-600 text-white"
                     : "border border-border bg-background text-muted-foreground hover:border-indigo-300 hover:text-indigo-700"
                 }`}
               >

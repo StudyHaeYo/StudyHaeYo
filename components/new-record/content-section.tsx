@@ -31,7 +31,7 @@ export function ContentSection({
   }, [value])
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+    <section className="rounded-xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center gap-2">
         <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-foreground">
           <Icon className="size-4" />

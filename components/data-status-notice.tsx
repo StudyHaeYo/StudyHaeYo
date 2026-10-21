@@ -66,7 +66,7 @@ export function DataStatusNotice() {
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
         <Link
           href="/new"
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
         >
           첫 학습 페이지 만들기
         </Link>
@@ -104,7 +104,7 @@ export function DataStatusView({ status }: { status: DataStatus }) {
           <button
             type="button"
             onClick={() => void loadUserData()}
-            className="mt-5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+            className="mt-5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
           >
             다시 시도
           </button>

@@ -11,7 +11,7 @@ export default function PlanPage() {
       <main className="min-w-0 flex-1 overflow-y-auto px-6 py-6 lg:px-10">
         <div className="mx-auto max-w-5xl">
           <header className="mb-6">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">학습 계획</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">학습 계획</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               전체, 과목, 페이지 단위로 기간과 목표를 정해 두세요.
             </p>

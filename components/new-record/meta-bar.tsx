@@ -42,7 +42,7 @@ export function MetaBar({
           <select
             value={categoryId}
             onChange={(e) => onChangeCategory(e.target.value)}
-            className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground shadow-sm outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-indigo-500"
+            className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-indigo-500"
             aria-label="카테고리 선택"
           >
             {categories.map((cat) => (
@@ -56,7 +56,7 @@ export function MetaBar({
             value={subjectId}
             onChange={(e) => onChangeSubject(e.target.value)}
             disabled={subjects.length === 0}
-            className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground shadow-sm outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="과목 선택"
           >
             {subjects.length === 0 ? (
@@ -106,7 +106,7 @@ export function MetaBar({
             type="button"
             onClick={onSave}
             disabled={!canSave}
-            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
           >
             <Check className="size-4" />
             저장

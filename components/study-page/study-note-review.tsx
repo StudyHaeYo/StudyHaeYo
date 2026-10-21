@@ -83,7 +83,7 @@ export function StudyNoteReview({ note, exitHref, onComplete }: ReviewBodyProps)
             return (
               <li key={concept.id}>
                 <div
-                  className={`flex h-full flex-col rounded-xl border bg-card shadow-sm transition-colors ${
+                  className={`flex h-full flex-col rounded-xl border bg-card transition-colors ${
                     result === "remembered"
                       ? "border-emerald-200"
                       : result === "confused"
@@ -151,7 +151,7 @@ export function StudyNoteReview({ note, exitHref, onComplete }: ReviewBodyProps)
       )}
 
       {allDone && (
-        <div className="flex flex-col gap-5 rounded-xl border border-border bg-card px-6 py-6 shadow-sm">
+        <div className="flex flex-col gap-5 rounded-xl border border-border bg-card px-6 py-6">
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" aria-hidden="true" />
             <div className="flex flex-col gap-1">
@@ -197,7 +197,7 @@ export function StudyNoteReview({ note, exitHref, onComplete }: ReviewBodyProps)
               type="button"
               disabled={understanding === null}
               onClick={finish}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               확인하고 학습 기록 남기기
             </button>

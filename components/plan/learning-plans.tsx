@@ -35,7 +35,7 @@ export function LearningPlans() {
   return (
     <section aria-labelledby="plans-title" className="mb-8 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-4">
-        <h2 id="plans-title" className="text-sm font-semibold text-foreground">
+        <h2 id="plans-title" className="text-[15px] font-semibold text-foreground">
           진행 중인 계획
           <span className="ml-2 font-normal text-muted-foreground">{plans.length}</span>
         </h2>
@@ -43,7 +43,7 @@ export function LearningPlans() {
           <button
             type="button"
             onClick={() => setFormOpen(true)}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
           >
             <Plus className="size-4" />
             계획 만들기
@@ -60,7 +60,7 @@ export function LearningPlans() {
             return (
               <li
                 key={plan.id}
-                className="group relative flex flex-col gap-2.5 rounded-xl border border-border bg-card p-4 shadow-sm"
+                className="group relative flex flex-col gap-2.5 rounded-xl border border-border bg-card p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="text-sm font-semibold text-card-foreground">{plan.title}</h3>
@@ -68,7 +68,7 @@ export function LearningPlans() {
                     type="button"
                     onClick={() => removePlan(plan.id)}
                     aria-label={`${plan.title} 계획 삭제`}
-                    className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+                    className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -137,7 +137,7 @@ function PlanForm({ workspace, onClose }: { workspace: WorkspaceState; onClose: 
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid gap-4 rounded-xl border border-indigo-200 bg-card p-5 shadow-sm sm:grid-cols-2"
+      className="grid gap-4 rounded-xl border border-indigo-200 bg-card p-5 sm:grid-cols-2"
     >
       <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
         계획 제목
@@ -205,7 +205,7 @@ function PlanForm({ workspace, onClose }: { workspace: WorkspaceState; onClose: 
         </button>
         <button
           type="submit"
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
         >
           계획 생성
         </button>

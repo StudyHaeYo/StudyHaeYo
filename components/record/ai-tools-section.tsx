@@ -38,7 +38,7 @@ export function AiToolsSection() {
               onClick={() => toggle(id)}
               aria-expanded={active}
               aria-controls={`ai-panel-${id}`}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                 active
                   ? "border-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700"
                   : "border-border bg-card text-foreground hover:border-indigo-300 hover:text-indigo-600"

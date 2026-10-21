@@ -56,7 +56,7 @@ export function AddRecordForm({ pageId, initial, initialMinutes, onSubmit, onCan
     <form
       onSubmit={handleSubmit}
       aria-label={isEdit ? "학습 기록 수정" : "학습 기록 추가"}
-      className="flex flex-col gap-4 rounded-xl border border-indigo-200 bg-card p-5 shadow-sm"
+      className="flex flex-col gap-4 rounded-xl border border-indigo-200 bg-card p-5"
     >
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-card-foreground">{isEdit ? "학습 기록 수정" : "새 학습 기록"}</p>
@@ -137,7 +137,7 @@ export function AddRecordForm({ pageId, initial, initialMinutes, onSubmit, onCan
         <button
           type="submit"
           disabled={!canSubmit}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isEdit ? "수정 저장" : "기록 추가"}
         </button>

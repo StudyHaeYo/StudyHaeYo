@@ -23,7 +23,7 @@ export function TodayAgenda() {
   const checklistCount = useChecklistCount()
 
   return (
-    <section aria-labelledby="today-agenda-title" className="mb-6 overflow-hidden rounded-2xl border border-indigo-200 bg-card shadow-sm">
+    <section aria-labelledby="today-agenda-title" className="mb-6 overflow-hidden rounded-2xl border border-indigo-200 bg-card shadow-[0_1px_2px_rgb(0_0_0/0.04),0_12px_32px_-16px_rgb(79_70_229/0.35)]">
       <div className="border-b border-indigo-100 bg-indigo-50/70 px-5 py-4">
         <h2 id="today-agenda-title" className="text-base font-semibold text-foreground">
           오늘 할 일
@@ -132,7 +132,7 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
         </span>
         <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>{item.due}</span>
         {first ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors group-hover:bg-indigo-700">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors group-hover:bg-indigo-700">
             <Flame className="size-3.5" aria-hidden="true" />
             복습하기
           </span>

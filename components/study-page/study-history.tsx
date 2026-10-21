@@ -68,7 +68,7 @@ export function StudyHistory({
               setEditingId(null)
               setNotice(null)
             }}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-indigo-300 hover:text-indigo-600"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-indigo-300 hover:text-indigo-600"
           >
             <Plus className="size-4" />
             학습 기록 추가
@@ -181,7 +181,7 @@ function RecordCard({
   const dateLabel = formatDate(record.date)
   return (
     <div
-      className={`group flex min-w-0 flex-1 flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm ${
+      className={`group flex min-w-0 flex-1 flex-col gap-2 rounded-xl border bg-card p-4 ${
         highlighted ? "border-indigo-300" : "border-border"
       }`}
     >

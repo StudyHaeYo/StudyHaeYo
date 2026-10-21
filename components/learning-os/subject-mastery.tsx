@@ -1,6 +1,5 @@
 "use client"
 
-import { Gauge } from "lucide-react"
 import { subjectMastery } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
 
@@ -8,11 +7,8 @@ export function SubjectMastery({ title = "나의 학습 상태" }: { title?: str
   const items = subjectMastery(useWorkspace())
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
-      <div className="mb-4 flex items-center gap-2">
-        <Gauge className="size-4 text-indigo-600" />
-        <h2 className="text-sm font-medium text-card-foreground">{title}</h2>
-      </div>
+    <section className="rounded-xl border border-border bg-card p-5">
+      <h2 className="mb-4 text-[15px] font-semibold text-foreground">{title}</h2>
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">아직 학습 기록이 없어요. 기록을 남기면 과목별 이해도가 보여요.</p>
       ) : (

@@ -11,7 +11,7 @@ export function ProfileSection() {
   ]
 
   return (
-    <section aria-labelledby="settings-profile" className="rounded-xl border border-border bg-card shadow-sm">
+    <section aria-labelledby="settings-profile" className="rounded-xl border border-border bg-card">
       <div className="flex items-center justify-between border-b border-border px-5 py-3">
         <h2 id="settings-profile" className="text-sm font-semibold text-card-foreground">
           프로필

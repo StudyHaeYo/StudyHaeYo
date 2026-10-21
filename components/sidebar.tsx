@@ -310,7 +310,7 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
   const { rowProps, indicator, isDragging } = useTreeDrag(group.id, { allowAfter: !open })
   const dragClass = `relative ${dropIndicatorClass(indicator)} ${isDragging ? "opacity-40" : ""}`
   const hoverAction =
-    "flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100"
+    "flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100"
 
   const addButton = (
     <div className="mr-1 flex items-center">

@@ -215,7 +215,7 @@ export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActi
         <div
           role="toolbar"
           aria-label="그리기 도구"
-          className="sticky top-16 z-[5] flex flex-wrap items-center gap-1 self-start rounded-lg border border-border bg-card p-1 shadow-sm"
+          className="sticky top-16 z-[5] flex flex-wrap items-center gap-1 self-start rounded-lg border border-border bg-card p-1"
         >
           <ToolButton label="펜" active={tool === "pen"} onClick={() => setTool("pen")}>
             <PenLine className="size-4" />
@@ -337,7 +337,7 @@ export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActi
           onClick={onRemove}
           aria-label="그림 블록 삭제"
           title="그림 삭제"
-          className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground opacity-0 shadow-sm transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+          className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
         >
           <X className="size-4" />
         </button>
@@ -347,7 +347,7 @@ export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActi
         type="button"
         onClick={() => onChange({ ...latest.current, height: latest.current.height + DRAWING_GROW_STEP })}
         className={`inline-flex items-center justify-center gap-1 self-center rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 ${
-          editing ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          editing ? "opacity-100" : "opacity-0 [@media(hover:none)]:opacity-100 group-hover:opacity-100"
         }`}
       >
         <ChevronsDown className="size-3.5" aria-hidden="true" />

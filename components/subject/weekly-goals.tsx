@@ -15,7 +15,7 @@ export function WeeklyGoals({ initialGoals }: { initialGoals: WeeklyGoal[] }) {
   return (
     <section
       aria-labelledby="weekly-goals-title"
-      className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm"
+      className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5"
     >
       <div className="flex items-center justify-between">
         <h2 id="weekly-goals-title" className="text-base font-semibold text-card-foreground">
