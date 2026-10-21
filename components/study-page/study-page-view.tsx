@@ -3,15 +3,18 @@
 import { Fragment, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Check, ChevronRight, FileQuestion, Lock, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff, Save } from "lucide-react"
+import { ChevronRight, FileQuestion, Lock, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff } from "lucide-react"
 import {
   computePageStats,
   newItemId,
+  newRecordId,
   noteOf,
   todayISO,
   type PageStudyRecord,
   type StudyNoteContent,
 } from "@/lib/study-pages"
+import { useDataStatus } from "@/lib/db/sync"
+import { DataStatusView } from "@/components/data-status-notice"
 import type { ReviewResult } from "@/components/study-page/study-note-review"
 import { resolvePageLayout } from "@/lib/templates"
 import { nearestSubject, nodePath, setPageStudyEnabled, updatePage, useWorkspace } from "@/lib/workspace"
@@ -30,12 +33,12 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
   const today = useTodayISO()
   const router = useRouter()
   const { prefill } = useStudySession()
-  const [saved, setSaved] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
   const attachRef = useRef<AttachmentHandle>(null)
   const page = pages.find((p) => p.id === pageId)
+  const dataStatus = useDataStatus()
 
-  if (!page) return <MissingPage />
+  if (!page) return dataStatus.phase === "ready" ? <MissingPage /> : <DataStatusView status={dataStatus} />
 
   // Every page type shares one column:
   // Study on:  [속성] → [본문 템플릿 or 복습 모드] → [학습 기록] → [AI 학습 도구]
@@ -47,11 +50,6 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
   const path = nodePath({ groups, pages }, page.parentId)
   const subject = nearestSubject({ groups, pages }, page.parentId)
   const stats = computePageStats(page, today)
-
-  const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1500)
-  }
 
   const handleAddRecord = (record: PageStudyRecord) => {
     // A new record reflects the latest study session, so it takes over from manually picked values.
@@ -88,7 +86,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
     if (newConfusions.length > 0) changeNote({ ...note, confusions: [...note.confusions, ...newConfusions] })
     const now = Date.now()
     handleAddRecord({
-      id: `${page.id}-r-${now}`,
+      id: newRecordId(),
       pageId: page.id,
       date: today ?? todayISO(),
       createdAt: now,
@@ -181,13 +179,6 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
             <span className="truncate font-medium text-foreground">{page.title.trim() || "제목 없음"}</span>
           </nav>
           <div className="flex shrink-0 items-center gap-1">
-          <button
-            onClick={handleSave}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
-          >
-            {saved ? <Check className="size-4" /> : <Save className="size-4" />}
-            {saved ? "저장됨" : "저장"}
-          </button>
           <PageActionsMenu
             pageId={page.id}
             title={page.title.trim() || "제목 없음"}
@@ -271,7 +262,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
                 </p>
                 {page.studyRecords.length > 0 && (
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    {`보관 중인 ��습 기록 ${page.studyRecords.length}개가 있어요. 다시 추가하면 그대로 표시돼요.`}
+                    {`보관 중인 학습 기록 ${page.studyRecords.length}개가 있어요. 다시 추가하면 그대로 표시돼요.`}
                   </p>
                 )}
               </div>

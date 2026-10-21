@@ -18,10 +18,15 @@ export function ChecklistWidget({ items, onToggle }: ChecklistWidgetProps) {
           <ListTodo className="size-4 text-indigo-600" />
           오늘의 체크리스트
         </h2>
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">준비 중</span>
+      </div>
+      {/* 할 일은 아직 데이터가 없다(docs/DATA_MODEL.md 알려진 문제 2). 예시 목록이고 체크는 저장되지 않는다. */}
+      <p className="mb-2 flex items-center justify-between px-2 text-xs text-muted-foreground">
+        <span>예시 목록이에요. 체크는 저장되지 않아요.</span>
+        <span className="font-medium">
           {doneCount}/{items.length}
         </span>
-      </div>
+      </p>
 
       <ul className="space-y-1">
         {items.map((item) => (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { settleWrites } from "@/lib/db/queue"
 
 // 화면은 이 파일의 함수만 부른다. Supabase를 직접 부르지 않는다.
 // 브라우저에서만 쓴다(서버 컴포넌트에서 import하지 않는다).
@@ -65,6 +66,8 @@ export async function signUp(name: string, email: string, password: string): Pro
 
 export async function signOut(): Promise<AuthResult> {
   try {
+    // Finish pending saves while the session is still valid; lib/db/sync.ts clears the cache after sign-out.
+    await settleWrites()
     const { error } = await createClient().auth.signOut()
     return error ? { ok: false, message: toMessage(error) } : { ok: true }
   } catch {

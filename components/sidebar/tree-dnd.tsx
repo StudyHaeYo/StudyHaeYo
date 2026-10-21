@@ -96,7 +96,8 @@ export function dropIndicatorClass(indicator: DropPosition | null) {
   return ""
 }
 
-// Appears only while dragging; drops the node at the end of the top level.
+// Empty space under the tree while dragging. Dropping there moves the node to the end of the top level,
+// shown with the same line indicator as every other drop, so there is no separate "move to top level" box.
 export function RootDropZone() {
   const { dragId, over, setDragId, setOver } = useTreeDnd()
   if (!dragId) return null
@@ -104,23 +105,20 @@ export function RootDropZone() {
 
   return (
     <li
+      aria-hidden="true"
       onDragOver={(e) => {
         e.preventDefault()
         e.dataTransfer.dropEffect = "move"
-        if (!active) setOver({ id: null, position: "inside" })
+        if (!active) setOver({ id: null, position: "after" })
       }}
       onDragLeave={() => active && setOver(null)}
       onDrop={(e) => {
         e.preventDefault()
-        moveNode(dragId, null, "inside")
+        moveNode(dragId, null, "after")
         setDragId(null)
         setOver(null)
       }}
-      className={`mt-1 rounded-md border border-dashed px-3 py-2 text-center text-xs transition-colors ${
-        active ? "border-indigo-400 bg-indigo-50 text-indigo-700" : "border-border text-muted-foreground"
-      }`}
-    >
-      최상위로 이동
-    </li>
+      className={`relative min-h-10 flex-1 ${active ? dropIndicatorClass("before") : ""}`}
+    />
   )
 }

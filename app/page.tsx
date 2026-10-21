@@ -13,6 +13,7 @@ import { WeeklyStats } from "@/components/learning-os/weekly-stats"
 import { checklist as initialChecklist } from "@/lib/dummy-data"
 import type { ChecklistItem } from "@/lib/types"
 import { useTodayLabel } from "@/hooks/use-today"
+import { DataStatusNotice } from "@/components/data-status-notice"
 
 export default function DashboardPage() {
   const todayLabel = useTodayLabel()
@@ -34,6 +35,7 @@ export default function DashboardPage() {
       <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-10">
         <div className="mx-auto max-w-2xl">
           <TopBar date={todayLabel} />
+          <DataStatusNotice />
           <SessionTimerCard />
 
           <section aria-label="오늘의 학습" className="mb-8 flex flex-col gap-4">

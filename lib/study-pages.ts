@@ -154,8 +154,17 @@ export function addDays(iso: string, days: number) {
   return toISODate(date)
 }
 
+// Same date: newer createdAt first. Record ids are random uuids, so they only break exact ties.
 export function sortRecordsNewestFirst(records: PageStudyRecord[]) {
-  return [...records].sort((a, b) => (a.date === b.date ? b.id.localeCompare(a.id) : b.date.localeCompare(a.date)))
+  return [...records].sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) || (b.createdAt ?? 0) - (a.createdAt ?? 0) || b.id.localeCompare(a.id),
+  )
+}
+
+// Study record ids are uuids (study_records.id).
+export function newRecordId() {
+  return crypto.randomUUID()
 }
 
 // `today` is null during SSR/hydration (see useTodayISO); the review check waits for the browser date.
@@ -204,8 +213,35 @@ export function formatDuration(minutes: number) {
   return m === 0 ? `${h}시간` : `${h}시간 ${m}분`
 }
 
+// One date style across the app: "9월 28일". Lists that track a deadline add a relative label (dueLabel).
 export function formatDate(iso: string) {
-  return iso.replaceAll("-", ".")
+  const [, m, d] = iso.split("-").map(Number)
+  return `${m}월 ${d}일`
+}
+
+// Whole days from `fromISO` to `toISO` (local date strings, no time zone).
+export function daysBetween(fromISO: string, toISO: string) {
+  const [fy, fm, fd] = fromISO.split("-").map(Number)
+  const [ty, tm, td] = toISO.split("-").map(Number)
+  return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86_400_000)
+}
+
+export type DueTone = "overdue" | "today" | "soon" | "later"
+
+// How a review date reads next to today: "3일 지남", "오늘", "내일", "5일 후".
+export function dueLabel(dueISO: string, today: string): { label: string; tone: DueTone } {
+  const diff = daysBetween(today, dueISO)
+  if (diff < 0) return { label: `${-diff}일 지남`, tone: "overdue" }
+  if (diff === 0) return { label: "오늘", tone: "today" }
+  if (diff === 1) return { label: "내일", tone: "soon" }
+  return { label: `${diff}일 후`, tone: "later" }
+}
+
+export const dueToneClass: Record<DueTone, string> = {
+  overdue: "text-red-600",
+  today: "text-amber-600",
+  soon: "text-indigo-600",
+  later: "text-muted-foreground",
 }
 
 let blockSeq = 0
@@ -263,8 +299,8 @@ export const studyPages: StudyPage[] = [
       ],
     ),
     studyRecords: [
-      { id: "ds1-r1", pageId: "ds-1", date: "2026-09-25", durationMinutes: 40, understanding: 2, studyContent: "강의 영상으로 해시 함수와 해시 테이블의 기본 구조를 공부함", difficulties: "해시 함수가 인덱스를 ���드는 과정", nextSteps: "체이닝 직접 구현해보기", tags: ["해시"] },
-      { id: "ds1-r2", pageId: "ds-1", date: "2026-09-27", durationMinutes: 50, understanding: 3, studyContent: "체이닝을 직접 구현하고 Open Addressing 개념을 읽음", difficulties: "Open Addressing의 탐색 과정", nextSteps: "탐사 방식별 차이 정리", tags: ["���시"] },
+      { id: "ds1-r1", pageId: "ds-1", date: "2026-09-25", durationMinutes: 40, understanding: 2, studyContent: "강의 영상으로 해시 함수와 해시 테이블의 기본 구조를 공부함", difficulties: "해시 함수가 인덱스를 만드는 과정", nextSteps: "체이닝 직접 구현해보기", tags: ["해시"] },
+      { id: "ds1-r2", pageId: "ds-1", date: "2026-09-27", durationMinutes: 50, understanding: 3, studyContent: "체이닝을 직접 구현하고 Open Addressing 개념을 읽음", difficulties: "Open Addressing의 탐색 과정", nextSteps: "탐사 방식별 차이 정리", tags: ["해시"] },
       { id: "ds1-r3", pageId: "ds-1", date: "2026-09-28", durationMinutes: 60, understanding: 4, studyContent: "선형·이차 탐사, 이중 해싱을 비교 정리하고 로드 팩터 예제를 풀어봄", difficulties: "Open Addressing의 충돌 처리 방식", nextSteps: "충돌 처리 방법 다시 복습하기", tags: ["해시", "충돌"] },
     ],
   },

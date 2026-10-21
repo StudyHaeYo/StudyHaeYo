@@ -6,6 +6,7 @@ import { useTodayISO } from "@/hooks/use-today"
 import { reviewCandidates, reviewHref } from "@/lib/study-candidates"
 import { UnresolvedBadge } from "@/components/study-page/unresolved-badge"
 import { useWorkspace } from "@/lib/workspace"
+import { dueToneClass } from "@/lib/study-pages"
 
 export function ReviewQueue({ title = "복습이 필요한 학습" }: { title?: string }) {
   const workspace = useWorkspace()
@@ -45,7 +46,7 @@ export function ReviewQueue({ title = "복습이 필요한 학습" }: { title?: 
               </span>
               <span className="flex shrink-0 flex-col items-end gap-1">
                 <span
-                  className={`text-xs font-medium ${item.due === "오늘" ? "text-amber-600" : "text-muted-foreground"}`}
+                  className={`text-xs font-medium ${dueToneClass[item.dueTone]}`}
                 >
                   {item.due}
                 </span>

@@ -7,12 +7,15 @@ import { SubjectSummaryPanel } from "@/components/subject/subject-summary"
 import { SubjectRecords } from "@/components/subject/subject-records"
 import { SubjectPlans } from "@/components/subject/subject-plans"
 import { nodePath, useWorkspace } from "@/lib/workspace"
+import { useDataStatus } from "@/lib/db/sync"
+import { DataStatusView } from "@/components/data-status-notice"
 
 export function SubjectView({ subjectId }: { subjectId: string }) {
   const workspace = useWorkspace()
+  const dataStatus = useDataStatus()
   const subject = workspace.groups.find((g) => g.id === subjectId && g.kind === "subject")
 
-  if (!subject) return <SubjectNotFound />
+  if (!subject) return dataStatus.phase === "ready" ? <SubjectNotFound /> : <DataStatusView status={dataStatus} />
 
   const ancestors = nodePath(workspace, subject.id)
     .slice(0, -1)
@@ -34,7 +37,7 @@ function SubjectNotFound() {
       <SearchX className="size-8 text-muted-foreground" aria-hidden="true" />
       <h1 className="text-xl font-semibold text-foreground">과목을 찾을 수 없어요</h1>
       <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
-        삭제되었거나, 새로고침으로 만들었던 과목이 사라졌을 수 있어요.
+        삭제되었거나 존재하지 않는 과목이에요.
       </p>
       <Link
         href="/"
