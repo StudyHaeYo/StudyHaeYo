@@ -23,7 +23,8 @@
 - v0의 Publish로 main에 바로 반영하지 않는다. PR의 Vercel 미리보기 빌드가 Ready인지 확인하고 merge한다.
 - PR의 merge 버튼은 이재윤이 누른다. Vercel 프로젝트가 이재윤의 Hobby 계정이라, 다른 사람이 만든 merge 커밋은 배포가 막힌다(D-19). 김준혁은 리뷰와 승인(Approve)을 남긴다.
 - 비밀값(API 키, Supabase `service_role` 키 등)은 코드와 저장소에 넣지 않는다. 로컬은 `.env.local`(git에 올라가지 않음), 배포는 Vercel 환경 변수를 쓴다.
-- 구현되지 않은 기능을 구현된 것처럼 쓰지 않는다. AI 요약/문제 생성은 현재 UI 목업이다.
+- 구현되지 않은 기능을 구현된 것처럼 쓰지 않는다.
+- AI는 서버 경로(`app/api/ai/chat/route.ts`)에서만 Claude API를 부른다. 키는 `ANTHROPIC_API_KEY`(서버 전용 Vercel 환경 변수)이고 `NEXT_PUBLIC_`을 붙이지 않는다. 화면은 `lib/ai.ts` 함수만 부른다.
 - 문서에는 코드로 알 수 없는 것(이유, 합의, 규칙, 폐기한 방향)만 쓴다. 파일 목록이나 필드 나열을 복사해 두지 않는다.
 
 ## 역할
