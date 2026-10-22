@@ -45,6 +45,19 @@ const placeholders: Record<BlockType, string> = {
 
 const emptyParagraph = (): TextBlock => ({ id: newBlockId(), type: "p", text: "" })
 
+const markdownPrefix: Record<BlockType, string> = { h1: "# ", h2: "## ", h3: "### ", li: "- ", p: "", code: "" }
+
+// Plain text of a block for copying a multi-block selection.
+function blockText(block: Block) {
+  if (isTextBlock(block)) return block.type === "code" ? "```\n" + block.text + "\n```" : markdownPrefix[block.type] + block.text
+  return isDrawingBlock(block) ? "[그림]" : `[첨부] ${block.name}`
+}
+
+function blockIndexAt(target: EventTarget | null) {
+  const el = (target as HTMLElement | null)?.closest?.("[data-block-index]") as HTMLElement | null
+  return el ? Number(el.dataset.blockIndex) : null
+}
+
 // Inserts attachments or drawings after `afterId` (or at the end). An empty text block at that spot is
 // replaced, and a text block is kept after the inserted blocks so typing can continue below them.
 function insertBlocks(blocks: Block[], inserted: Block[], afterId: string | null): Block[] {
@@ -90,6 +103,13 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
   const [dragging, setDragging] = useState(false)
   // A drawing added from the menu opens straight into edit mode.
   const [autoEditId, setAutoEditId] = useState<string | null>(null)
+  // Block selection: dragging from one block into another selects whole blocks (each line is its own textarea,
+  // so the browser can't select text across them). Copy, cut, Backspace/Delete and Esc act on the selection.
+  const [selection, setSelection] = useState<{ anchor: number; focus: number } | null>(null)
+  const dragFrom = useRef<number | null>(null)
+  const selStart = selection ? Math.min(selection.anchor, selection.focus) : -1
+  const selEnd = selection ? Math.max(selection.anchor, selection.focus) : -1
+  const isSelected = (index: number) => index >= selStart && index <= selEnd
   const first = blocks[0]
   const isSoleEmptyBlock = blocks.length === 1 && isTextBlock(first) && first.text === ""
 
@@ -126,6 +146,59 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
     document.addEventListener("focusin", handleFocusIn)
     return () => document.removeEventListener("focusin", handleFocusIn)
   }, [allowAttachments])
+
+  useEffect(() => {
+    const endDrag = () => {
+      dragFrom.current = null
+    }
+    document.addEventListener("mouseup", endDrag)
+    return () => document.removeEventListener("mouseup", endDrag)
+  }, [])
+
+  useEffect(() => {
+    if (!selection) return
+    const { blocks: current } = latest.current
+    const lo = Math.min(selection.anchor, selection.focus)
+    const hi = Math.max(selection.anchor, selection.focus)
+    const picked = current.slice(lo, hi + 1)
+    const removeSelected = () => {
+      const next = [...current.slice(0, lo), ...current.slice(hi + 1)]
+      const kept = next.some(isTextBlock) ? next : [...next, emptyParagraph()]
+      latest.current.onChange(kept)
+      setSelection(null)
+      const target = kept.slice(Math.max(0, lo - 1)).find(isTextBlock) ?? kept.find(isTextBlock)
+      if (target && isTextBlock(target)) setPendingFocus({ id: target.id, caret: target.text.length })
+    }
+    const writeClipboard = (e: ClipboardEvent) => {
+      e.preventDefault()
+      e.clipboardData?.setData("text/plain", picked.map(blockText).join("\n"))
+    }
+    const onCopy = (e: ClipboardEvent) => writeClipboard(e)
+    const onCut = (e: ClipboardEvent) => {
+      writeClipboard(e)
+      removeSelected()
+    }
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") setSelection(null)
+      else if (e.key === "Backspace" || e.key === "Delete") {
+        e.preventDefault()
+        removeSelected()
+      } else if (!e.metaKey && !e.ctrlKey && !e.shiftKey) setSelection(null)
+    }
+    const onPointerDown = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setSelection(null)
+    }
+    document.addEventListener("copy", onCopy)
+    document.addEventListener("cut", onCut)
+    document.addEventListener("keydown", onKeyDown)
+    document.addEventListener("mousedown", onPointerDown)
+    return () => {
+      document.removeEventListener("copy", onCopy)
+      document.removeEventListener("cut", onCut)
+      document.removeEventListener("keydown", onKeyDown)
+      document.removeEventListener("mousedown", onPointerDown)
+    }
+  }, [selection])
 
   useEffect(() => {
     if (!pendingFocus) return
@@ -253,16 +326,34 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
     <div ref={containerRef} className="flex flex-col gap-2">
       <div
         {...dropHandlers}
-        className={`relative flex flex-col gap-1 rounded-lg transition-colors ${
+        onMouseDown={(e) => {
+          if (e.button !== 0) return
+          setSelection(null)
+          dragFrom.current = blockIndexAt(e.target)
+        }}
+        onMouseMove={(e) => {
+          if (e.buttons !== 1 || dragFrom.current === null) return
+          const index = blockIndexAt(e.target)
+          if (index === null) return
+          if (!selection && index === dragFrom.current) return
+          if (!selection) {
+            ;(document.activeElement as HTMLElement | null)?.blur()
+            window.getSelection()?.removeAllRanges()
+          }
+          e.preventDefault()
+          if (!selection || selection.focus !== index) setSelection({ anchor: dragFrom.current, focus: index })
+        }}
+        className={`relative flex flex-col gap-1 rounded-lg transition-colors ${selection ? "select-none" : ""} ${
           dragging ? "bg-indigo-50/60 ring-2 ring-indigo-300 ring-offset-4 ring-offset-background" : ""
         }`}
         aria-label="페이지 본문"
       >
         {blocks.map((block, index) => {
+          const selectedClass = isSelected(index) ? "rounded-md bg-indigo-100/70 ring-1 ring-indigo-200" : ""
           if (isDrawingBlock(block)) {
             return (
+              <div key={block.id} data-block-index={index} className={selectedClass}>
               <DrawingBlockView
-                key={block.id}
                 block={block}
                 autoEdit={autoEditId === block.id}
                 onChange={(next) => {
@@ -278,14 +369,19 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
                   if (target) setPendingFocus({ id: target.id, caret: step === -1 ? target.text.length : 0 })
                 }}
               />
+              </div>
             )
           }
           if (!isTextBlock(block)) {
-            return <AttachmentBlockView key={block.id} block={block} onRemove={() => removeBlock(block.id)} />
+            return (
+              <div key={block.id} data-block-index={index} className={selectedClass}>
+                <AttachmentBlockView block={block} onRemove={() => removeBlock(block.id)} />
+              </div>
+            )
           }
           const hint = hintFor(index)
           return (
-            <div key={block.id} className="flex items-start gap-2">
+            <div key={block.id} data-block-index={index} className={`flex items-start gap-2 ${selectedClass}`}>
               {block.type === "li" && (
                 <span aria-hidden="true" className="select-none pt-0.5 text-base leading-relaxed text-muted-foreground">
                   •
@@ -317,7 +413,12 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
                     : undefined
                 }
                 placeholder={
-                  hint ?? (isSoleEmptyBlock ? "자유롭게 학습 내용을 작성해보세요. # 제목, - 목록, ``` 코드" : placeholders[block.type])
+                  hint ??
+                  (isSoleEmptyBlock
+                    ? "자유롭게 학습 내용을 작성해보세요. # 제목, - 목록, ``` 코드"
+                    : block.type === "p"
+                      ? undefined
+                      : placeholders[block.type])
                 }
                 className={`w-full resize-none bg-transparent text-foreground outline-none [field-sizing:content] ${
                   hint || isSoleEmptyBlock
