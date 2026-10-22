@@ -1,4 +1,5 @@
 import { SessionIndicator } from "@/components/study-session/session-timer"
+import { TodaySummary } from "@/components/learning-os/today-summary"
 
 interface TopBarProps {
   date: string
@@ -12,6 +13,7 @@ export function TopBar({ date }: TopBarProps) {
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
           오늘의 학습 현황
         </h1>
+        <TodaySummary />
       </div>
       <SessionIndicator />
     </header>

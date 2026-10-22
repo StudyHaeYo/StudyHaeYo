@@ -91,6 +91,10 @@ export interface WeeklyStats {
   subjects: { subject: string; minutes: number }[]
   totalMinutes: number
   goalMinutes: number
+  // Monday to Sunday of this week; days after today are `future`.
+  days: { date: string; minutes: number; isToday: boolean; future: boolean }[]
+  // Minutes per day (today included) still needed to reach the goal; 0 once it is reached.
+  perDayToGoal: number
 }
 
 // Monday through today, by record `date`.
@@ -104,11 +108,31 @@ export function weeklyStats(workspace: WorkspaceState, today: string): WeeklySta
   const subjects = [...bySubject.entries()]
     .map(([subject, minutes]) => ({ subject, minutes }))
     .sort((a, b) => b.minutes - a.minutes)
+  const totalMinutes = subjects.reduce((sum, s) => sum + s.minutes, 0)
+  const byDay = new Map<string, number>()
+  for (const { record } of allRecordEntries(workspace)) {
+    if (record.date < from || record.date > today) continue
+    byDay.set(record.date, (byDay.get(record.date) ?? 0) + record.durationMinutes)
+  }
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(from, i)
+    return { date, minutes: byDay.get(date) ?? 0, isToday: date === today, future: date > today }
+  })
+  const todayIndex = days.findIndex((d) => d.isToday)
+  const daysLeft = todayIndex === -1 ? 1 : 7 - todayIndex // today included
+  const remaining = Math.max(0, WEEKLY_GOAL_MINUTES - totalMinutes)
   return {
     subjects,
-    totalMinutes: subjects.reduce((sum, s) => sum + s.minutes, 0),
+    totalMinutes,
     goalMinutes: WEEKLY_GOAL_MINUTES,
+    days,
+    perDayToGoal: remaining === 0 ? 0 : Math.ceil(remaining / Math.max(1, daysLeft)),
   }
+}
+
+// Minutes recorded today across all pages.
+export function todayMinutes(workspace: WorkspaceState, today: string) {
+  return workspace.pages.flatMap((p) => p.studyRecords).filter((r) => r.date === today).reduce((sum, r) => sum + r.durationMinutes, 0)
 }
 
 export interface WeakArea {

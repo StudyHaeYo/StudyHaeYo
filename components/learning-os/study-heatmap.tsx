@@ -19,6 +19,15 @@ function shade(day: StudyDay) {
   return "bg-indigo-700"
 }
 
+// The next small goal for the streak.
+function streakMessage({ current, best, studiedToday }: { current: number; best: number; studiedToday: boolean }) {
+  if (!studiedToday) {
+    if (current === 0) return "오늘 학습 기록을 남기면 연속 학습이 시작돼요."
+    return current + 1 > best ? `오늘 기록을 남기면 ${current + 1}일 연속, 신기록이에요!` : `오늘 기록을 남기면 ${current + 1}일 연속이에요.`
+  }
+  return current >= best ? `내일도 공부하면 ${current + 1}일 연속, 신기록이에요!` : `내일도 공부하면 ${current + 1}일 연속이에요.`
+}
+
 // 학습 잔디: the last 12 weeks of study time, plus the current and best streak of study days.
 export function StudyHeatmap() {
   const workspace = useWorkspace()
@@ -76,9 +85,7 @@ export function StudyHeatmap() {
         </div>
       )}
 
-      {streak && !streak.studiedToday && streak.current > 0 && (
-        <p className="mt-3 text-xs text-orange-600">오늘 기록을 남기면 {streak.current + 1}일 연속이에요.</p>
-      )}
+      {streak && <p className="mt-3 text-xs text-orange-600">{streakMessage(streak)}</p>}
       <div className="mt-3 flex items-center justify-end gap-1 text-[10px] text-muted-foreground" aria-hidden="true">
         적게
         {["bg-muted", "bg-indigo-200", "bg-indigo-300", "bg-indigo-500", "bg-indigo-700"].map((c) => (

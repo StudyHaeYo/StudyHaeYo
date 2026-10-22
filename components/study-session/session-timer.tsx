@@ -4,6 +4,10 @@ import Link from "next/link"
 import { Play, Square, Timer } from "lucide-react"
 import { endSession, formatElapsed, startSession, useStudySession } from "@/lib/study-session"
 import { useNowEverySecond } from "@/hooks/use-session-clock"
+import { useTodayISO } from "@/hooks/use-today"
+import { formatDuration } from "@/lib/study-pages"
+import { todayMinutes } from "@/lib/study-stats"
+import { useWorkspace } from "@/lib/workspace"
 
 function useElapsed() {
   const { startedAt } = useStudySession()
@@ -40,7 +44,7 @@ export function SessionTimerCard() {
             <>
               <p className="text-sm font-medium text-foreground">학습 세션</p>
               <p className="text-xs leading-relaxed text-muted-foreground text-pretty">
-                학습 노트에 머문 시간이 페이지별로 자동 기록돼요
+                <TodayStudied />학습 노트에 머문 시간이 페이지별로 자동 기록돼요
               </p>
             </>
           )}
@@ -66,6 +70,19 @@ export function SessionTimerCard() {
         </button>
       )}
     </section>
+  )
+}
+
+// "오늘 1시간 20분 공부 · " prefix from today's study records (nothing before the first record).
+function TodayStudied() {
+  const workspace = useWorkspace()
+  const today = useTodayISO()
+  const minutes = today ? todayMinutes(workspace, today) : 0
+  if (minutes === 0) return null
+  return (
+    <>
+      오늘 <span className="font-medium text-foreground">{formatDuration(minutes)}</span> 공부 ·{" "}
+    </>
   )
 }
 
