@@ -149,7 +149,14 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
           prefill={pagePrefill}
           onPrefillDone={clearRecordPrefill}
         />
-        <AiToolsSection />
+        <AiToolsSection
+          page={page}
+          onInsert={(blocks) =>
+            updatePage(page.id, (p) =>
+              p.note ? { ...p, note: { ...p.note, learned: [...p.note.learned, ...blocks] } } : { ...p, blocks: [...p.blocks, ...blocks] },
+            )
+          }
+        />
       </div>
     </>
   )
