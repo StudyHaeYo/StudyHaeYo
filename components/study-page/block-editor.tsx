@@ -10,6 +10,21 @@ import {
   type KeyboardEvent,
   type Ref,
 } from "react"
+import {
+  ArrowDown,
+  ArrowUp,
+  Code,
+  Copy,
+  GripVertical,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  Paperclip,
+  PenLine,
+  Pilcrow,
+  Trash2,
+} from "lucide-react"
 import { isDrawingBlock, isTextBlock, newBlockId, type Block, type BlockType, type TextBlock } from "@/lib/study-pages"
 import { createAttachmentBlocks } from "@/lib/attachments"
 import { newDrawingBlock } from "@/lib/drawing"
@@ -43,9 +58,58 @@ const placeholders: Record<BlockType, string> = {
   code: "코드를 입력하세요",
 }
 
+// Lines the grip up with the first text line (headings have top padding).
+const handleTop: Record<BlockType, string> = {
+  h1: "top-[19px]",
+  h2: "top-[14px]",
+  h3: "top-[6px]",
+  p: "top-0.5",
+  li: "top-0.5",
+  code: "top-2.5",
+}
+
 const emptyParagraph = (): TextBlock => ({ id: newBlockId(), type: "p", text: "" })
 
 const markdownPrefix: Record<BlockType, string> = { h1: "# ", h2: "## ", h3: "### ", li: "- ", p: "", code: "" }
+
+// "/" menu: typed at the start of a line, filtered by what follows the slash.
+type SlashItem = { label: string; keywords: string; icon: typeof Pilcrow } & (
+  | { type: BlockType }
+  | { action: "file" | "drawing" }
+)
+
+const slashItems: SlashItem[] = [
+  { label: "본문", keywords: "본문 텍스트 글 text paragraph", icon: Pilcrow, type: "p" },
+  { label: "제목 1", keywords: "제목1 큰제목 heading h1", icon: Heading1, type: "h1" },
+  { label: "제목 2", keywords: "제목2 중간제목 heading h2", icon: Heading2, type: "h2" },
+  { label: "제목 3", keywords: "제목3 작은제목 heading h3", icon: Heading3, type: "h3" },
+  { label: "목록", keywords: "목록 리스트 글머리 list bullet li", icon: List, type: "li" },
+  { label: "코드", keywords: "코드 code", icon: Code, type: "code" },
+  { label: "그림", keywords: "그림 필기 손글씨 드로잉 drawing draw pen", icon: PenLine, action: "drawing" },
+  { label: "파일 첨부", keywords: "파일 첨부 이미지 사진 pdf file image attach", icon: Paperclip, action: "file" },
+]
+
+function matchSlash(query: string, allowAttachments: boolean) {
+  const q = query.trim().toLowerCase().replace(/\s+/g, "")
+  return slashItems.filter(
+    (item) =>
+      (allowAttachments || !("action" in item)) &&
+      (q === "" || item.label.replace(/\s+/g, "").includes(q) || item.keywords.toLowerCase().includes(q)),
+  )
+}
+
+// Moves blocks[from] so it lands before/after blocks[to].
+function moveBlock(blocks: Block[], from: number, to: number, side: "before" | "after"): Block[] {
+  let at = side === "before" ? to : to + 1
+  if (from < at) at -= 1
+  if (at === from) return blocks
+  const next = [...blocks]
+  const [moved] = next.splice(from, 1)
+  next.splice(at, 0, moved)
+  return next
+}
+
+const BLOCK_DRAG_TYPE = "application/x-studyhaeyo-block"
 
 // Plain text of a block for copying a multi-block selection.
 function blockText(block: Block) {
@@ -107,6 +171,12 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
   // so the browser can't select text across them). Copy, cut, Backspace/Delete and Esc act on the selection.
   const [selection, setSelection] = useState<{ anchor: number; focus: number } | null>(null)
   const dragFrom = useRef<number | null>(null)
+  // "/" menu for one block; `active` is the highlighted row.
+  const [slash, setSlash] = useState<{ blockId: string; active: number } | null>(null)
+  // Reordering: the block being dragged by its handle, and where it would land.
+  const [moving, setMoving] = useState<number | null>(null)
+  const [dropAt, setDropAt] = useState<{ index: number; side: "before" | "after" } | null>(null)
+  const [handleMenu, setHandleMenu] = useState<string | null>(null)
   const selStart = selection ? Math.min(selection.anchor, selection.focus) : -1
   const selEnd = selection ? Math.max(selection.anchor, selection.focus) : -1
   const isSelected = (index: number) => index >= selStart && index <= selEnd
@@ -201,6 +271,22 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
   }, [selection])
 
   useEffect(() => {
+    if (!handleMenu) return
+    const close = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement | null)?.closest?.("[data-block-menu]")) setHandleMenu(null)
+    }
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") setHandleMenu(null)
+    }
+    document.addEventListener("mousedown", close)
+    document.addEventListener("keydown", onKey)
+    return () => {
+      document.removeEventListener("mousedown", close)
+      document.removeEventListener("keydown", onKey)
+    }
+  }, [handleMenu])
+
+  useEffect(() => {
     if (!pendingFocus) return
     const el = refs.current.get(pendingFocus.id)
     if (el) {
@@ -232,6 +318,11 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
   }
 
   const updateText = (block: TextBlock, raw: string) => {
+    if (block.type !== "code") {
+      if (raw.startsWith("/") && !block.text.startsWith("/")) setSlash({ blockId: block.id, active: 0 })
+      else if (!raw.startsWith("/") && slash?.blockId === block.id) setSlash(null)
+      else if (slash?.blockId === block.id) setSlash({ blockId: block.id, active: 0 })
+    }
     let type = block.type
     let text = raw
     if (block.type === "p") {
@@ -244,10 +335,69 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
     onChange(blocks.map((b) => (b.id === block.id ? { ...block, type, text } : b)))
   }
 
+  const applySlash = (block: TextBlock, item: SlashItem) => {
+    setSlash(null)
+    const cleared = blocks.map((b) => (b.id === block.id ? { ...block, text: "" } : b))
+    if ("type" in item) {
+      onChange(cleared.map((b) => (b.id === block.id ? { ...block, type: item.type, text: "" } : b)))
+      setPendingFocus({ id: block.id, caret: 0 })
+    } else if (item.action === "drawing") {
+      const drawing = newDrawingBlock()
+      onChange(insertBlocks(cleared, [drawing], block.id))
+      lastFocusedId.current = drawing.id
+      setAutoEditId(drawing.id)
+    } else {
+      onChange(cleared)
+      lastFocusedId.current = block.id
+      fileInputRef.current?.click()
+    }
+  }
+
+  const reorder = (from: number, to: number, side: "before" | "after") => {
+    const next = moveBlock(blocks, from, to, side)
+    if (next !== blocks) onChange(next)
+  }
+
+  const duplicateBlock = (index: number) => {
+    const block = blocks[index]
+    const copy = { ...block, id: newBlockId() } as Block
+    onChange([...blocks.slice(0, index + 1), copy, ...blocks.slice(index + 1)])
+  }
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>, block: TextBlock, index: number) => {
     if (e.nativeEvent.isComposing || e.keyCode === 229) return
     const el = e.currentTarget
     const caretAtStart = el.selectionStart === 0 && el.selectionEnd === 0
+
+    if (slash?.blockId === block.id) {
+      const items = matchSlash(block.text.slice(1), allowAttachments)
+      if (e.key === "Escape") {
+        e.preventDefault()
+        setSlash(null)
+        return
+      }
+      if (items.length > 0 && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+        e.preventDefault()
+        const step = e.key === "ArrowDown" ? 1 : -1
+        setSlash({ blockId: block.id, active: (slash.active + step + items.length) % items.length })
+        return
+      }
+      if (items.length > 0 && e.key === "Enter") {
+        e.preventDefault()
+        applySlash(block, items[Math.min(slash.active, items.length - 1)])
+        return
+      }
+    }
+
+    // Alt+Shift+↑/↓ moves the line itself.
+    if (e.altKey && e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      e.preventDefault()
+      const to = e.key === "ArrowUp" ? index - 1 : index + 1
+      if (to < 0 || to >= blocks.length) return
+      reorder(index, to, e.key === "ArrowUp" ? "before" : "after")
+      setPendingFocus({ id: block.id, caret: el.selectionStart })
+      return
+    }
 
     if (e.key === "Enter" && !e.shiftKey && block.type !== "code") {
       e.preventDefault()
@@ -349,10 +499,76 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
         aria-label="페이지 본문"
       >
         {blocks.map((block, index) => {
-          const selectedClass = isSelected(index) ? "rounded-md bg-indigo-100/70 ring-1 ring-indigo-200" : ""
+          const wrap = (content: React.ReactNode) => (
+            <div
+              key={block.id}
+              data-block-index={index}
+              className={`group/block relative ${isSelected(index) ? "rounded-md bg-indigo-100/70 ring-1 ring-indigo-200" : ""} ${
+                moving === index ? "opacity-40" : ""
+              }`}
+              onDragOver={(e) => {
+                if (moving === null || !e.dataTransfer.types.includes(BLOCK_DRAG_TYPE)) return
+                e.preventDefault()
+                e.dataTransfer.dropEffect = "move"
+                const rect = e.currentTarget.getBoundingClientRect()
+                const side = e.clientY < rect.top + rect.height / 2 ? "before" : "after"
+                if (dropAt?.index !== index || dropAt.side !== side) setDropAt({ index, side })
+              }}
+              onDrop={(e) => {
+                if (moving === null || !e.dataTransfer.types.includes(BLOCK_DRAG_TYPE)) return
+                e.preventDefault()
+                e.stopPropagation()
+                if (dropAt) reorder(moving, dropAt.index, dropAt.side)
+                setMoving(null)
+                setDropAt(null)
+              }}
+            >
+              {dropAt?.index === index && moving !== null && (
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute inset-x-0 z-10 h-0.5 rounded-full bg-indigo-500 ${
+                    dropAt.side === "before" ? "-top-[3px]" : "-bottom-[3px]"
+                  }`}
+                />
+              )}
+              <BlockHandle
+                top={isTextBlock(block) ? handleTop[block.type] : "top-1"}
+                index={index}
+                count={blocks.length}
+                open={handleMenu === block.id}
+                onToggle={() => setHandleMenu((v) => (v === block.id ? null : block.id))}
+                onDragStart={(e) => {
+                  setHandleMenu(null)
+                  setSelection(null)
+                  e.dataTransfer.setData(BLOCK_DRAG_TYPE, String(index))
+                  e.dataTransfer.effectAllowed = "move"
+                  const row = e.currentTarget.closest("[data-block-index]")
+                  if (row) e.dataTransfer.setDragImage(row, 0, 12)
+                  setMoving(index)
+                }}
+                onDragEnd={() => {
+                  setMoving(null)
+                  setDropAt(null)
+                }}
+                onMove={(step) => {
+                  setHandleMenu(null)
+                  reorder(index, index + step, step === -1 ? "before" : "after")
+                }}
+                onDuplicate={() => {
+                  setHandleMenu(null)
+                  duplicateBlock(index)
+                }}
+                onDelete={() => {
+                  setHandleMenu(null)
+                  removeBlock(block.id)
+                }}
+              />
+              {content}
+            </div>
+          )
+
           if (isDrawingBlock(block)) {
-            return (
-              <div key={block.id} data-block-index={index} className={selectedClass}>
+            return wrap(
               <DrawingBlockView
                 block={block}
                 autoEdit={autoEditId === block.id}
@@ -368,65 +584,102 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
                   const target = textNeighbor(index, step)
                   if (target) setPendingFocus({ id: target.id, caret: step === -1 ? target.text.length : 0 })
                 }}
-              />
-              </div>
+              />,
             )
           }
           if (!isTextBlock(block)) {
-            return (
-              <div key={block.id} data-block-index={index} className={selectedClass}>
-                <AttachmentBlockView block={block} onRemove={() => removeBlock(block.id)} />
-              </div>
-            )
+            return wrap(<AttachmentBlockView block={block} onRemove={() => removeBlock(block.id)} />)
           }
           const hint = hintFor(index)
-          return (
-            <div key={block.id} data-block-index={index} className={`flex items-start gap-2 ${selectedClass}`}>
-              {block.type === "li" && (
-                <span aria-hidden="true" className="select-none pt-0.5 text-base leading-relaxed text-muted-foreground">
-                  •
-                </span>
+          const slashOpen = slash?.blockId === block.id && block.text.startsWith("/")
+          const slashMatches = slashOpen ? matchSlash(block.text.slice(1), allowAttachments) : []
+          return wrap(
+            <>
+              <div className="flex items-start gap-2">
+                {block.type === "li" && (
+                  <span aria-hidden="true" className="select-none pt-0.5 text-base leading-relaxed text-muted-foreground">
+                    •
+                  </span>
+                )}
+                <textarea
+                  ref={(el) => {
+                    if (el) refs.current.set(block.id, el)
+                    else refs.current.delete(block.id)
+                  }}
+                  id={index === 0 ? "page-body" : undefined}
+                  aria-label={index === 0 ? "페이지 본문" : undefined}
+                  aria-expanded={slashMatches.length > 0 ? true : undefined}
+                  aria-controls={slashMatches.length > 0 ? `slash-${block.id}` : undefined}
+                  value={block.text}
+                  rows={1}
+                  spellCheck={false}
+                  onFocus={() => {
+                    lastFocusedId.current = block.id
+                  }}
+                  onBlur={() => {
+                    if (slash?.blockId === block.id) setSlash(null)
+                  }}
+                  onChange={(e) => updateText(block, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, block, index)}
+                  onPaste={
+                    allowAttachments
+                      ? (e) => {
+                          const files = Array.from(e.clipboardData.files)
+                          if (files.length === 0) return
+                          e.preventDefault()
+                          void attachFiles(files, block.id)
+                        }
+                      : undefined
+                  }
+                  placeholder={
+                    hint ??
+                    (isSoleEmptyBlock
+                      ? "자유롭게 학습 내용을 작성해보세요. / 를 누르면 제목, 목록, 그림 같은 메뉴가 나와요"
+                      : block.type === "p"
+                        ? undefined
+                        : placeholders[block.type])
+                  }
+                  className={`w-full resize-none bg-transparent text-foreground outline-none [field-sizing:content] ${
+                    hint || isSoleEmptyBlock
+                      ? "placeholder:text-muted-foreground/60"
+                      : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
+                  } ${blockStyles[block.type]}`}
+                />
+              </div>
+              {slashMatches.length > 0 && slash && (
+                <ul
+                  id={`slash-${block.id}`}
+                  role="listbox"
+                  aria-label="블록 메뉴"
+                  className="absolute left-0 top-full z-30 mt-1 max-h-72 w-56 overflow-y-auto rounded-xl border border-border bg-card p-1 shadow-lg"
+                >
+                  {slashMatches.map((item, i) => {
+                    const Icon = item.icon
+                    const active = i === Math.min(slash.active, slashMatches.length - 1)
+                    return (
+                      <li
+                        key={item.label}
+                        role="option"
+                        aria-selected={active}
+                        onMouseDown={(e) => {
+                          e.preventDefault()
+                          applySlash(block, item)
+                        }}
+                        onMouseEnter={() => setSlash({ blockId: block.id, active: i })}
+                        className={`flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm ${
+                          active ? "bg-indigo-50 text-indigo-700" : "text-foreground"
+                        }`}
+                      >
+                        <span className="flex size-7 items-center justify-center rounded-md border border-border bg-background">
+                          <Icon className="size-4" aria-hidden="true" />
+                        </span>
+                        {item.label}
+                      </li>
+                    )
+                  })}
+                </ul>
               )}
-              <textarea
-                ref={(el) => {
-                  if (el) refs.current.set(block.id, el)
-                  else refs.current.delete(block.id)
-                }}
-                id={index === 0 ? "page-body" : undefined}
-                aria-label={index === 0 ? "페이지 본문" : undefined}
-                value={block.text}
-                rows={1}
-                spellCheck={false}
-                onFocus={() => {
-                  lastFocusedId.current = block.id
-                }}
-                onChange={(e) => updateText(block, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, block, index)}
-                onPaste={
-                  allowAttachments
-                    ? (e) => {
-                        const files = Array.from(e.clipboardData.files)
-                        if (files.length === 0) return
-                        e.preventDefault()
-                        void attachFiles(files, block.id)
-                      }
-                    : undefined
-                }
-                placeholder={
-                  hint ??
-                  (isSoleEmptyBlock
-                    ? "자유롭게 학습 내용을 작성해보세요. # 제목, - 목록, ``` 코드"
-                    : block.type === "p"
-                      ? undefined
-                      : placeholders[block.type])
-                }
-                className={`w-full resize-none bg-transparent text-foreground outline-none [field-sizing:content] ${
-                  hint || isSoleEmptyBlock
-                    ? "placeholder:text-muted-foreground/60"
-                    : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
-                } ${blockStyles[block.type]}`}
-              />
-            </div>
+            </>,
           )
         })}
         {dragging && (
@@ -450,6 +703,81 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
             void attachFiles(files, lastFocusedId.current)
           }}
         />
+      )}
+    </div>
+  )
+}
+
+// Grip on the left of each block: drag to reorder, or click for move/duplicate/delete (works on touch too).
+function BlockHandle({
+  top,
+  index,
+  count,
+  open,
+  onToggle,
+  onDragStart,
+  onDragEnd,
+  onMove,
+  onDuplicate,
+  onDelete,
+}: {
+  top: string
+  index: number
+  count: number
+  open: boolean
+  onToggle: () => void
+  onDragStart: (e: DragEvent<HTMLButtonElement>) => void
+  onDragEnd: () => void
+  onMove: (step: -1 | 1) => void
+  onDuplicate: () => void
+  onDelete: () => void
+}) {
+  const item = "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm disabled:opacity-40"
+  return (
+    <div data-block-menu className={`absolute -left-5 z-20 ${top}`}>
+      <button
+        type="button"
+        draggable
+        onMouseDown={(e) => e.stopPropagation()}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onClick={onToggle}
+        aria-label="블록 옮기기 또는 메뉴"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="끌어서 옮기기 · 눌러서 메뉴"
+        className={`flex h-6 w-4 cursor-grab items-center justify-center rounded text-muted-foreground transition-opacity hover:bg-accent hover:text-foreground active:cursor-grabbing focus-visible:opacity-100 ${
+          open ? "opacity-100" : "opacity-0 group-hover/block:opacity-100 [@media(hover:none)]:opacity-30"
+        }`}
+      >
+        <GripVertical className="size-3.5" />
+      </button>
+      {open && (
+        <div role="menu" className="absolute left-0 top-7 w-40 rounded-xl border border-border bg-card p-1 shadow-lg">
+          <button role="menuitem" type="button" disabled={index === 0} onClick={() => onMove(-1)} className={`${item} hover:bg-accent`}>
+            <ArrowUp className="size-4 text-muted-foreground" />
+            위로 옮기기
+          </button>
+          <button
+            role="menuitem"
+            type="button"
+            disabled={index === count - 1}
+            onClick={() => onMove(1)}
+            className={`${item} hover:bg-accent`}
+          >
+            <ArrowDown className="size-4 text-muted-foreground" />
+            아래로 옮기기
+          </button>
+          <button role="menuitem" type="button" onClick={onDuplicate} className={`${item} hover:bg-accent`}>
+            <Copy className="size-4 text-muted-foreground" />
+            복제
+          </button>
+          <div role="separator" className="my-1 border-t border-border" />
+          <button role="menuitem" type="button" onClick={onDelete} className={`${item} text-destructive hover:bg-destructive/10`}>
+            <Trash2 className="size-4" />
+            삭제
+          </button>
+        </div>
       )}
     </div>
   )
