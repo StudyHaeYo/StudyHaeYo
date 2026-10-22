@@ -1,112 +1,81 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
-import { CalendarRange, Flag, Plus, X } from "lucide-react"
-import { addDays, formatDate, todayISO } from "@/lib/study-pages"
-import {
-  addPlan,
-  decodeTarget,
-  encodeTarget,
-  removePlan,
-  usePlans,
-  type PlanTarget,
-} from "@/lib/plans"
+import { Plus } from "lucide-react"
+import { useTodayISO } from "@/hooks/use-today"
+import { addDays, todayISO } from "@/lib/study-pages"
+import { addPlan, decodeTarget, encodeTarget, removePlan, usePlans } from "@/lib/plans"
+import { groupPlans, type ActivePlan } from "@/lib/study-stats"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
-
-function describeTarget(target: PlanTarget, { groups, pages }: WorkspaceState) {
-  if (target.scope === "all") return { label: "전체 학습", href: null }
-  if (target.scope === "subject") {
-    const name = groups.find((g) => g.id === target.subjectId)?.name ?? "삭제된 과목"
-    return { label: `과목 · ${name}`, href: `/subject/${target.subjectId}` }
-  }
-  const page = pages.find((p) => p.id === target.pageId)
-  return {
-    label: `페이지 · ${page ? page.title || "제목 없음" : "삭제된 페이지"}`,
-    href: page ? `/record/${page.id}` : null,
-  }
-}
+import { PlanCard } from "@/components/plan/plan-card"
 
 export function LearningPlans() {
   const plans = usePlans()
   const workspace = useWorkspace()
+  const today = useTodayISO()
   const [formOpen, setFormOpen] = useState(false)
+  const groups = today ? groupPlans(workspace, plans, today) : null
 
   return (
-    <section aria-labelledby="plans-title" className="mb-8 flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-4">
-        <h2 id="plans-title" className="text-[15px] font-semibold text-foreground">
-          진행 중인 계획
-          <span className="ml-2 font-normal text-muted-foreground">{plans.length}</span>
-        </h2>
-        {!formOpen && (
-          <button
-            type="button"
-            onClick={() => setFormOpen(true)}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-          >
-            <Plus className="size-4" />
-            계획 만들기
-          </button>
+    <section aria-labelledby="plans-title" className="mb-8 flex flex-col gap-8">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-4">
+          <h2 id="plans-title" className="text-[15px] font-semibold text-foreground">
+            진행 중인 계획
+            {groups && <span className="ml-2 font-normal text-muted-foreground">{groups.active.length}</span>}
+          </h2>
+          {!formOpen && (
+            <button
+              type="button"
+              onClick={() => setFormOpen(true)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            >
+              <Plus className="size-4" />
+              계획 만들기
+            </button>
+          )}
+        </div>
+
+        {formOpen && <PlanForm workspace={workspace} onClose={() => setFormOpen(false)} />}
+
+        {groups === null ? (
+          <div className="h-40 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
+        ) : groups.active.length > 0 ? (
+          <PlanGrid items={groups.active} />
+        ) : (
+          !formOpen && (
+            <p className="rounded-xl border border-dashed border-border bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
+              {plans.length === 0 ? "아직 만든 계획이 없어요. 기간과 목표를 정해 두면 홈에서 진행 상황을 보여 줘요." : "지금 진행 중인 계획이 없어요."}
+            </p>
+          )
         )}
       </div>
 
-      {formOpen && <PlanForm workspace={workspace} onClose={() => setFormOpen(false)} />}
-
-      {plans.length > 0 ? (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan) => {
-            const target = describeTarget(plan.target, workspace)
-            return (
-              <li
-                key={plan.id}
-                className="group relative flex flex-col gap-2.5 rounded-xl border border-border bg-card p-4"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-sm font-semibold text-card-foreground">{plan.title}</h3>
-                  <button
-                    type="button"
-                    onClick={() => removePlan(plan.id)}
-                    aria-label={`${plan.title} 계획 삭제`}
-                    className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                </div>
-                {target.href ? (
-                  <Link
-                    href={target.href}
-                    className="w-fit rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
-                  >
-                    {target.label}
-                  </Link>
-                ) : (
-                  <span className="w-fit rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                    {target.label}
-                  </span>
-                )}
-                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <CalendarRange className="size-3.5" />
-                  {formatDate(plan.startDate)} ~ {formatDate(plan.endDate)}
-                </p>
-                {plan.goal && (
-                  <p className="flex items-start gap-1.5 text-sm leading-relaxed text-foreground">
-                    <Flag className="mt-1 size-3.5 shrink-0 text-indigo-600" />
-                    {plan.goal}
-                  </p>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      ) : (
-        !formOpen && (
-          <p className="rounded-xl border border-dashed border-border bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
-            아직 만든 계획이 없어요.
-          </p>
-        )
-      )}
+      {groups && groups.upcoming.length > 0 && <PlanGroup title="예정된 계획" items={groups.upcoming} />}
+      {groups && groups.ended.length > 0 && <PlanGroup title="끝난 계획" items={groups.ended} />}
     </section>
+  )
+}
+
+function PlanGroup({ title, items }: { title: string; items: ActivePlan[] }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 className="text-[15px] font-semibold text-foreground">
+        {title}
+        <span className="ml-2 font-normal text-muted-foreground">{items.length}</span>
+      </h2>
+      <PlanGrid items={items} />
+    </div>
+  )
+}
+
+function PlanGrid({ items }: { items: ActivePlan[] }) {
+  return (
+    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((item) => (
+        <PlanCard key={item.plan.id} item={item} onRemove={() => removePlan(item.plan.id)} />
+      ))}
+    </ul>
   )
 }
 

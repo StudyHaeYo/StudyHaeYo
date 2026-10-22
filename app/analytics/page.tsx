@@ -40,12 +40,14 @@ export default function AnalyticsPage() {
             </p>
           </header>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             {summaryCards.map(({ label, value, hint }) => (
-              <div key={label} className="rounded-xl border border-border bg-card p-5">
-                <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums text-foreground">{value}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+              <div key={label} className="min-w-0 rounded-xl border border-border bg-card p-3 sm:p-5">
+                <p className="text-xs text-muted-foreground sm:text-sm">{label}</p>
+                <p className="mt-1 text-lg font-semibold leading-tight tracking-tight tabular-nums text-foreground sm:mt-2 sm:text-3xl">
+                  {value}
+                </p>
+                <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{hint}</p>
               </div>
             ))}
           </div>

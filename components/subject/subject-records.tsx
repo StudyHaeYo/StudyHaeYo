@@ -32,6 +32,7 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
         <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
           {rows.map(({ page, stats }) => {
             const Icon = resolveTreeAppearance(page).icon
+            const due = stats.status === "복습 필요" ? "text-amber-700" : undefined
             return (
               <li key={page.id}>
                 <Link
@@ -43,10 +44,10 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
                     <span className="truncate font-medium text-foreground">{page.title || "제목 없음"}</span>
                   </span>
                   <dl className="grid grid-cols-4 gap-3 text-xs sm:w-96 sm:shrink-0">
-                    <Cell label="상태" value={stats.status} />
+                    <Cell label="상태" value={stats.status} tone={due} />
                     <Cell label="이해도" value={stats.understanding === null ? "—" : `${stats.understanding}/5`} />
                     <Cell label="마지막 학습" value={stats.lastStudiedAt ? formatDate(stats.lastStudiedAt) : "—"} />
-                    <Cell label="다음 복습" value={stats.nextReviewAt ? formatDate(stats.nextReviewAt) : "—"} />
+                    <Cell label="다음 복습" value={stats.nextReviewAt ? formatDate(stats.nextReviewAt) : "—"} tone={due} />
                   </dl>
                 </Link>
               </li>
@@ -69,11 +70,11 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
   )
 }
 
-function Cell({ label, value }: { label: string; value: string }) {
+function Cell({ label, value, tone = "text-foreground" }: { label: string; value: string; tone?: string }) {
   return (
     <div className="flex flex-col gap-0.5">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className="font-medium text-foreground">{value}</dd>
+      <dd className={`font-medium ${tone}`}>{value}</dd>
     </div>
   )
 }
