@@ -2,6 +2,7 @@
 
 import { Sidebar } from "@/components/sidebar"
 import { SubjectMastery } from "@/components/learning-os/subject-mastery"
+import { AnalyticsTrend } from "@/components/learning-os/analytics-trend"
 import { RecentActivity, UpcomingReviews, WeakAreas } from "@/components/learning-os/analytics-widgets"
 import { formatDuration } from "@/lib/study-pages"
 import { useWorkspace } from "@/lib/workspace"
@@ -48,6 +49,8 @@ export default function AnalyticsPage() {
               </div>
             ))}
           </div>
+
+          <AnalyticsTrend />
 
           <div className="grid items-start gap-4 lg:grid-cols-2">
             <SubjectMastery title="과목별 학습 상태" />

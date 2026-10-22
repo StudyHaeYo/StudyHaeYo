@@ -4,6 +4,7 @@ import {
   daysBetween,
   dueLabel,
   formatDate,
+  formatDuration,
   unresolvedConfusionCount,
   type DueTone,
   type PageStats,
@@ -311,4 +312,78 @@ export function studyStreak(workspace: WorkspaceState, today: string): StudyStre
     prev = day
   }
   return { current, best, studiedToday }
+}
+
+export interface WeekTotal {
+  start: string // Monday
+  minutes: number
+  isCurrent: boolean
+}
+
+// Study minutes per week for the last `weeks` weeks (Monday-first), the current week last.
+export function weeklyTrend(workspace: WorkspaceState, today: string, weeks = 8): WeekTotal[] {
+  const current = weekStart(today)
+  const totals = Array.from({ length: weeks }, (_, i) => ({
+    start: addDays(current, -7 * (weeks - 1 - i)),
+    minutes: 0,
+    isCurrent: i === weeks - 1,
+  }))
+  const first = totals[0].start
+  for (const record of workspace.pages.flatMap((p) => p.studyRecords)) {
+    if (record.date < first || record.date > today) continue
+    const index = Math.floor(daysBetween(first, record.date) / 7)
+    if (totals[index]) totals[index].minutes += record.durationMinutes
+  }
+  return totals
+}
+
+export type Insight = { tone: "up" | "down" | "info"; text: string }
+
+// A few plain-language readings of the records: pace against last week, understanding trend, weakest subject.
+export function studyInsights(workspace: WorkspaceState, today: string): Insight[] {
+  const records = workspace.pages.flatMap((p) => p.studyRecords).filter((r) => r.date <= today)
+  const sum = (from: string, to: string) =>
+    records.filter((r) => r.date >= from && r.date <= to).reduce((total, r) => total + r.durationMinutes, 0)
+  const insights: Insight[] = []
+
+  const thisWeek = weekStart(today)
+  const dayOfWeek = daysBetween(thisWeek, today)
+  const lastWeek = addDays(thisWeek, -7)
+  const now = sum(thisWeek, today)
+  const before = sum(lastWeek, addDays(lastWeek, dayOfWeek))
+  if (now > 0 || before > 0) {
+    const diff = now - before
+    insights.push(
+      diff === 0
+        ? { tone: "info", text: `이번 주는 지난주 같은 요일까지와 똑같이 ${formatDuration(now)} 공부했어요.` }
+        : diff > 0
+          ? { tone: "up", text: `지난주 같은 요일까지보다 ${formatDuration(diff)} 더 공부했어요.` }
+          : { tone: "down", text: `지난주 같은 요일까지보다 ${formatDuration(-diff)} 덜 공부했어요.` },
+    )
+  }
+
+  const average = (from: string, to: string) => {
+    const list = records.filter((r) => r.date >= from && r.date <= to)
+    return list.length > 0 ? list.reduce((total, r) => total + r.understanding, 0) / list.length : null
+  }
+  const recent = average(addDays(today, -13), today)
+  const earlier = average(addDays(today, -27), addDays(today, -14))
+  if (recent !== null && earlier !== null) {
+    const delta = Math.round((recent - earlier) * 10) / 10
+    insights.push(
+      delta === 0
+        ? { tone: "info", text: `최근 2주 평균 이해도는 ${recent.toFixed(1)}로 그 전 2주와 같아요.` }
+        : {
+            tone: delta > 0 ? "up" : "down",
+            text: `최근 2주 평균 이해도는 ${recent.toFixed(1)}로, 그 전 2주보다 ${delta > 0 ? "+" : ""}${delta.toFixed(1)}예요.`,
+          },
+    )
+  }
+
+  const mastery = subjectMastery(workspace)
+  if (mastery.length >= 2) {
+    const weakest = [...mastery].sort((a, b) => a.progress - b.progress)[0]
+    insights.push({ tone: "info", text: `${weakest.subject}의 이해도가 ${weakest.progress}%로 가장 낮아요. 이 과목 복습을 먼저 해 보세요.` })
+  }
+  return insights
 }
