@@ -102,7 +102,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
 
   const properties = (
     <PageProperties
-      subjectName={subject?.name ?? path.at(-1)?.name ?? "내 페이지"}
+      subjectName={subject?.name ?? null}
       stats={stats}
       recordCount={page.studyRecords.length}
       tags={page.tags}
@@ -142,6 +142,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
       <div className="flex flex-col gap-12">
         <StudyHistory
           pageId={page.id}
+          pageTitle={page.title}
           records={page.studyRecords}
           onAdd={handleAddRecord}
           onUpdate={handleUpdateRecord}

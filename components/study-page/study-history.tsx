@@ -1,13 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { History, Pencil, Plus, Trash2 } from "lucide-react"
-import { formatDate, sortRecordsNewestFirst, type PageStudyRecord } from "@/lib/study-pages"
+import { CalendarCheck, Check, History, ListPlus, Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  daysBetween,
+  formatDate,
+  nextReviewDate,
+  sortRecordsNewestFirst,
+  type PageStudyRecord,
+} from "@/lib/study-pages"
+import { addTodo, useTodosStatus } from "@/lib/todos"
 import { AddRecordForm } from "@/components/study-page/add-record-form"
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
 
 interface StudyHistoryProps {
   pageId: string
+  pageTitle: string
   records: PageStudyRecord[]
   onAdd: (record: PageStudyRecord) => void
   onUpdate: (record: PageStudyRecord) => void
@@ -17,10 +25,12 @@ interface StudyHistoryProps {
   onPrefillDone?: () => void
 }
 
-type Notice = { recordId: string | null; message: string }
+// `review` is set right after adding a record: the next review day it scheduled.
+type Notice = { recordId: string | null; message: string; review?: string }
 
 export function StudyHistory({
   pageId,
+  pageTitle,
   records,
   onAdd,
   onUpdate,
@@ -87,17 +97,26 @@ export function StudyHistory({
             closeAddForm()
             setNotice({
               recordId: record.id,
-              message: "학습 기록이 추가되어 페이지 속성의 이해도와 복습 일정이 업데이트되었어요.",
+              message: "학습 기록을 추가했어요.",
+              review: nextReviewDate(record.date, record.understanding),
             })
           }}
         />
       )}
 
-      {notice && (
-        <p role="status" className="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-medium text-indigo-700">
-          {notice.message}
-        </p>
-      )}
+      {notice &&
+        (notice.review && notice.recordId ? (
+          <NextReviewNotice
+            key={notice.recordId}
+            pageTitle={pageTitle}
+            recordDate={records.find((r) => r.id === notice.recordId)?.date ?? notice.review}
+            review={notice.review}
+          />
+        ) : (
+          <p role="status" className="rounded-lg bg-indigo-50 px-3 py-2 text-xs font-medium text-indigo-700">
+            {notice.message}
+          </p>
+        ))}
 
       {sorted.length === 0 && !adding ? (
         <div className="rounded-xl border border-dashed border-border px-5 py-8 text-center">
@@ -235,6 +254,42 @@ function RecordCard({
             </span>
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+// After saving a record: when the next review is, and a one-tap way to put it on that day's checklist.
+function NextReviewNotice({ pageTitle, recordDate, review }: { pageTitle: string; recordDate: string; review: string }) {
+  const todosStatus = useTodosStatus()
+  const [added, setAdded] = useState(false)
+  const days = daysBetween(recordDate, review)
+
+  return (
+    <div
+      role="status"
+      className="flex flex-col gap-3 rounded-xl border border-indigo-200 bg-indigo-50/70 px-4 py-3 sm:flex-row sm:items-center"
+    >
+      <CalendarCheck className="hidden size-5 shrink-0 text-indigo-600 sm:block" aria-hidden="true" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-foreground">
+          기록했어요. 다음 복습은 {formatDate(review)}이에요{days > 0 ? ` (${days}일 뒤)` : ""}.
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">이해도에 맞춰 잡은 날짜예요. 그날 홈의 복습할 노트에 올라와요.</p>
+      </div>
+      {todosStatus === "ready" && (
+        <button
+          type="button"
+          disabled={added}
+          onClick={() => {
+            addTodo(`${pageTitle || "제목 없음"} 복습`, review)
+            setAdded(true)
+          }}
+          className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-card px-3 py-1.5 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100 disabled:cursor-default disabled:border-transparent disabled:bg-transparent"
+        >
+          {added ? <Check className="size-4" /> : <ListPlus className="size-4" />}
+          {added ? `${formatDate(review)} 체크리스트에 넣었어요` : "그날 체크리스트에 추가"}
+        </button>
       )}
     </div>
   )

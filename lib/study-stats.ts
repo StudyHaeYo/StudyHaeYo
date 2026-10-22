@@ -12,11 +12,10 @@ import {
 } from "@/lib/study-pages"
 import { recordCreatedAt } from "@/lib/study-session"
 import { isReviewCandidate } from "@/lib/templates"
-import { descendantPages, nearestSubject, type WorkspaceState } from "@/lib/workspace"
+import { descendantPages, nearestSubject, NO_SUBJECT, type WorkspaceState } from "@/lib/workspace"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
 import type { LearningPlan } from "@/lib/plans"
 
-const NO_SUBJECT = "내 페이지"
 
 export function subjectOf(workspace: WorkspaceState, page: StudyPage) {
   return nearestSubject(workspace, page.parentId)?.name ?? NO_SUBJECT

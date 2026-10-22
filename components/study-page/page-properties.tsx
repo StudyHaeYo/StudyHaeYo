@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { formatDate, formatDuration, pageStatuses, type PageStats, type PageStatus } from "@/lib/study-pages"
+import { NO_SUBJECT } from "@/lib/workspace"
 
 const statusStyles: Record<PageStatus, string> = {
   "시작 전": "bg-muted text-muted-foreground",
@@ -23,7 +24,8 @@ const statusStyles: Record<PageStatus, string> = {
 }
 
 interface PagePropertiesProps {
-  subjectName: string
+  // null when no subject is above the page (a plain folder doesn't count).
+  subjectName: string | null
   stats: PageStats
   recordCount: number
   tags: string[]
@@ -61,7 +63,11 @@ export function PageProperties({
     <section aria-label="페이지 속성" className="flex flex-col gap-0.5">
       <dl className="flex flex-col">
         <Row icon={BookOpen} label="과목">
-          {subjectName}
+          {subjectName ?? (
+            <span className="text-muted-foreground/70" title="과목 안으로 옮기면 과목별 분석과 계획에 잡혀요">
+              {NO_SUBJECT}
+            </span>
+          )}
         </Row>
         <Row icon={CircleDot} label="상태">
           <span className="inline-flex items-center gap-2">
