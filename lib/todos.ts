@@ -35,14 +35,15 @@ export function todayChecklist(todos: Todo[], today: string) {
     .sort((a, b) => Number(a.doneAt !== null) - Number(b.doneAt !== null) || a.position - b.position)
 }
 
-export function addTodo(title: string, today: string) {
+// dueOn is usually today; a later date (e.g. a review day) makes it show up from that day.
+export function addTodo(title: string, dueOn: string) {
   const text = title.trim().slice(0, 200)
   if (!text) return
   const todos = store.get()
   const todo: Todo = {
     id: newId(),
     title: text,
-    dueOn: today,
+    dueOn,
     doneAt: null,
     position: todos.reduce((max, t) => Math.max(max, t.position), -1) + 1,
   }

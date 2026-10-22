@@ -1,6 +1,6 @@
 import { addDays, computePageStats, daysBetween, dueLabel, unresolvedConfusionCount, type DueTone, type PageStatus } from "@/lib/study-pages"
 import { isReviewCandidate } from "@/lib/templates"
-import { nearestSubject, type WorkspaceState } from "@/lib/workspace"
+import { nearestSubject, NO_SUBJECT, type WorkspaceState } from "@/lib/workspace"
 
 export interface StudyCandidate {
   pageId: string
@@ -48,7 +48,7 @@ export function reviewCandidates(workspace: WorkspaceState, today: string): Stud
       return {
         pageId: page.id,
         topic: page.title || "제목 없음",
-        subject: nearestSubject(workspace, page.parentId)?.name ?? "내 페이지",
+        subject: nearestSubject(workspace, page.parentId)?.name ?? NO_SUBJECT,
         status: stats.status,
         understanding: stats.understanding,
         lastStudied: relativeDay(stats.lastStudiedAt, today),

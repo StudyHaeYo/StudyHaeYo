@@ -162,6 +162,11 @@ export function sortRecordsNewestFirst(records: PageStudyRecord[]) {
   )
 }
 
+// Review spacing (reviewOffsetDays): the next review day after studying on `date` with this understanding.
+export function nextReviewDate(date: string, understanding: number) {
+  return addDays(date, reviewOffsetDays[understanding] ?? 4)
+}
+
 // Study record ids are uuids (study_records.id).
 export function newRecordId() {
   return crypto.randomUUID()
@@ -172,7 +177,7 @@ export function computePageStats(page: StudyPage, today: string | null): PageSta
   const records = sortRecordsNewestFirst(page.studyRecords)
   const latest = records[0]
   const understanding = page.understanding ?? latest?.understanding ?? null
-  const nextReviewAt = latest ? addDays(latest.date, reviewOffsetDays[understanding ?? latest.understanding] ?? 4) : null
+  const nextReviewAt = latest ? nextReviewDate(latest.date, understanding ?? latest.understanding) : null
 
   let derivedStatus: PageStatus = "시작 전"
   if (latest) {

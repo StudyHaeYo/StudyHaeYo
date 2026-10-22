@@ -510,6 +510,9 @@ export function nearestSubject(tree: TreeSource, id: string | null) {
   return nodePath(tree, id).findLast((n) => n.kind === "subject") ?? null
 }
 
+// Label for pages with no subject above them (page properties, review list, analytics).
+export const NO_SUBJECT = "과목 없음"
+
 // Every page somewhere under the given node, at any depth.
 export function descendantPages(tree: TreeSource, ancestorId: string) {
   return tree.pages.filter((p) => nodePath(tree, p.parentId).some((n) => n.id === ancestorId))
