@@ -229,42 +229,62 @@ export function subjectPageRows(workspace: WorkspaceState, subjectId: string, to
 }
 
 
+export type PlanPhase = "active" | "upcoming" | "ended"
+
 export interface ActivePlan {
   plan: LearningPlan
   targetLabel: string
   targetHref: string | null
-  // Study minutes recorded on the plan's target between its start date and today.
+  // Study minutes recorded on the plan's target from its start date up to today (or the end date, if it has ended).
   studiedMinutes: number
-  // Days from today to the end date (0 = ends today).
+  // Days from today to the end date (0 = ends today; negative once ended).
   daysLeft: number
+  phase: PlanPhase
+  // Length of the period in days, and how many of them have passed including today.
+  totalDays: number
+  elapsedDays: number
 }
 
-// Plans whose period includes today, ending soonest first. Progress comes from study records only (no stored goal).
+// Where a plan stands today. Progress comes from study records only (no stored goal).
+export function planProgress(workspace: WorkspaceState, plan: LearningPlan, today: string): ActivePlan {
+  const { target } = plan
+  let pages: StudyPage[] = workspace.pages
+  let targetLabel = "전체 학습"
+  let targetHref: string | null = null
+  if (target.scope === "subject") {
+    pages = descendantPages(workspace, target.subjectId)
+    targetLabel = workspace.groups.find((g) => g.id === target.subjectId)?.name ?? "삭제된 과목"
+    targetHref = `/subject/${target.subjectId}`
+  } else if (target.scope === "page") {
+    const page = workspace.pages.find((p) => p.id === target.pageId)
+    pages = page ? [page, ...descendantPages(workspace, page.id)] : []
+    targetLabel = page ? page.title || "제목 없음" : "삭제된 페이지"
+    targetHref = page ? `/record/${page.id}` : null
+  }
+  const phase: PlanPhase = today < plan.startDate ? "upcoming" : today > plan.endDate ? "ended" : "active"
+  const until = phase === "ended" ? plan.endDate : today
+  const studiedMinutes = pages
+    .flatMap((p) => p.studyRecords)
+    .filter((r) => r.date >= plan.startDate && r.date <= until)
+    .reduce((sum, r) => sum + r.durationMinutes, 0)
+  const totalDays = daysBetween(plan.startDate, plan.endDate) + 1
+  const elapsedDays = phase === "upcoming" ? 0 : phase === "ended" ? totalDays : daysBetween(plan.startDate, today) + 1
+  return { plan, targetLabel, targetHref, studiedMinutes, daysLeft: daysBetween(today, plan.endDate), phase, totalDays, elapsedDays }
+}
+
+// Plans whose period includes today, ending soonest first.
 export function activePlans(workspace: WorkspaceState, plans: LearningPlan[], today: string): ActivePlan[] {
-  return plans
-    .filter((plan) => plan.startDate <= today && today <= plan.endDate)
-    .sort((a, b) => a.endDate.localeCompare(b.endDate))
-    .map((plan) => {
-      const { target } = plan
-      let pages: StudyPage[] = workspace.pages
-      let targetLabel = "전체 학습"
-      let targetHref: string | null = null
-      if (target.scope === "subject") {
-        pages = descendantPages(workspace, target.subjectId)
-        targetLabel = workspace.groups.find((g) => g.id === target.subjectId)?.name ?? "삭제된 과목"
-        targetHref = `/subject/${target.subjectId}`
-      } else if (target.scope === "page") {
-        const page = workspace.pages.find((p) => p.id === target.pageId)
-        pages = page ? [page, ...descendantPages(workspace, page.id)] : []
-        targetLabel = page ? page.title || "제목 없음" : "삭제된 페이지"
-        targetHref = page ? `/record/${page.id}` : null
-      }
-      const studiedMinutes = pages
-        .flatMap((p) => p.studyRecords)
-        .filter((r) => r.date >= plan.startDate && r.date <= today)
-        .reduce((sum, r) => sum + r.durationMinutes, 0)
-      return { plan, targetLabel, targetHref, studiedMinutes, daysLeft: daysBetween(today, plan.endDate) }
-    })
+  return groupPlans(workspace, plans, today).active
+}
+
+// Running plans end soonest first, upcoming ones start soonest first, ended ones most recent first.
+export function groupPlans(workspace: WorkspaceState, plans: LearningPlan[], today: string) {
+  const all = plans.map((plan) => planProgress(workspace, plan, today))
+  return {
+    active: all.filter((p) => p.phase === "active").sort((a, b) => a.plan.endDate.localeCompare(b.plan.endDate)),
+    upcoming: all.filter((p) => p.phase === "upcoming").sort((a, b) => a.plan.startDate.localeCompare(b.plan.startDate)),
+    ended: all.filter((p) => p.phase === "ended").sort((a, b) => b.plan.endDate.localeCompare(a.plan.endDate)),
+  }
 }
 
 export interface StudyDay {
