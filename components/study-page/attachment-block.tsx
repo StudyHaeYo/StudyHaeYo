@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
-import { Download, Eye, File, FileText, ExternalLink, X } from "lucide-react"
-import { formatFileSize, previewKind } from "@/lib/attachments"
+import { Download, Eye, File, FileText, ExternalLink, FileWarning, X } from "lucide-react"
+import { downloadAttachment, formatFileSize, previewKind, useAttachmentUrl } from "@/lib/attachments"
 import type { AttachmentBlock } from "@/lib/study-pages"
 
 interface AttachmentBlockViewProps {
@@ -14,6 +14,7 @@ interface AttachmentBlockViewProps {
 export function AttachmentBlockView({ block, onRemove }: AttachmentBlockViewProps) {
   const [viewing, setViewing] = useState(false)
   const kind = previewKind(block.mime)
+  const source = useAttachmentUrl(block)
 
   const removeButton = (
     <button
@@ -29,7 +30,14 @@ export function AttachmentBlockView({ block, onRemove }: AttachmentBlockViewProp
 
   return (
     <div className="group relative py-1">
-      {block.type === "image" && kind === "image" ? (
+      {source.status === "missing" ? (
+        <MissingCard block={block} />
+      ) : source.status === "loading" ? (
+        <div
+          className={`animate-pulse rounded-lg border border-border bg-muted ${block.type === "image" ? "h-48" : "h-16"}`}
+          aria-label={`${block.name} 불러오는 중`}
+        />
+      ) : block.type === "image" && kind === "image" ? (
         <button
           type="button"
           onClick={() => setViewing(true)}
@@ -38,21 +46,36 @@ export function AttachmentBlockView({ block, onRemove }: AttachmentBlockViewProp
         >
           {/* Object/blob URLs can't go through next/image optimization. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={block.url} alt={block.name} className="mx-auto block h-auto max-w-full" />
+          <img src={source.url} alt={block.name} className="mx-auto block h-auto max-w-full" />
         </button>
       ) : (
-        <FileCard block={block} pdf={kind === "pdf"} onPreview={() => setViewing(true)} />
+        <FileCard block={block} url={source.url} pdf={kind === "pdf"} onPreview={() => setViewing(true)} />
       )}
       {removeButton}
 
-      {viewing && (
-        <AttachmentViewer block={block} pdf={kind === "pdf"} onClose={() => setViewing(false)} />
+      {viewing && source.url && (
+        <AttachmentViewer block={block} url={source.url} pdf={kind === "pdf"} onClose={() => setViewing(false)} />
       )}
     </div>
   )
 }
 
-function FileCard({ block, pdf, onPreview }: { block: AttachmentBlock; pdf: boolean; onPreview: () => void }) {
+// Attached before files were saved to the server (or the stored file is gone): only removable.
+function MissingCard({ block }: { block: AttachmentBlock }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-dashed border-border bg-muted/40 px-4 py-3 pr-12">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <FileWarning className="size-5" aria-hidden="true" />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-sm font-medium text-muted-foreground">{block.name}</span>
+        <span className="text-xs text-muted-foreground">저장되지 않은 파일이라 열 수 없어요. 지우고 다시 올려 주세요.</span>
+      </div>
+    </div>
+  )
+}
+
+function FileCard({ block, url, pdf, onPreview }: { block: AttachmentBlock; url: string; pdf: boolean; onPreview: () => void }) {
   const Icon = pdf ? FileText : File
   const actionClass =
     "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -79,20 +102,30 @@ function FileCard({ block, pdf, onPreview }: { block: AttachmentBlock; pdf: bool
             미리보기
           </button>
         )}
-        <a href={block.url} target="_blank" rel="noopener noreferrer" className={actionClass}>
+        <a href={url} target="_blank" rel="noopener noreferrer" className={actionClass}>
           <ExternalLink className="size-3.5" aria-hidden="true" />
           열기
         </a>
-        <a href={block.url} download={block.name} className={actionClass}>
+        <button type="button" onClick={() => void downloadAttachment(block)} className={actionClass}>
           <Download className="size-3.5" aria-hidden="true" />
           다운로드
-        </a>
+        </button>
       </div>
     </div>
   )
 }
 
-function AttachmentViewer({ block, pdf, onClose }: { block: AttachmentBlock; pdf: boolean; onClose: () => void }) {
+function AttachmentViewer({
+  block,
+  url,
+  pdf,
+  onClose,
+}: {
+  block: AttachmentBlock
+  url: string
+  pdf: boolean
+  onClose: () => void
+}) {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
@@ -127,10 +160,10 @@ function AttachmentViewer({ block, pdf, onClose }: { block: AttachmentBlock; pdf
           </button>
         </div>
         {pdf ? (
-          <iframe src={block.url} title={`${block.name} 미리보기`} className="min-h-0 w-full flex-1 bg-muted" />
+          <iframe src={url} title={`${block.name} 미리보기`} className="min-h-0 w-full flex-1 bg-muted" />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={block.url} alt={block.name} className="max-h-[80vh] max-w-full object-contain" />
+          <img src={url} alt={block.name} className="max-h-[80vh] max-w-full object-contain" />
         )}
       </div>
     </div>,

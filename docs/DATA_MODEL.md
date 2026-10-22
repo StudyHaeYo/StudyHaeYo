@@ -46,7 +46,7 @@
 ### 블록 (`Block = TextBlock | AttachmentBlock | DrawingBlock`)
 **글 블록**: `{id, type: h1｜h2｜h3｜p｜li｜code, text}`
 
-**첨부 블록** (`type: "image"｜"file"`): `{id, type, name, mime, size, url}`
+**첨부 블록** (`type: "image"｜"file"`): `{id, type, name, mime, size, url, path?}`. `path`는 Supabase Storage `attachments` 버킷 안의 위치(`<사용자 id>/<파일 id>`)이고, 있으면 화면은 `url` 대신 `path`로 1시간짜리 임시 주소(signed URL)를 받아 연다. `url`은 올린 탭에서만 쓰는 `blob:` 주소라 다른 탭이나 새로고침 뒤에는 쓰지 않는다
 - `url`은 지금 브라우저 임시 주소(`URL.createObjectURL`)라 새로고침하면 사라진다. 파일을 저장하고 url을 만드는 곳은 `lib/attachments.ts`의 `storeAttachmentFile` 하나뿐이다.
 
 **그림 블록** (`type: "drawing"`): `{id, type: "drawing", strokes, height}`
@@ -165,6 +165,9 @@ User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유�
 **R9. 첨부와 그림 블록 넣기**
 - 페이지 헤더 ⋯ 메뉴의 "파일 첨부"와 "그림 추가"로 넣는다. 첨부는 본문으로 드래그 앤 드롭, 이미지 붙여넣기도 된다. 사이드바 메뉴에는 없고, 복습 모드에서는 두 항목이 숨겨진다
 - 첨부는 파일당 10MB 이하(`MAX_ATTACHMENT_BYTES`). PNG/JPEG/GIF/WebP는 본문에 이미지로 보이고, PDF는 파일 카드 + 미리보기, 그 외 형식은 열기/다운로드만 된다
+- 저장(`lib/attachments.ts`): 로그인 상태면 Storage에 올린 뒤 블록을 넣는다(올리는 중 알림). 올리기에 실패하거나 로그인 정보가 없으면 그 탭에서만 보이는 첨부로 넣고 "새로고침하면 사라져요"라고 알린다. 파일은 덮어쓰지 않고 매번 새 id로 올린다
+- `path`가 없고 다른 탭에서 만든 `blob:` 주소인 옛 첨부, 또는 Storage에서 열 수 없는 첨부는 "저장되지 않은 파일" 카드로 보이고 지우기만 된다
+- 다운로드는 원래 파일 이름으로 받도록 다운로드용 임시 주소를 따로 받는다(브라우저가 다른 도메인 링크의 `download` 속성을 무시해서)
 - 위치: 마지막으로 클릭한 줄 바로 뒤, 없으면 본문 끝. 학습 노트는 항상 "오늘 배운 내용" 영역에 들어간다(핵심 개념, 헷갈린 점은 글 항목이라 넣을 수 없다)
 - AI 요약/문제 생성은 글 블록만 사용한다
 
@@ -224,7 +227,7 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
    - 예시 데이터: 워크스페이스가 완전히 비었을 때만 홈 안내 카드에 "예시 데이터 가져오기"가 보인다(`importExampleData`). 시드(`lib/study-tree.ts`, `lib/study-pages.ts`, `lib/plans.ts`의 `examplePlans`)를 새 uuid로 그 계정에 저장한다. 저장 직전에 그 계정의 노드가 DB에 있는지 다시 확인해 중복을 막고, 기존 데이터는 건드리지 않는다. 시드의 날짜(기록, 페이지 생성일, 계획 기간)는 모두 같은 일수만큼 옮겨서 가장 최근 기록이 가져온 날의 어제가 되게 한다. `createdAt`은 공부한 날 정오다. 노드는 트리 깊이별로 나눠 부모부터 insert한다
    - 불러온 그룹·페이지 배열은 사이드바(깊이 우선) 순서로 맞춘다. 위젯이 배열 순서대로 과목과 페이지를 나열하기 때문이다
    - 권한: 네 테이블 모두 `authenticated` 역할에 select/insert/update/delete 정책이 있고, 조건은 `auth.uid() = user_id`(`profiles`는 `= id`)다. 계획의 대상 노드 소유자는 `learning_plans`의 `check_learning_plan_owner` 트리거가 검사한다(단일 FK 보완)
-   - 세션 타이머는 여전히 브라우저 전용이다. 체크리스트는 `todos` 테이블에 저장한다(R10). 첨부 블록은 `blob:` URL째 저장되어 새로고침하면 깨진다(Storage 연동 전)
+   - 세션 타이머는 여전히 브라우저 전용이다. 체크리스트는 `todos` 테이블에 저장한다(R10). 첨부 파일은 Storage `attachments` 버킷에 저장한다(R9, `supabase/migrations/20261023_attachments_storage.sql`)
 2. **정적 더미 위젯은 없다.** Home의 나의 학습 상태/오늘의 기록/이번 주 학습 통계, 학습 분석의 과목별 학습 상태/취약 학습 영역/복습 예정/최근 학습 활동은 모두 `lib/study-stats.ts`가 워크스페이스 페이지의 `studyRecords`에서 계산한다.
    - 과목: 페이지의 가장 가까운 상위 과목(`nearestSubject`), 없으면 "과목 없음"(일반 폴더 이름을 대신 쓰지 않는다)
    - 나의 학습 상태 / 과목별 학습 상태: 과목별 기록 `understanding` 평균 ÷ 5 × 100 (기록 없는 과목은 숨김)
@@ -242,7 +245,7 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
 7. 페이지·그룹·기록·계획 id는 클라이언트가 `crypto.randomUUID()`로 만든다(DB 컬럼에 기본값 없음). 같은 날짜 기록의 정렬 동률은 `createdAt`으로 깬다. 시드의 `ds-1` 같은 id와 옛 `<pageId>-r-<ms>` 기록 id는 DB에 없다.
 8. `app/page/new/page.tsx`의 옛 경로 리다이렉트는 쿼리 값을 인코딩하지 않는다(`app/record/[id]`는 수정됨).
 9. 세션 로그는 localStorage에만 쌓이고 정리 기준이 없다.
-10. 첨부를 복제하면 복제본이 원본과 같은 파일을 가리킨다. 서버 저장을 붙이면 블록을 지울 때 파일을 바로 지우면 안 된다(다른 페이지가 쓰고 있을 수 있다).
+10. 첨부를 복제하면 복제본이 원본과 같은 파일을 가리킨다. 그래서 블록이나 페이지를 지워도 Storage의 파일은 지우지 않는다(다른 블록이 쓰고 있을 수 있다). 아무 블록도 가리키지 않는 파일 정리는 아직 없다
 11. `next.config.mjs`의 `typescript.ignoreBuildErrors: true` 때문에 `pnpm run build`는 타입 오류를 검사하지 않는다. 타입은 `npx tsc --noEmit`으로 따로 확인한다.
 
 ---
