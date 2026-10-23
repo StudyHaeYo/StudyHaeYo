@@ -100,6 +100,12 @@ export function markdownToBlocks(markdown: string): TextBlock[] {
     }
     const line = raw.trim()
     if (!line || /^-{3,}$/.test(line)) continue
+    // Multiple-choice options ("① … ② …") stay with their numbered question, so the numbering keeps running.
+    const prev = blocks.at(-1)
+    if (/^[①-⑩]/.test(line) && prev?.type === "ol") {
+      prev.text += "\n" + clean(line)
+      continue
+    }
     const heading = line.match(/^(#{1,6})\s+(.*)$/)
     if (heading) {
       const level = Math.min(heading[1].length, 3)
@@ -122,3 +128,20 @@ export function markdownToBlocks(markdown: string): TextBlock[] {
   if (code) blocks.push({ id: newBlockId(), type: "code", text: code.join("\n") })
   return blocks
 }
+
+// "점수: 4/5" on the last lines of a grading answer (the prompt asks for exactly this line).
+export function parseScore(text: string): { correct: number; total: number } | null {
+  const matches = [...text.matchAll(/점수\s*[:：]\s*(\d+)\s*\/\s*(\d+)/g)]
+  const last = matches.at(-1)
+  if (!last) return null
+  const correct = Number(last[1])
+  const total = Number(last[2])
+  return total > 0 && correct <= total ? { correct, total } : null
+}
+
+// 0% → 1, 100% → 5: a starting value for the record's 이해도, which the user can change.
+export function scoreToUnderstanding({ correct, total }: { correct: number; total: number }) {
+  return Math.min(5, Math.max(1, Math.round((correct / total) * 4) + 1))
+}
+
+export const ANSWER_HEADING = /^정답\s*(과|및)?\s*해설/

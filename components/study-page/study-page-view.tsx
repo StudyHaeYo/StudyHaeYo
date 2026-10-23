@@ -3,7 +3,7 @@
 import { Fragment, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronRight, FileQuestion, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff } from "lucide-react"
+import { ChevronRight, FileQuestion, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff, Sparkles } from "lucide-react"
 import {
   addConfusions,
   computePageStats,
@@ -24,11 +24,11 @@ import { clearRecordPrefill, useStudySession } from "@/lib/study-session"
 import { useTodayISO } from "@/hooks/use-today"
 import { PageProperties } from "@/components/study-page/page-properties"
 import { StudyHistory } from "@/components/study-page/study-history"
-import { AiToolsSection } from "@/components/record/ai-tools-section"
+import { AiPanel } from "@/components/record/ai-panel"
 
 // The single page UI: seeded pages and user-created pages both render here.
 // Every page has the same block body (D-23); study features (속성 · 학습 기록 · AI 도구) are on or off per page.
-export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review" }) {
+export function StudyPageView({ pageId, mode, openAi = false }: { pageId: string; mode?: "review"; openAi?: boolean }) {
   const { groups, pages } = useWorkspace()
   const today = useTodayISO()
   const router = useRouter()
@@ -37,6 +37,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
   const attachRef = useRef<AttachmentHandle>(null)
   const page = pages.find((p) => p.id === pageId)
   const dataStatus = useDataStatus()
+  const [aiOpen, setAiOpen] = useState(openAi)
 
   if (!page) return dataStatus.phase === "ready" ? <MissingPage /> : <DataStatusView status={dataStatus} />
 
@@ -155,10 +156,6 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
           prefill={pagePrefill}
           onPrefillDone={clearRecordPrefill}
         />
-        <AiToolsSection
-          page={page}
-          onInsert={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks: [...p.blocks, ...blocks] }))}
-        />
       </div>
     </>
   )
@@ -189,6 +186,17 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
             <span className="truncate font-medium text-foreground">{page.title.trim() || "제목 없음"}</span>
           </nav>
           <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setAiOpen((v) => !v)}
+            aria-pressed={aiOpen}
+            className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
+              aiOpen ? "bg-indigo-50 text-indigo-700" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+            }`}
+          >
+            <Sparkles className="size-4" />
+            AI
+          </button>
           <PageActionsMenu
             pageId={page.id}
             title={page.title.trim() || "제목 없음"}
@@ -268,7 +276,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
                   학습 기능
                 </h2>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  학습 기록과 AI 학습 도구를 사용할 수 있습니다.
+                  학습 기록, 복습 일정, 복습 모드를 사용할 수 있어요. AI 도우미는 학습 기능 없이도 위의 AI 버튼으로 열 수 있어요.
                 </p>
                 {page.studyRecords.length > 0 && (
                   <p className="text-xs leading-relaxed text-muted-foreground">
@@ -290,6 +298,13 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
 
       </article>
     </div>
+    <AiPanel
+      page={page}
+      open={aiOpen}
+      onClose={() => setAiOpen(false)}
+      onInsert={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks: [...p.blocks, ...blocks] }))}
+      onAddConfusions={(texts) => updatePage(page.id, (p) => ({ ...p, blocks: addConfusions(p.blocks, texts) }))}
+    />
     </PagesContext.Provider>
   )
 }

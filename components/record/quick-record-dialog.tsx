@@ -27,6 +27,8 @@ export interface QuickRecordRequest {
   pageId?: string | null
   minutes?: number
   studyContent?: string
+  // Starting 이해도 (e.g. from an AI grading score).
+  understanding?: number
   // Editing a record left on a subject (it can be moved onto a page here).
   edit?: SubjectStudyRecord
 }
@@ -74,7 +76,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
   const [duration, setDuration] = useState(
     edit ? String(edit.durationMinutes) : request.minutes ? String(request.minutes) : "",
   )
-  const [understanding, setUnderstanding] = useState<number | null>(edit?.understanding ?? null)
+  const [understanding, setUnderstanding] = useState<number | null>(edit?.understanding ?? request.understanding ?? null)
   const [studyContent, setStudyContent] = useState(edit?.studyContent ?? request.studyContent ?? "")
   const [difficulties, setDifficulties] = useState(edit?.difficulties ?? "")
   const [nextSteps, setNextSteps] = useState(edit?.nextSteps ?? "")

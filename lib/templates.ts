@@ -1,4 +1,4 @@
-import { FilePlus, FileText, GraduationCap, NotebookPen, Presentation, ClipboardCheck, XCircle, type LucideIcon } from "lucide-react"
+import { ClipboardCheck, FilePlus, FileText, GraduationCap, NotebookPen, Presentation, Sparkles, XCircle, type LucideIcon } from "lucide-react"
 import { newBlockId, type Block, type BlockType } from "@/lib/study-pages"
 
 // Every page is one block body (D-23). A template only decides what a new page starts with:
@@ -28,6 +28,8 @@ export interface PageStarter {
   icon: LucideIcon
   templateId: TemplateId
   createBlocks: () => Block[]
+  // Opens the AI panel on the new page (/record/<id>?ai=1).
+  openAi?: boolean
 }
 
 export const pageStarters: PageStarter[] = [
@@ -38,6 +40,15 @@ export const pageStarters: PageStarter[] = [
     icon: FilePlus,
     templateId: "blank",
     createBlocks: () => [t("p")],
+  },
+  {
+    id: "ai",
+    name: "AI로 시작하기",
+    tagline: "제목에 주제를 적으면 AI가 정리 노트나 문제를 만들어 줘요",
+    icon: Sparkles,
+    templateId: "study-note",
+    createBlocks: () => [t("p")],
+    openAi: true,
   },
   {
     id: "study-note",
