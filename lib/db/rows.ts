@@ -1,6 +1,7 @@
 import type { LearningPlan, PlanTarget } from "@/lib/plans"
 import {
   pageStatuses,
+  withNoteBlocks,
   toISODate,
   type Block,
   type PageStudyRecord,
@@ -113,7 +114,7 @@ export function toRecord(row: RecordRow): PageStudyRecord {
 }
 
 function toPage(row: NodeRow, records: PageStudyRecord[]): StudyPage {
-  return {
+  return withNoteBlocks({
     id: row.id,
     title: row.title,
     parentId: row.parent_id,
@@ -127,7 +128,7 @@ function toPage(row: NodeRow, records: PageStudyRecord[]): StudyPage {
     status: oneOf(pageStatuses, row.status),
     understanding: understandingOf(row.understanding),
     studyEnabled: row.study_enabled ?? undefined,
-  }
+  })
 }
 
 // Rows arrive sorted by (position, created_at); position only orders siblings, so one global list works as `order`.

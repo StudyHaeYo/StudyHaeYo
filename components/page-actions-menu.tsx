@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
-import { Copy, Lock, MoreHorizontal, Pencil, Power, PowerOff, Trash2 } from "lucide-react"
-import { resolvePageLayout } from "@/lib/templates"
+import { Copy, MoreHorizontal, Pencil, Power, PowerOff, Trash2 } from "lucide-react"
+import { isStudyOn } from "@/lib/templates"
 import { deletePage, duplicatePage, flattenTree, plansInSubtree, setPageStudyEnabled, useWorkspace } from "@/lib/workspace"
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
 
@@ -54,7 +54,7 @@ export function PageActionsMenu({
   const nested = flattenTree(workspace, pageId).length
   const planCount = plansInSubtree(workspace, pageId).length
   const deleteNote = deleteNoteText(nested, planCount)
-  const layout = page ? resolvePageLayout(page) : null
+  const studyOn = page ? isStudyOn(page) : null
 
   const setOpen = (next: boolean) => {
     setOpenState(next)
@@ -134,31 +134,20 @@ export function PageActionsMenu({
           </button>
           {extraItems?.(close)}
 
-          {showStudyToggle &&
-            layout &&
-            (layout.studyControl === "locked" ? (
-              <div role="menuitem" aria-disabled="true" tabIndex={-1} className="flex items-start gap-2 px-2 py-1.5">
-                <Lock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <span className="text-xs leading-relaxed text-muted-foreground">학습 기능은 항상 켜져 있어요</span>
-              </div>
-            ) : (
-              <button
-                role="menuitem"
-                type="button"
-                className={`${menuItemClass} text-foreground`}
-                onClick={() => {
-                  close()
-                  setPageStudyEnabled(pageId, !layout.studyOn)
-                }}
-              >
-                {layout.studyOn ? (
-                  <PowerOff className="size-4 text-muted-foreground" />
-                ) : (
-                  <Power className="size-4 text-muted-foreground" />
-                )}
-                {layout.studyOn ? "학습 기능 끄기" : "학습 기능 켜기"}
-              </button>
-            ))}
+          {showStudyToggle && studyOn !== null && (
+            <button
+              role="menuitem"
+              type="button"
+              className={`${menuItemClass} text-foreground`}
+              onClick={() => {
+                close()
+                setPageStudyEnabled(pageId, !studyOn)
+              }}
+            >
+              {studyOn ? <PowerOff className="size-4 text-muted-foreground" /> : <Power className="size-4 text-muted-foreground" />}
+              {studyOn ? "학습 기능 끄기" : "학습 기능 켜기"}
+            </button>
+          )}
 
           <div role="separator" className="my-1 border-t border-border" />
           <button

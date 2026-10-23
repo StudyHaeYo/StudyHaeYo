@@ -20,24 +20,24 @@ export type AiResult = { ok: true; text: string } | { ok: false; message: string
 
 export const MAX_CONTEXT_CHARS = 20_000
 
+function lineOf(block: TextBlock) {
+  const words = textBlockWords(block)
+  if (block.type === "concept") return `[핵심 개념] ${words}`
+  if (block.type === "confusion") return `[헷갈린 점${block.checked ? ", 해결함" : ""}] ${words}`
+  return words
+}
+
 const textOf = (blocks: Block[]) =>
   blocks
     .filter(isTextBlock)
-    .map(textBlockWords)
-    .filter((t) => t.trim())
+    .filter((b) => textBlockWords(b).trim())
+    .map(lineOf)
     .join("\n")
 
-// What the AI reads: title, body (or the study note's sections), and the latest study records.
+// What the AI reads: title, body (핵심 개념 / 헷갈린 점 blocks are labeled), and the latest study records.
 export function pageContextText(page: StudyPage) {
   const parts = [`제목: ${page.title || "제목 없음"}`]
-  if (page.note) {
-    parts.push(`[오늘 배운 내용]\n${textOf(page.note.learned) || "(비어 있음)"}`)
-    if (page.note.concepts.length > 0) parts.push(`[핵심 개념]\n${page.note.concepts.map((c) => `- ${c.text}`).join("\n")}`)
-    if (page.note.confusions.length > 0)
-      parts.push(`[헷갈린 점]\n${page.note.confusions.map((c) => `- ${c.text}${c.resolved ? " (해결함)" : ""}`).join("\n")}`)
-  } else {
-    parts.push(`[본문]\n${textOf(page.blocks) || "(비어 있음)"}`)
-  }
+  parts.push(`[본문]\n${textOf(page.blocks) || "(비어 있음)"}`)
   const records = [...page.studyRecords].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3)
   if (records.length > 0)
     parts.push(
@@ -54,8 +54,7 @@ export const MAX_AI_PDFS = 2
 // PDFs in the page the AI could read. Only files saved to Storage (`path`) can be sent; ones that live
 // only in this tab are listed with `stored: false` so the screen can say why they can't be picked.
 export function pagePdfs(page: StudyPage): { block: AttachmentBlock; stored: boolean }[] {
-  const blocks = page.note ? page.note.learned : page.blocks
-  return blocks
+  return page.blocks
     .filter((b): b is AttachmentBlock => (b.type === "file" || b.type === "image") && b.mime === "application/pdf")
     .map((block) => ({ block, stored: Boolean(block.path) }))
 }
@@ -82,9 +81,11 @@ export async function askStudyAI(context: string, messages: ChatMessage[], pdfs:
 const clean = (text: string) => text.replace(/\*\*(.+?)\*\*/g, "$1").replace(/`([^`]+)`/g, "$1")
 
 // The AI answers in a small markdown subset (# headings, - lists, ``` code); turn it into page blocks.
+// List lines under a "핵심 개념" heading become concept blocks (복습 카드), under "헷갈린 점" confusion blocks.
 export function markdownToBlocks(markdown: string): TextBlock[] {
   const blocks: TextBlock[] = []
   let code: string[] | null = null
+  let section: "concept" | "confusion" | null = null
   for (const raw of markdown.replace(/\r/g, "").split("\n")) {
     if (raw.trim().startsWith("```")) {
       if (code) {
@@ -102,7 +103,9 @@ export function markdownToBlocks(markdown: string): TextBlock[] {
     const heading = line.match(/^(#{1,6})\s+(.*)$/)
     if (heading) {
       const level = Math.min(heading[1].length, 3)
-      blocks.push({ id: newBlockId(), type: (["h1", "h2", "h3"] as const)[level - 1], text: clean(heading[2]) })
+      const title = clean(heading[2])
+      section = /핵심\s*개념/.test(title) ? "concept" : /헷갈/.test(title) ? "confusion" : null
+      blocks.push({ id: newBlockId(), type: (["h1", "h2", "h3"] as const)[level - 1], text: title })
     } else if (/^[-*]\s+\[( |x|X)\]\s+/.test(line)) {
       const checked = /^[-*]\s+\[(x|X)\]/.test(line)
       blocks.push({ id: newBlockId(), type: "todo", text: clean(line.replace(/^[-*]\s+\[( |x|X)\]\s+/, "")), checked })
@@ -111,7 +114,7 @@ export function markdownToBlocks(markdown: string): TextBlock[] {
     } else if (/^>\s?/.test(line)) {
       blocks.push({ id: newBlockId(), type: "quote", text: clean(line.replace(/^>\s?/, "")) })
     } else if (/^[-*•]\s+/.test(line)) {
-      blocks.push({ id: newBlockId(), type: "li", text: clean(line.replace(/^[-*•]\s+/, "")) })
+      blocks.push({ id: newBlockId(), type: section ?? "li", text: clean(line.replace(/^[-*•]\s+/, "")) })
     } else {
       blocks.push({ id: newBlockId(), type: "p", text: clean(line) })
     }

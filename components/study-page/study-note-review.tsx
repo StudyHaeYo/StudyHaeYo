@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Brain, Check, CheckCircle2, ChevronDown, HelpCircle, RotateCcw } from "lucide-react"
-import { newItemId, splitConcept, type StudyNoteContent } from "@/lib/study-pages"
+import { splitConcept, type TextBlock } from "@/lib/study-pages"
 
 export type ReviewAnswer = "remembered" | "confused"
 
@@ -12,25 +12,25 @@ export interface ReviewResult {
   durationMinutes: number
   remembered: string[]
   confused: string[]
-  // Full text of concepts marked "헷갈려요"; added to the note's confusions only when the review is saved.
+  // Full text of concepts marked "헷갈려요"; added to the page as 헷갈린 점 blocks only when the review is saved.
   confusedTexts: string[]
 }
 
 export interface ReviewBodyProps {
-  note: StudyNoteContent
+  // The page's 핵심 개념 blocks (non-empty). With none, the page body is shown below for reading.
+  concepts: TextBlock[]
   exitHref: string
   onComplete: (result: ReviewResult) => void
 }
 
 const understandingLabels = ["", "거의 모름", "조금 앎", "보통", "대부분 앎", "완벽히 앎"]
 
-export function StudyNoteReview({ note, exitHref, onComplete }: ReviewBodyProps) {
+export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyProps) {
   const [startedAt] = useState(() => Date.now())
   const [answers, setAnswers] = useState<Record<string, ReviewAnswer>>({})
   const [openId, setOpenId] = useState<string | null>(null)
   const [understanding, setUnderstanding] = useState<number | null>(null)
 
-  const concepts = note.concepts.filter((c) => c.text.trim())
   const answered = concepts.filter((c) => answers[c.id]).length
   const allDone = answered === concepts.length
 
@@ -70,7 +70,7 @@ export function StudyNoteReview({ note, exitHref, onComplete }: ReviewBodyProps)
 
       {concepts.length === 0 && (
         <p className="rounded-xl border border-dashed border-border px-5 py-6 text-sm leading-relaxed text-muted-foreground">
-          아직 정리된 핵심 개념이 없어요. 바로 이해도를 기록하거나, 전체 노트에서 개념을 먼저 추가해보세요.
+          핵심 개념 블록이 없어서 카드 없이 복습해요. 아래 노트를 다시 읽고 이해도를 골라 주세요. (/핵심 개념 으로 블록을 넣으면 다음부터 카드로 복습할 수 있어요)
         </p>
       )}
 
@@ -159,7 +159,7 @@ export function StudyNoteReview({ note, exitHref, onComplete }: ReviewBodyProps)
               {concepts.length > 0 && (
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {`기억남 ${concepts.filter((c) => answers[c.id] === "remembered").length}개 · 헷갈림 ${concepts.filter((c) => answers[c.id] === "confused").length}개`}
-                  {concepts.some((c) => answers[c.id] === "confused") && " — 학습 기록을 남기면 헷갈린 개념이 헷갈린 점 목록에 추가돼요."}
+                  {concepts.some((c) => answers[c.id] === "confused") && " — 복습을 마치면 헷갈린 개념이 헷갈린 점 블록으로 추가돼요."}
                 </p>
               )}
             </div>

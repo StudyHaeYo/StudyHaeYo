@@ -46,17 +46,19 @@ function snippetAround(line: string, at: number, length: number): Pick<SearchRes
   return { snippet, match: [prefix.length + at - start, prefix.length + at - start + length] }
 }
 
-function blockLines(blocks: Block[]) {
-  return blocks.filter(isTextBlock).flatMap((b) => textBlockWords(b).split("\n"))
+function blockLines(blocks: Block[], types?: string[]) {
+  return blocks
+    .filter(isTextBlock)
+    .filter((b) => (types ? types.includes(b.type) : b.type !== "concept" && b.type !== "confusion"))
+    .flatMap((b) => textBlockWords(b).split("\n"))
 }
 
 function pageSources(page: StudyPage): { field: SearchField; lines: string[] }[] {
-  const sources: { field: SearchField; lines: string[] }[] = [{ field: "본문", lines: blockLines(page.blocks) }]
-  if (page.note) {
-    sources.push({ field: "본문", lines: blockLines(page.note.learned) })
-    sources.push({ field: "핵심 개념", lines: page.note.concepts.map((c) => c.text) })
-    sources.push({ field: "헷갈린 점", lines: page.note.confusions.map((c) => c.text) })
-  }
+  const sources: { field: SearchField; lines: string[] }[] = [
+    { field: "본문", lines: blockLines(page.blocks) },
+    { field: "핵심 개념", lines: blockLines(page.blocks, ["concept"]) },
+    { field: "헷갈린 점", lines: blockLines(page.blocks, ["confusion"]) },
+  ]
   sources.push({
     field: "학습 기록",
     lines: page.studyRecords.flatMap((r) => [r.studyContent, r.difficulties, r.nextSteps]).filter(Boolean),

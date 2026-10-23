@@ -3,24 +3,23 @@
 import { Fragment, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronRight, FileQuestion, Lock, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff } from "lucide-react"
+import { ChevronRight, FileQuestion, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff } from "lucide-react"
 import {
+  addConfusions,
   computePageStats,
-  newItemId,
+  conceptBlocks,
   newRecordId,
-  noteOf,
   todayISO,
   type PageStudyRecord,
-  type StudyNoteContent,
 } from "@/lib/study-pages"
 import { useDataStatus } from "@/lib/db/sync"
 import { DataStatusView } from "@/components/data-status-notice"
-import type { ReviewResult } from "@/components/study-page/study-note-review"
-import { resolvePageLayout } from "@/lib/templates"
+import { StudyNoteReview, type ReviewResult } from "@/components/study-page/study-note-review"
+import { isStudyOn } from "@/lib/templates"
 import { nearestSubject, nodePath, setPageStudyEnabled, updatePage, useWorkspace } from "@/lib/workspace"
 import { PagesContext } from "@/components/study-page/pages-context"
 import { PageActionsMenu, menuItemClass } from "@/components/page-actions-menu"
-import type { AttachmentHandle } from "@/components/study-page/block-editor"
+import { BlockEditor, type AttachmentHandle } from "@/components/study-page/block-editor"
 import { clearRecordPrefill, useStudySession } from "@/lib/study-session"
 import { useTodayISO } from "@/hooks/use-today"
 import { PageProperties } from "@/components/study-page/page-properties"
@@ -28,7 +27,7 @@ import { StudyHistory } from "@/components/study-page/study-history"
 import { AiToolsSection } from "@/components/record/ai-tools-section"
 
 // The single page UI: seeded pages and user-created pages both render here.
-// What renders is decided by the page type (template) via resolvePageLayout.
+// Every page has the same block body (D-23); study features (속성 · 학습 기록 · AI 도구) are on or off per page.
 export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review" }) {
   const { groups, pages } = useWorkspace()
   const today = useTodayISO()
@@ -41,11 +40,9 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
 
   if (!page) return dataStatus.phase === "ready" ? <MissingPage /> : <DataStatusView status={dataStatus} />
 
-  // Every page type shares one column:
-  // Study on:  [속성] → [본문 템플릿 or 복습 모드] → [학습 기록] → [AI 학습 도구]
-  // Study off: [본문 템플릿] → [학습 기능 추가]
-  const layout = resolvePageLayout(page)
-  const { Body, ReviewBody } = layout
+  // Study on:  [속성] → [복습 모드 (?mode=review)] → [본문] → [학습 기록] → [AI 학습 도구]
+  // Study off: [본문] → [학습 기능 추가]
+  const studyOn = isStudyOn(page)
   const pagePrefill = prefill?.pageId === page.id ? prefill : null
   const setStudyEnabled = (studyEnabled: boolean) => setPageStudyEnabled(page.id, studyEnabled)
   const path = nodePath({ groups, pages }, page.parentId)
@@ -75,16 +72,14 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
   }
 
   const pageHref = `/record/${page.id}`
-  const reviewing = mode === "review" && ReviewBody !== null
-  const changeNote = (note: StudyNoteContent) => updatePage(page.id, (p) => ({ ...p, note }))
+  const reviewing = mode === "review" && studyOn
+  // Review cards come from 핵심 개념 blocks. Without any, the review panel only asks for 이해도 and the
+  // note stays readable below it.
+  const concepts = conceptBlocks(page.blocks)
 
   const handleReviewComplete = (result: ReviewResult) => {
-    const note = noteOf(page)
-    const openTexts = new Set(note.confusions.filter((q) => !q.resolved).map((q) => q.text.trim()))
-    const newConfusions = result.confusedTexts
-      .filter((text) => !openTexts.has(text.trim()))
-      .map((text) => ({ id: newItemId("q"), text, resolved: false }))
-    if (newConfusions.length > 0) changeNote({ ...note, confusions: [...note.confusions, ...newConfusions] })
+    if (result.confusedTexts.length > 0)
+      updatePage(page.id, (p) => ({ ...p, blocks: addConfusions(p.blocks, result.confusedTexts) }))
     const now = Date.now()
     handleAddRecord({
       id: newRecordId(),
@@ -93,7 +88,8 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
       createdAt: now,
       durationMinutes: result.durationMinutes,
       understanding: result.understanding,
-      studyContent: `복습 모드: 핵심 개념 ${result.remembered.length + result.confused.length}개 확인`,
+      studyContent:
+        concepts.length > 0 ? `복습 모드: 핵심 개념 ${result.remembered.length + result.confused.length}개 확인` : "복습 모드: 노트 다시 읽기",
       difficulties: result.confused.length > 0 ? `헷갈린 개념: ${result.confused.join(", ")}` : "",
       nextSteps: "",
       tags: [],
@@ -117,28 +113,36 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
     />
   )
 
-  const body =
-    reviewing && ReviewBody ? (
-      <ReviewBody
-        note={noteOf(page)}
-        exitHref={pageHref}
-        onComplete={handleReviewComplete}
-      />
-    ) : (
-      <Body
+  const review = reviewing && (
+    <StudyNoteReview concepts={concepts} exitHref={pageHref} onComplete={handleReviewComplete} />
+  )
+  const editor = (
+    <div className="min-h-64">
+      <BlockEditor
         blocks={page.blocks}
-        note={page.note}
-        onChangeBlocks={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
-        onChangeNote={changeNote}
+        onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
+        allowAttachments
         attachRef={attachRef}
       />
-    )
+    </div>
+  )
+  // With concept cards the review replaces the body (no peeking); without, the body is what gets reviewed.
+  const body = !review ? (
+    editor
+  ) : concepts.length > 0 ? (
+    review
+  ) : (
+    <div className="flex flex-col gap-8">
+      {review}
+      {editor}
+    </div>
+  )
 
   const renderStudyArea = () => (
     <>
       <div className="mb-8 mt-16 flex items-center gap-3">
         <hr className="flex-1 border-border" />
-        <StudyFeaturesMenu locked={layout.studyControl === "locked"} onDisable={() => setStudyEnabled(false)} />
+        <StudyFeaturesMenu onDisable={() => setStudyEnabled(false)} />
       </div>
       <div className="flex flex-col gap-12">
         <StudyHistory
@@ -153,11 +157,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
         />
         <AiToolsSection
           page={page}
-          onInsert={(blocks) =>
-            updatePage(page.id, (p) =>
-              p.note ? { ...p, note: { ...p.note, learned: [...p.note.learned, ...blocks] } } : { ...p, blocks: [...p.blocks, ...blocks] },
-            )
-          }
+          onInsert={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks: [...p.blocks, ...blocks] }))}
         />
       </div>
     </>
@@ -251,12 +251,12 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {layout.studyOn && <div className="mt-4">{properties}</div>}
+        {studyOn && <div className="mt-4">{properties}</div>}
         <hr className="my-6 border-border" />
         {body}
-        {layout.studyOn && renderStudyArea()}
+        {studyOn && renderStudyArea()}
 
-        {!layout.studyOn && (
+        {!studyOn && (
           <>
             <hr className="mb-8 mt-16 border-border" />
             <section
@@ -294,7 +294,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
   )
 }
 
-function StudyFeaturesMenu({ locked, onDisable }: { locked: boolean; onDisable: () => void }) {
+function StudyFeaturesMenu({ onDisable }: { onDisable: () => void }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -322,14 +322,6 @@ function StudyFeaturesMenu({ locked, onDisable }: { locked: boolean; onDisable: 
             role="menu"
             className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-border bg-background p-1 shadow-lg"
           >
-            {locked ? (
-              <div role="menuitem" aria-disabled="true" tabIndex={-1} className="flex gap-2 px-2.5 py-2">
-                <Lock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  이 페이지는 항상 학습 기록으로 추적됩니다
-                </p>
-              </div>
-            ) : (
               <>
                 <button
                   type="button"
@@ -348,7 +340,6 @@ function StudyFeaturesMenu({ locked, onDisable }: { locked: boolean; onDisable: 
                   본문과 학습 기록은 삭제되지 않아요.
                 </p>
               </>
-            )}
           </div>
         </>
       )}

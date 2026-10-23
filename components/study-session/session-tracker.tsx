@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
-import { isLockedOn } from "@/lib/templates"
+import { isStudyOn } from "@/lib/templates"
 import { useWorkspace } from "@/lib/workspace"
 import {
   HEARTBEAT_MS,
@@ -15,7 +15,7 @@ import {
 import { usePageVisible } from "@/hooks/use-session-clock"
 import { usePomodoro } from "@/lib/pomodoro"
 
-// Keeps the open segment in sync with the current route: only a visible locked-on page is tracked,
+// Keeps the open segment in sync with the current route: only a visible page with study on is tracked,
 // and nothing is tracked during a pomodoro break.
 export function SessionTracker() {
   const pathname = usePathname()
@@ -27,7 +27,7 @@ export function SessionTracker() {
 
   const routePageId = pathname.match(/^\/record\/([^/]+)/)?.[1] ?? null
   const routePage = routePageId ? pages.find((p) => p.id === routePageId) : undefined
-  const trackedPageId = startedAt && visible && !onBreak && routePage && isLockedOn(routePage) ? routePage.id : null
+  const trackedPageId = startedAt && visible && !onBreak && routePage && isStudyOn(routePage) ? routePage.id : null
 
   // Declared first so stale segments from a previous load are closed before tracking resumes.
   useEffect(() => {

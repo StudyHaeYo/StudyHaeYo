@@ -28,7 +28,7 @@ export interface RecordPrefill {
 export interface SessionState {
   startedAt: number | null
   segments: SessionSegment[]
-  // Open segment on a locked-on page; closed when leaving the page, hiding the tab, or ending the session.
+  // Open segment on a page with study on; closed when leaving the page, hiding the tab, or ending the session.
   openSegment: { pageId: string; start: number } | null
   // Heartbeat while a session runs and the tab is visible; used to close stale segments after a reload.
   lastActiveAt: number | null

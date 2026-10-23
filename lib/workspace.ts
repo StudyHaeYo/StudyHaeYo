@@ -2,7 +2,7 @@ import { toast } from "sonner"
 import { createStore } from "@/lib/create-store"
 import { addDays, cloneBlock, daysBetween, studyPages, todayISO, type PageStudyRecord, type StudyPage } from "@/lib/study-pages"
 import { studyTree } from "@/lib/study-tree"
-import { getTemplate, type TemplateId } from "@/lib/templates"
+import { getStarter } from "@/lib/templates"
 import {
   deletePlanRows,
   detachPlans,
@@ -142,14 +142,16 @@ function insertPage(page: StudyPage) {
   })
 }
 
-export function createPage(input: { title: string; templateId: TemplateId; parentId: string | null }) {
+// `starterId` picks the "+ 새 페이지" template card (lib/templates.ts pageStarters).
+export function createPage(input: { title: string; starterId: string; parentId: string | null }) {
+  const starter = getStarter(input.starterId)
   const page: StudyPage = {
     id: newId(),
     title: input.title.trim(),
     parentId: input.parentId,
-    templateId: input.templateId,
+    templateId: starter.templateId,
     createdAt: todayISO(),
-    ...getTemplate(input.templateId).createContent(),
+    blocks: starter.createBlocks(),
     tags: [],
     studyRecords: [],
   }

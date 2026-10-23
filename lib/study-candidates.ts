@@ -24,8 +24,7 @@ function relativeDay(iso: string | null, today: string) {
   return `${diff}일 전`
 }
 
-// Pages due for review today or tomorrow. Only pages whose template is studyMode "locked-on"
-// are candidates; "optional" pages (even with study on) are left out of these Home widgets.
+// Pages due for review today or tomorrow, among pages with study features on.
 // Order: review date → understanding → more unresolved 헷갈린 점 first.
 export function reviewCandidates(workspace: WorkspaceState, today: string): StudyCandidate[] {
   const tomorrow = addDays(today, 1)

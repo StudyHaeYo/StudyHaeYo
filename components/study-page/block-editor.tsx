@@ -15,6 +15,7 @@ import {
   ArrowUp,
   Check,
   ChevronRight,
+  CircleHelp,
   Code,
   Copy,
   FileSymlink,
@@ -22,6 +23,7 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  KeyRound,
   Lightbulb,
   List,
   ListChecks,
@@ -68,7 +70,7 @@ const shortcuts: { prefix: string; type: BlockType; checked?: boolean }[] = [
 ]
 
 // Types that continue on Enter (a new line of the same list); an empty one turns back into a paragraph.
-const LIST_TYPES = new Set<BlockType>(["li", "ol", "todo"])
+const LIST_TYPES = new Set<BlockType>(["li", "ol", "todo", "concept", "confusion"])
 
 const blockStyles: Record<BlockType, string> = {
   h1: "text-2xl font-bold tracking-tight pt-4",
@@ -82,6 +84,8 @@ const blockStyles: Record<BlockType, string> = {
   quote: "text-base leading-relaxed",
   callout: "text-base leading-relaxed",
   code: "rounded-lg bg-muted px-4 py-3 font-mono text-sm leading-relaxed",
+  concept: "text-base leading-relaxed",
+  confusion: "text-base leading-relaxed",
 }
 
 const placeholders: Record<BlockType, string> = {
@@ -96,6 +100,8 @@ const placeholders: Record<BlockType, string> = {
   quote: "인용",
   callout: "강조할 내용",
   code: "코드를 입력하세요",
+  concept: "용어: 설명 (복습 카드의 앞/뒤가 돼요)",
+  confusion: "헷갈리는 것이나 다시 확인할 질문",
 }
 
 // Lines the grip up with the first text line (headings have top padding).
@@ -111,6 +117,8 @@ const handleTop: Record<BlockType, string> = {
   quote: "top-0.5",
   callout: "top-3",
   code: "top-2.5",
+  concept: "top-0.5",
+  confusion: "top-0.5",
 }
 
 const emptyParagraph = (): TextBlock => ({ id: newBlockId(), type: "p", text: "" })
@@ -118,7 +126,7 @@ const emptyParagraph = (): TextBlock => ({ id: newBlockId(), type: "p", text: ""
 // Changes a text block's type, keeping only the fields that type uses.
 function withType(block: TextBlock, type: BlockType, checked = false): TextBlock {
   const base: TextBlock = { id: block.id, type, text: block.text }
-  if (type === "todo") base.checked = block.checked ?? checked
+  if (type === "todo" || type === "confusion") base.checked = block.checked ?? checked
   if (type === "toggle") {
     base.body = block.body ?? ""
     base.open = block.open ?? true
@@ -138,6 +146,8 @@ const markdownPrefix: Record<BlockType, string> = {
   callout: "> 💡 ",
   p: "",
   code: "",
+  concept: "- ",
+  confusion: "- ",
 }
 
 // "/" menu: typed at the start of a line, filtered by what follows the slash.
@@ -157,6 +167,8 @@ const slashItems: SlashItem[] = [
   { label: "토글", keywords: "토글 접기 문제 정답 toggle", icon: ListCollapse, type: "toggle" },
   { label: "인용", keywords: "인용 quote", icon: Quote, type: "quote" },
   { label: "콜아웃", keywords: "콜아웃 강조 박스 중요 callout", icon: Lightbulb, type: "callout" },
+  { label: "핵심 개념", keywords: "핵심개념 개념 용어 복습 카드 concept", icon: KeyRound, type: "concept" },
+  { label: "헷갈린 점", keywords: "헷갈린점 헷갈림 질문 모름 confusion question", icon: CircleHelp, type: "confusion" },
   { label: "구분선", keywords: "구분선 선 divider hr", icon: Minus, action: "divider" },
   { label: "페이지 링크", keywords: "페이지링크 링크 연결 link page", icon: FileSymlink, action: "pagelink" },
   { label: "코드", keywords: "코드 code", icon: Code, type: "code" },
@@ -746,6 +758,33 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
                     💡
                   </span>
                 )}
+                {block.type === "concept" && (
+                  <span
+                    aria-hidden="true"
+                    title="핵심 개념 · 복습 카드가 돼요"
+                    className="mt-[3px] shrink-0 select-none rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-medium text-indigo-700"
+                  >
+                    개념
+                  </span>
+                )}
+                {block.type === "confusion" && (
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={block.checked === true}
+                    aria-label={block.checked ? "해결 취소" : "해결함"}
+                    title={block.checked ? "해결함" : "헷갈린 점 · 해결하면 눌러요"}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => onChange(blocks.map((b) => (b.id === block.id ? { ...block, checked: !block.checked } : b)))}
+                    className={`mt-1 flex size-[18px] shrink-0 items-center justify-center rounded-full border transition-colors ${
+                      block.checked
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-amber-400 text-amber-600 hover:border-amber-600"
+                    }`}
+                  >
+                    {block.checked ? <Check className="size-3" /> : <span className="text-[11px] font-bold leading-none">?</span>}
+                  </button>
+                )}
                 {block.type === "todo" && (
                   <button
                     type="button"
@@ -815,7 +854,7 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
                     hint || isSoleEmptyBlock
                       ? "placeholder:text-muted-foreground/60"
                       : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
-                  } ${blockStyles[block.type]} ${block.type === "todo" && block.checked ? "text-muted-foreground line-through" : ""}`}
+                  } ${blockStyles[block.type]} ${(block.type === "todo" || block.type === "confusion") && block.checked ? "text-muted-foreground line-through" : ""}`}
                 />
               </div>
               {block.type === "toggle" && block.open !== false && (
