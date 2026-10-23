@@ -13,18 +13,21 @@ import {
   useStudySession,
 } from "@/lib/study-session"
 import { usePageVisible } from "@/hooks/use-session-clock"
+import { usePomodoro } from "@/lib/pomodoro"
 
-// Keeps the open segment in sync with the current route: only a visible locked-on page is tracked.
+// Keeps the open segment in sync with the current route: only a visible locked-on page is tracked,
+// and nothing is tracked during a pomodoro break.
 export function SessionTracker() {
   const pathname = usePathname()
   const { pages } = useWorkspace()
   const { startedAt } = useStudySession()
   const visible = usePageVisible()
+  const onBreak = usePomodoro().phase === "break"
   const trackedRef = useRef<string | null>(null)
 
   const routePageId = pathname.match(/^\/record\/([^/]+)/)?.[1] ?? null
   const routePage = routePageId ? pages.find((p) => p.id === routePageId) : undefined
-  const trackedPageId = startedAt && visible && routePage && isLockedOn(routePage) ? routePage.id : null
+  const trackedPageId = startedAt && visible && !onBreak && routePage && isLockedOn(routePage) ? routePage.id : null
 
   // Declared first so stale segments from a previous load are closed before tracking resumes.
   useEffect(() => {
