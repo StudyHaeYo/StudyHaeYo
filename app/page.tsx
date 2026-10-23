@@ -4,7 +4,6 @@ import { Sidebar } from "@/components/sidebar"
 import { TopBar } from "@/components/top-bar"
 import { SessionTimerCard } from "@/components/study-session/session-timer"
 import { TodayAgenda } from "@/components/learning-os/today-agenda"
-import { SubjectMastery } from "@/components/learning-os/subject-mastery"
 import { TodayRecords } from "@/components/learning-os/today-records"
 import { WeeklyStats } from "@/components/learning-os/weekly-stats"
 import { StudyHeatmap } from "@/components/learning-os/study-heatmap"
@@ -26,17 +25,13 @@ export default function DashboardPage() {
             <TodayAgenda />
             <SessionTimerCard />
 
-            <section aria-label="학습 상태" className="mb-8">
-              <SubjectMastery />
-            </section>
-
             <TodayRecords />
           </div>
         </main>
 
         {/* Right panel */}
-        <aside className="shrink-0 border-t border-border bg-sidebar px-4 py-6 xl:w-72 xl:border-l xl:border-t-0">
-          <div className="mx-auto grid max-w-2xl gap-4 sm:grid-cols-2 xl:block xl:max-w-none xl:space-y-4">
+        <aside className="shrink-0 border-t border-border px-4 py-6 xl:w-72 xl:border-l xl:border-t-0 xl:px-6">
+          <div className="mx-auto grid max-w-2xl gap-8 sm:grid-cols-2 xl:flex xl:max-w-none xl:flex-col xl:gap-0 xl:divide-y xl:divide-border xl:[&>*]:py-6 xl:[&>*:first-child]:pt-0">
             <StudyHeatmap />
             <WeeklyStats />
           </div>

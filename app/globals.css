@@ -4,6 +4,22 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Design A (2026-10-24): brand navy #1E2B58. The app uses Tailwind's indigo-* classes for the brand color,
+   so the indigo scale itself is redefined as navy instead of rewriting every class. */
+@theme {
+  --color-indigo-50: #f3f5fa;
+  --color-indigo-100: #e4e8f2;
+  --color-indigo-200: #c9d0e3;
+  --color-indigo-300: #9ea9c9;
+  --color-indigo-400: #6f7ea8;
+  --color-indigo-500: #475887;
+  --color-indigo-600: #1e2b58;
+  --color-indigo-700: #18234a;
+  --color-indigo-800: #121b3a;
+  --color-indigo-900: #0d142b;
+  --color-indigo-950: #080d1d;
+}
+
 @theme inline {
   --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo',
     'Noto Sans KR', 'Malgun Gothic', sans-serif;
@@ -55,7 +71,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.511 0.262 276.966); /* brand indigo (indigo-600) */
+  --primary: #1e2b58; /* brand navy (indigo-600, see @theme) */
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -66,7 +82,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.585 0.233 277.117);
+  --ring: #475887;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

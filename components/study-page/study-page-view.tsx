@@ -162,7 +162,8 @@ export function StudyPageView({ pageId, mode, openAi = false }: { pageId: string
 
   return (
     <PagesContext.Provider value={pages}>
-    <div className="flex flex-col">
+    {/* With the AI panel open on a wide screen, the page moves aside instead of going under it. */}
+    <div className={`flex flex-col transition-[padding] ${aiOpen ? "md:pr-[420px]" : ""}`}>
       <header className="sticky top-12 z-10 border-b md:top-0 border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-3 lg:px-10">
           <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">

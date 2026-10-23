@@ -37,7 +37,7 @@ export function SubjectStudyLog({ subjectId }: { subjectId: string }) {
             : "페이지 없이 과목에 바로 기록하는 기능은 DB 업데이트 후에 열려요. 지금은 기록할 페이지를 골라 주세요."}
         </p>
       ) : (
-        <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+        <ul className="flex flex-col divide-y divide-border border-y border-border">
           {records.map((record) => (
             <li key={record.id} className="flex items-start gap-3 px-4 py-3">
               <div className="min-w-0 flex-1">

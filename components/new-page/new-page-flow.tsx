@@ -4,9 +4,10 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Check, ChevronRight, FolderOpen } from "lucide-react"
 import { getStarter, pageStarters } from "@/lib/templates"
-import { createPage, flattenTree, nodeExists, nodePath, useWorkspace } from "@/lib/workspace"
+import { addGroup, createPage, flattenTree, nodeExists, nodePath, useWorkspace } from "@/lib/workspace"
 
 const ROOT = "__root__"
+const NEW_SUBJECT = "__new_subject__"
 
 export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
   const router = useRouter()
@@ -20,6 +21,15 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
   const [location, setLocation] = useState(defaultLocation)
   const [pickingLocation, setPickingLocation] = useState(!hasContext)
   const [showError, setShowError] = useState(false)
+  // "+ 새 과목": name typed here becomes a subject at the top of 내 페이지, then the page goes in it.
+  const [newSubject, setNewSubject] = useState<string | null>(null)
+
+  const createSubject = () => {
+    const name = newSubject?.trim()
+    if (!name) return
+    setLocation(addGroup(name, null, "subject"))
+    setNewSubject(null)
+  }
 
   const contextPath = hasContext ? nodePath(workspace, contextParentId ?? null) : []
   const titleMissing = title.trim().length === 0
@@ -119,21 +129,58 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
           <span id="location-label" className="text-sm font-medium text-card-foreground">
             저장 위치
           </span>
-          {pickingLocation ? (
+          {pickingLocation && newSubject !== null ? (
+            <div className="flex gap-2">
+              <input
+                autoFocus
+                value={newSubject}
+                onChange={(e) => setNewSubject(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.nativeEvent.isComposing || e.keyCode === 229) return
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    createSubject()
+                  } else if (e.key === "Escape") {
+                    e.preventDefault()
+                    setNewSubject(null)
+                  }
+                }}
+                placeholder="새 과목 이름 (예: 운영체제)"
+                aria-label="새 과목 이름"
+                className={fieldClass}
+              />
+              <button
+                type="button"
+                onClick={createSubject}
+                disabled={!newSubject.trim()}
+                className="shrink-0 rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                만들기
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewSubject(null)}
+                className="shrink-0 rounded-lg px-3 text-sm text-muted-foreground hover:bg-muted"
+              >
+                취소
+              </button>
+            </div>
+          ) : pickingLocation ? (
             <select
               aria-labelledby="location-label"
               value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              onChange={(e) => (e.target.value === NEW_SUBJECT ? setNewSubject("") : setLocation(e.target.value))}
               className={fieldClass}
             >
               <option value={ROOT}>내 페이지 (최상위)</option>
               {locations.map(({ node, depth }) => (
                 <option key={node.id} value={node.id}>
                   {`${"\u00A0\u00A0\u00A0".repeat(depth + 1)}${node.kind === "page" ? "· " : ""}${node.name}${
-                    node.kind === "page" ? " (하위 페이지로)" : ""
+                    node.kind === "page" ? " (하위 페이지로)" : node.kind === "subject" ? " · 과목" : ""
                   }`}
                 </option>
               ))}
+              <option value={NEW_SUBJECT}>+ 새 과목 만들기</option>
             </select>
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/60 px-3 py-2.5">

@@ -29,7 +29,7 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
       </div>
 
       {rows.length > 0 ? (
-        <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+        <ul className="flex flex-col divide-y divide-border border-y border-border">
           {rows.map(({ page, stats }) => {
             const Icon = resolveTreeAppearance(page).icon
             const due = stats.status === "복습 필요" ? "text-amber-700" : undefined
