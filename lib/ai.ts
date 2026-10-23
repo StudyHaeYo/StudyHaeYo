@@ -1,4 +1,12 @@
-import { newBlockId, type AttachmentBlock, type Block, type StudyPage, type TextBlock } from "@/lib/study-pages"
+import {
+  isTextBlock,
+  newBlockId,
+  textBlockWords,
+  type AttachmentBlock,
+  type Block,
+  type StudyPage,
+  type TextBlock,
+} from "@/lib/study-pages"
 
 // AI 학습 도우미 (client side). The browser never sees the API key: it calls our route (app/api/ai/chat/route.ts),
 // which checks the session and calls Claude. Chat history lives only in the open page (not saved).
@@ -14,8 +22,8 @@ export const MAX_CONTEXT_CHARS = 20_000
 
 const textOf = (blocks: Block[]) =>
   blocks
-    .filter((b): b is TextBlock => "text" in b)
-    .map((b) => b.text)
+    .filter(isTextBlock)
+    .map(textBlockWords)
     .filter((t) => t.trim())
     .join("\n")
 
@@ -95,6 +103,13 @@ export function markdownToBlocks(markdown: string): TextBlock[] {
     if (heading) {
       const level = Math.min(heading[1].length, 3)
       blocks.push({ id: newBlockId(), type: (["h1", "h2", "h3"] as const)[level - 1], text: clean(heading[2]) })
+    } else if (/^[-*]\s+\[( |x|X)\]\s+/.test(line)) {
+      const checked = /^[-*]\s+\[(x|X)\]/.test(line)
+      blocks.push({ id: newBlockId(), type: "todo", text: clean(line.replace(/^[-*]\s+\[( |x|X)\]\s+/, "")), checked })
+    } else if (/^\d+[.)]\s+/.test(line)) {
+      blocks.push({ id: newBlockId(), type: "ol", text: clean(line.replace(/^\d+[.)]\s+/, "")) })
+    } else if (/^>\s?/.test(line)) {
+      blocks.push({ id: newBlockId(), type: "quote", text: clean(line.replace(/^>\s?/, "")) })
     } else if (/^[-*•]\s+/.test(line)) {
       blocks.push({ id: newBlockId(), type: "li", text: clean(line.replace(/^[-*•]\s+/, "")) })
     } else {

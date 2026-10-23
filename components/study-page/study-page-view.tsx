@@ -18,6 +18,7 @@ import { DataStatusView } from "@/components/data-status-notice"
 import type { ReviewResult } from "@/components/study-page/study-note-review"
 import { resolvePageLayout } from "@/lib/templates"
 import { nearestSubject, nodePath, setPageStudyEnabled, updatePage, useWorkspace } from "@/lib/workspace"
+import { PagesContext } from "@/components/study-page/pages-context"
 import { PageActionsMenu, menuItemClass } from "@/components/page-actions-menu"
 import type { AttachmentHandle } from "@/components/study-page/block-editor"
 import { clearRecordPrefill, useStudySession } from "@/lib/study-session"
@@ -163,6 +164,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
   )
 
   return (
+    <PagesContext.Provider value={pages}>
     <div className="flex flex-col">
       <header className="sticky top-12 z-10 border-b md:top-0 border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-3 lg:px-10">
@@ -288,6 +290,7 @@ export function StudyPageView({ pageId, mode }: { pageId: string; mode?: "review
 
       </article>
     </div>
+    </PagesContext.Provider>
   )
 }
 

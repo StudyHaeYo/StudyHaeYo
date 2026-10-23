@@ -2,13 +2,34 @@ import { reviewOffsetDays } from "@/lib/learning-os"
 import type { StudyType } from "@/lib/types"
 import type { TemplateId } from "@/lib/templates"
 
-export type BlockType = "h1" | "h2" | "h3" | "p" | "li" | "code"
+// Text-like blocks share one shape (a line of text + a few optional fields), so the editor keeps one textarea
+// per block. todo = 체크 목록, ol = 번호 목록 (numbers come from consecutive ol blocks), toggle = 접기 제목
+// (+ hidden body), quote = 인용, callout = 강조 박스.
+export type BlockType = "h1" | "h2" | "h3" | "p" | "li" | "ol" | "todo" | "toggle" | "quote" | "callout" | "code"
 export type AttachmentBlockType = "image" | "file"
 
 export interface TextBlock {
   id: string
   type: BlockType
   text: string
+  // todo only.
+  checked?: boolean
+  // toggle only: the folded content (plain text, may span lines) and whether it is shown.
+  body?: string
+  open?: boolean
+}
+
+// 구분선.
+export interface DividerBlock {
+  id: string
+  type: "divider"
+}
+
+// 페이지 링크: a card that opens another page; the title is read live, so renames follow.
+export interface PageLinkBlock {
+  id: string
+  type: "pagelink"
+  pageId: string
 }
 
 // "image" is used only for formats the browser previews inline; every other file is a "file" card.
@@ -49,10 +70,25 @@ export interface DrawingBlock {
   height: number
 }
 
-export type Block = TextBlock | AttachmentBlock | DrawingBlock
+export type Block = TextBlock | AttachmentBlock | DrawingBlock | DividerBlock | PageLinkBlock
+
+const NON_TEXT_TYPES = new Set(["image", "file", "drawing", "divider", "pagelink"])
 
 export function isTextBlock(block: Block): block is TextBlock {
-  return block.type !== "image" && block.type !== "file" && block.type !== "drawing"
+  return !NON_TEXT_TYPES.has(block.type)
+}
+
+export function isDividerBlock(block: Block): block is DividerBlock {
+  return block.type === "divider"
+}
+
+export function isPageLinkBlock(block: Block): block is PageLinkBlock {
+  return block.type === "pagelink"
+}
+
+// All words in a text block, including a toggle's folded body (search, AI context).
+export function textBlockWords(block: TextBlock) {
+  return block.body ? `${block.text}\n${block.body}` : block.text
 }
 
 export function isDrawingBlock(block: Block): block is DrawingBlock {
@@ -72,7 +108,7 @@ export function cloneBlock(block: Block): Block {
 export function blocksPlainText(blocks: Block[]) {
   return blocks
     .filter(isTextBlock)
-    .map((b) => b.text)
+    .map(textBlockWords)
     .join("\n")
 }
 
