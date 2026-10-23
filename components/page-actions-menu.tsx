@@ -7,9 +7,10 @@ import { deletePage, duplicatePage, flattenTree, plansInSubtree, setPageStudyEna
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
 
 // Confirmation line for deleting a page or group: what else goes with it.
-export function deleteNoteText(nestedCount: number, planCount: number) {
+export function deleteNoteText(nestedCount: number, planCount: number, subjectRecordCount = 0) {
   const parts = [
     nestedCount > 0 ? `하위 항목 ${nestedCount}개와 그 학습 기록` : null,
+    subjectRecordCount > 0 ? `과목에 바로 남긴 학습 기록 ${subjectRecordCount}개` : null,
     planCount > 0 ? `이 항목을 대상으로 한 학습 계획 ${planCount}개` : null,
   ].filter(Boolean)
   return parts.length > 0 ? `${parts.join(", ")}도 함께 삭제됩니다.` : undefined

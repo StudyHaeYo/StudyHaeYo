@@ -1,8 +1,17 @@
 import { toast } from "sonner"
 import { createStore } from "@/lib/create-store"
-import { addDays, cloneBlock, daysBetween, studyPages, todayISO, type PageStudyRecord, type StudyPage } from "@/lib/study-pages"
+import {
+  addDays,
+  cloneBlock,
+  daysBetween,
+  studyPages,
+  todayISO,
+  type PageStudyRecord,
+  type StudyPage,
+  type SubjectStudyRecord,
+} from "@/lib/study-pages"
 import { studyTree } from "@/lib/study-tree"
-import { getStarter } from "@/lib/templates"
+import { getStarter, isStudyOn } from "@/lib/templates"
 import {
   deletePlanRows,
   detachPlans,
@@ -30,6 +39,7 @@ import {
   pageInsertRow,
   recordInsertRow,
   recordUpdateRow,
+  subjectRecordInsertRow,
 } from "@/lib/db/rows"
 
 // A folder groups pages or other groups; a subject is a group that plans and analytics can target.
@@ -45,6 +55,8 @@ export interface WorkspaceGroup {
 export interface WorkspaceState {
   groups: WorkspaceGroup[]
   pages: StudyPage[]
+  // Records of studying without a page, attached to a subject (D-24). Page records stay in page.studyRecords.
+  subjectRecords: SubjectStudyRecord[]
   // Sibling order for groups and pages alike; ids missing here sort after listed ones.
   order: string[]
 }
@@ -53,10 +65,18 @@ export interface WorkspaceState {
 // it starts empty (server snapshot too, so hydration matches), lib/db/sync.ts fills it after sign-in, and every
 // function below updates it first and then queues the matching DB write. A failed write reloads from the DB.
 // The seed pages in lib/study-tree.ts and lib/study-pages.ts are no longer loaded here.
-const emptyWorkspace: WorkspaceState = { groups: [], pages: [], order: [] }
+const emptyWorkspace: WorkspaceState = { groups: [], pages: [], subjectRecords: [], order: [] }
 const store = createStore<WorkspaceState>(emptyWorkspace)
 
 export const useWorkspace = store.useStore
+
+// False while study_records has no subject_id column (supabase/migrations/20261024_subject_records.sql not
+// applied): then a record must go on a page. Server snapshot is true so the first render matches.
+const subjectRecordsReadyStore = createStore<boolean>(true)
+export const useSubjectRecordsReady = subjectRecordsReadyStore.useStore
+export function setSubjectRecordsReady(ready: boolean) {
+  subjectRecordsReadyStore.set(() => ready)
+}
 
 // Last (parentId, position) written to workspace_nodes for each node, so only moved siblings get updated.
 let savedPositions = new Map<string, { parentId: string | null; position: number }>()
@@ -216,6 +236,64 @@ export function setPageStudyEnabled(id: string, studyEnabled: boolean) {
   updatePage(id, (p) => ({ ...p, studyEnabled }))
 }
 
+// ---- 학습 기록 바로 남기기 (D-24)
+
+// Adds a record to a page from outside the page (빠른 기록, 타이머). A page with study off gets it turned on,
+// so the record is visible there. Like adding on the page, a new record clears manual status/understanding.
+export function addPageRecord(pageId: string, record: PageStudyRecord) {
+  updatePage(pageId, ({ status: _s, understanding: _u, ...p }) => ({
+    ...p,
+    ...(isStudyOn(p) ? {} : { studyEnabled: true }),
+    studyRecords: [...p.studyRecords, { ...record, pageId }],
+  }))
+}
+
+function writeRecord(run: (records: ReturnType<ReturnType<typeof db>["from"]>, userId: string) => Promise<void>) {
+  enqueueWrite(async (userId) => run(db().from("study_records"), userId))
+}
+
+export function addSubjectRecord(record: SubjectStudyRecord) {
+  store.set((s) => ({ ...s, subjectRecords: [...s.subjectRecords, record] }))
+  writeRecord(async (records, userId) => {
+    check(await records.insert(subjectRecordInsertRow(record, userId)).select("id"), 1)
+  })
+}
+
+export function updateSubjectRecord(record: SubjectStudyRecord) {
+  store.set((s) => ({ ...s, subjectRecords: s.subjectRecords.map((r) => (r.id === record.id ? record : r)) }))
+  writeRecord(async (records, userId) => {
+    const patch = { ...recordUpdateRow(record), subject_id: record.subjectId }
+    check(await records.update(patch).eq("id", record.id).eq("user_id", userId).select("id"), 1)
+  })
+}
+
+export function deleteSubjectRecord(id: string) {
+  store.set((s) => ({ ...s, subjectRecords: s.subjectRecords.filter((r) => r.id !== id) }))
+  writeRecord(async (records, userId) => {
+    check(await records.delete().eq("id", id).eq("user_id", userId).select("id"), 1)
+  })
+}
+
+// "페이지에 연결": a subject record moves onto a page (same row: page_id set, subject_id cleared).
+// `record` carries any edits made in the same form.
+export function attachRecordToPage(record: SubjectStudyRecord, pageId: string) {
+  const page = store.get().pages.find((p) => p.id === pageId)
+  if (!page) return
+  if (!isStudyOn(page)) setPageStudyEnabled(pageId, true)
+  const { subjectId: _subject, ...fields } = record
+  const moved: PageStudyRecord = { ...fields, pageId }
+  // Straight into the store: going through updatePage would insert the record as a new row.
+  store.set((s) => ({
+    ...s,
+    subjectRecords: s.subjectRecords.filter((r) => r.id !== record.id),
+    pages: s.pages.map((p) => (p.id === pageId ? { ...p, studyRecords: [...p.studyRecords, moved] } : p)),
+  }))
+  writeRecord(async (records, userId) => {
+    const patch = { ...recordUpdateRow(moved), page_id: pageId, subject_id: null }
+    check(await records.update(patch).eq("id", record.id).eq("user_id", userId).select("id"), 1)
+  })
+}
+
 export function duplicatePage(id: string) {
   const pages = store.get().pages
   const index = pages.findIndex((p) => p.id === id)
@@ -281,15 +359,18 @@ function removeSubtree(rootId: string) {
   const snapshot = {
     pages: s.pages,
     groups: s.groups,
+    subjectRecords: s.subjectRecords,
     order: s.order,
     removed,
     plans: detachPlans(plansInSubtree(s, rootId).map((p) => p.id)),
   }
   const name = findNode(s, rootId)?.node.name || "제목 없음"
 
+  // Subject records go with their subject (study_records.subject_id cascades in the DB).
   store.set((state) => ({
     pages: state.pages.filter((p) => !removed.has(p.id)),
     groups: state.groups.filter((g) => !removed.has(g.id)),
+    subjectRecords: state.subjectRecords.filter((r) => !removed.has(r.subjectId)),
     order: state.order.filter((nodeId) => !removed.has(nodeId)),
   }))
   for (const nodeId of removed) savedPositions.delete(nodeId)
@@ -317,7 +398,14 @@ function removeSubtree(rootId: string) {
 
 function undoDelete(
   key: string,
-  snapshot: { pages: StudyPage[]; groups: WorkspaceGroup[]; order: string[]; removed: Set<string>; plans: LearningPlan[] },
+  snapshot: {
+    pages: StudyPage[]
+    groups: WorkspaceGroup[]
+    subjectRecords: SubjectStudyRecord[]
+    order: string[]
+    removed: Set<string>
+    plans: LearningPlan[]
+  },
 ) {
   if (!cancelScheduled(key)) {
     toast.error("이미 삭제가 저장돼서 되돌릴 수 없어요")
@@ -335,7 +423,10 @@ function undoDelete(
     const groups = merge(snapshot.groups, state.groups)
     const present = new Set([...pages.map((p) => p.id), ...groups.map((g) => g.id)])
     const order = [...snapshot.order.filter((id) => present.has(id)), ...state.order.filter((id) => !snapshot.order.includes(id))]
-    return { pages, groups, order }
+    const restoredRecords = snapshot.subjectRecords.filter(
+      (r) => snapshot.removed.has(r.subjectId) && !state.subjectRecords.some((x) => x.id === r.id),
+    )
+    return { pages, groups, order, subjectRecords: [...state.subjectRecords, ...restoredRecords] }
   })
   reattachPlans(snapshot.plans)
   syncPositions()
@@ -370,6 +461,7 @@ export function moveNode(dragId: string, targetId: string | null, position: Drop
   order.splice(insertAt, 0, dragId)
 
   store.set(() => ({
+    ...s,
     order,
     groups: s.groups.map((g) => (g.id === dragId ? { ...g, parentId: newParentId } : g)),
     pages: s.pages.map((p) => (p.id === dragId ? { ...p, parentId: newParentId } : p)),
@@ -411,6 +503,8 @@ export function deleteGroup(id: string) {
 // A subject that plans point at can't become a folder (R7). Returns false when the change is refused.
 export function setGroupKind(id: string, kind: GroupKind) {
   if (kind === "folder" && plansTargetingSubject(getPlans(), id).length > 0) return false
+  // Subject records point at the subject; a folder can't hold them.
+  if (kind === "folder" && store.get().subjectRecords.some((r) => r.subjectId === id)) return false
   const current = store.get().groups.find((g) => g.id === id)
   if (!current) return false
   if (current.kind === kind) return true
@@ -496,7 +590,7 @@ export async function importExampleData(): Promise<ImportResult> {
             : { scope: "all" },
     }))
 
-    store.set(() => ({ groups, pages, order: seedOrder.map(idFor) }))
+    store.set(() => ({ groups, pages, subjectRecords: [], order: seedOrder.map(idFor) }))
     const positions = siblingPositions(store.get())
     savedPositions = new Map(positions)
     const byId = new Map<string, WorkspaceGroup | StudyPage>([...groups, ...pages].map((n) => [n.id, n]))
@@ -589,6 +683,11 @@ export const NO_SUBJECT = "과목 없음"
 // Every page somewhere under the given node, at any depth.
 export function descendantPages(tree: TreeSource, ancestorId: string) {
   return tree.pages.filter((p) => nodePath(tree, p.parentId).some((n) => n.id === ancestorId))
+}
+
+// Every group somewhere under the given node, at any depth.
+export function descendantGroups(tree: TreeSource, ancestorId: string) {
+  return tree.groups.filter((g) => nodePath(tree, g.parentId).some((n) => n.id === ancestorId))
 }
 
 // Depth-first list of every possible parent (groups and pages) for location pickers.

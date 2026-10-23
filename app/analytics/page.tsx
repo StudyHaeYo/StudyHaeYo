@@ -6,13 +6,16 @@ import { AnalyticsTrend } from "@/components/learning-os/analytics-trend"
 import { RecentActivity, UpcomingReviews, WeakAreas } from "@/components/learning-os/analytics-widgets"
 import { formatDuration } from "@/lib/study-pages"
 import { useWorkspace } from "@/lib/workspace"
+import { allRecords } from "@/lib/study-stats"
 import { unrecordedSessionMinutes, useStudySession } from "@/lib/study-session"
 
 export default function AnalyticsPage() {
-  const { pages } = useWorkspace()
-  const records = pages.flatMap((p) => p.studyRecords)
+  const workspace = useWorkspace()
+  const { pages } = workspace
+  const pageRecords = pages.flatMap((p) => p.studyRecords)
+  const records = allRecords(workspace)
   const session = useStudySession()
-  const sessionMinutes = unrecordedSessionMinutes(session, records, Date.now(), new Set(pages.map((p) => p.id)))
+  const sessionMinutes = unrecordedSessionMinutes(session, pageRecords, Date.now(), new Set(pages.map((p) => p.id)))
   const totalMinutes = records.reduce((sum, r) => sum + r.durationMinutes, 0) + sessionMinutes
   const averageUnderstanding =
     records.length > 0 ? (records.reduce((sum, r) => sum + r.understanding, 0) / records.length).toFixed(1) : "-"
@@ -23,7 +26,7 @@ export default function AnalyticsPage() {
           ? `학습 기록 + 기록 전 타이머 세션 ${formatDuration(sessionMinutes)}`
           : "학습 기록의 학습 시간 합계",
     },
-    { label: "학습 기록 수", value: `${records.length}개`, hint: "전체 페이지 기준" },
+    { label: "학습 기록 수", value: `${records.length}개`, hint: "페이지 · 과목 기록 전체" },
     { label: "평균 이해도", value: `${averageUnderstanding} / 5`, hint: "전체 기록 기준" },
   ]
 

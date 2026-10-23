@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useTodayISO } from "@/hooks/use-today"
 import { dueToneClass, formatDate } from "@/lib/study-pages"
-import { recentActivity, upcomingReviews, weakAreas } from "@/lib/study-stats"
+import { entryHref, entryTitle, recentActivity, upcomingReviews, weakAreas } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
@@ -109,11 +109,11 @@ export function RecentActivity() {
           {items.map((item) => (
             <li key={item.record.id}>
               <Link
-                href={`/record/${item.pageId}`}
+                href={entryHref(item)}
                 className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-sm transition-colors hover:bg-accent"
               >
                 <span className="min-w-0">
-                  <span className="block truncate font-medium text-card-foreground">{item.pageTitle}</span>
+                  <span className="block truncate font-medium text-card-foreground">{entryTitle(item)}</span>
                   <span className="text-xs text-muted-foreground">
                     {`${item.subject} · ${formatDate(item.record.date)}`}
                   </span>

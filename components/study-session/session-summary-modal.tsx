@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import { usePathname, useRouter } from "next/navigation"
-import { Check, GraduationCap, Plus, Timer } from "lucide-react"
+import { BookMarked, Check, GraduationCap, Plus, Timer } from "lucide-react"
+import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { useWorkspace } from "@/lib/workspace"
 import {
   closeSummary,
@@ -19,7 +20,7 @@ import { SessionIndicator } from "@/components/study-session/session-timer"
 
 export function SessionSummaryModal() {
   const router = useRouter()
-  const { pages } = useWorkspace()
+  const { pages, groups } = useWorkspace()
   const { log, summarySessionId } = useStudySession()
   const closeRef = useRef<HTMLButtonElement>(null)
   const session = summarySessionId ? log.find((s) => s.id === summarySessionId) : undefined
@@ -43,6 +44,9 @@ export function SessionSummaryModal() {
     recorded: hasRecordInWindow(records, row.pageId, session.startedAt, session.endedAt),
   }))
   const noteMs = rows.reduce((sum, row) => sum + row.ms, 0)
+  // Time not spent on any page (수업, 문제집 …): offered as one record for the timer's subject.
+  const offPageMinutes = Math.round(Math.max(0, sessionDurationMs(session) - noteMs) / 60_000)
+  const subject = groups.find((g) => g.id === session.subjectId && g.kind === "subject")
 
   return createPortal(
     <div
@@ -109,6 +113,27 @@ export function SessionSummaryModal() {
               </li>
             ))}
           </ul>
+        )}
+
+        {offPageMinutes >= 1 && (
+          <div className="mt-4 flex items-center gap-3 rounded-lg border border-border px-3 py-2.5">
+            <BookMarked className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-foreground">{subject ? subject.name : "페이지 밖에서 공부한 시간"}</p>
+              <p className="text-xs text-muted-foreground">{`페이지 밖 ${offPageMinutes}분`}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                closeSummary()
+                openQuickRecord({ subjectId: subject?.id ?? null, minutes: offPageMinutes })
+              }}
+              className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              <Plus className="size-3.5" aria-hidden="true" />
+              {subject ? "과목에 기록" : "기록하기"}
+            </button>
+          </div>
         )}
 
         <div className="mt-6 flex justify-end">

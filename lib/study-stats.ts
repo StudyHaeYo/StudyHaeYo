@@ -8,12 +8,12 @@ import {
   unresolvedConfusionCount,
   type DueTone,
   type PageStats,
-  type PageStudyRecord,
   type StudyPage,
+  type StudyRecordFields,
 } from "@/lib/study-pages"
 import { recordCreatedAt } from "@/lib/study-session"
 import { isReviewCandidate } from "@/lib/templates"
-import { descendantPages, nearestSubject, NO_SUBJECT, type WorkspaceState } from "@/lib/workspace"
+import { descendantGroups, descendantPages, nearestSubject, NO_SUBJECT, type WorkspaceState } from "@/lib/workspace"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
 import type { LearningPlan } from "@/lib/plans"
 
@@ -23,22 +23,57 @@ export function subjectOf(workspace: WorkspaceState, page: StudyPage) {
 }
 
 export interface RecordEntry {
-  record: PageStudyRecord
-  pageId: string
-  pageTitle: string
+  record: StudyRecordFields
+  // null for a record left on a subject without a page (D-24).
+  pageId: string | null
+  pageTitle: string | null
   subject: string
+  subjectId: string | null
 }
 
-function allRecordEntries(workspace: WorkspaceState): RecordEntry[] {
-  return workspace.pages.flatMap((page) => {
-    const subject = subjectOf(workspace, page)
+// Every record: page records plus records left directly on a subject.
+export function allRecordEntries(workspace: WorkspaceState): RecordEntry[] {
+  const onPages = workspace.pages.flatMap((page) => {
+    const subject = nearestSubject(workspace, page.parentId)
     const pageTitle = page.title || "제목 없음"
-    return page.studyRecords.map((record) => ({ record, pageId: page.id, pageTitle, subject }))
+    return page.studyRecords.map((record) => ({
+      record,
+      pageId: page.id,
+      pageTitle,
+      subject: subject?.name ?? NO_SUBJECT,
+      subjectId: subject?.id ?? null,
+    }))
   })
+  const names = new Map(workspace.groups.map((g) => [g.id, g.name]))
+  const onSubjects = workspace.subjectRecords.map((record) => ({
+    record,
+    pageId: null,
+    pageTitle: null,
+    subject: names.get(record.subjectId) ?? NO_SUBJECT,
+    subjectId: record.subjectId,
+  }))
+  return [...onPages, ...onSubjects]
+}
+
+// Where a record entry opens: its page, or its subject for a record without a page.
+export function entryHref(entry: RecordEntry) {
+  return entry.pageId ? `/record/${entry.pageId}` : entry.subjectId ? `/subject/${entry.subjectId}` : "/"
+}
+
+export function entryTitle(entry: RecordEntry) {
+  return entry.pageTitle ?? (entry.record.studyContent.split("\n")[0] || `${entry.subject} 공부`)
+}
+
+export const allRecords = (workspace: WorkspaceState) => allRecordEntries(workspace).map((e) => e.record)
+
+// Records left directly on this subject or on a subject group under it.
+function subjectRecordsUnder(workspace: WorkspaceState, subjectId: string) {
+  const ids = new Set([subjectId, ...descendantGroups(workspace, subjectId).map((g) => g.id)])
+  return workspace.subjectRecords.filter((r) => ids.has(r.subjectId))
 }
 
 // Newest first by creation time; records without one (seeds) fall back to the start of their `date`.
-function recordTime(record: PageStudyRecord) {
+function recordTime(record: StudyRecordFields) {
   const created = recordCreatedAt(record)
   if (created !== null) return created
   const [y, m, d] = record.date.split("-").map(Number)
@@ -132,7 +167,7 @@ export function weeklyStats(workspace: WorkspaceState, today: string): WeeklySta
 
 // Minutes recorded today across all pages.
 export function todayMinutes(workspace: WorkspaceState, today: string) {
-  return workspace.pages.flatMap((p) => p.studyRecords).filter((r) => r.date === today).reduce((sum, r) => sum + r.durationMinutes, 0)
+  return allRecords(workspace).filter((r) => r.date === today).reduce((sum, r) => sum + r.durationMinutes, 0)
 }
 
 export interface WeakArea {
@@ -199,7 +234,7 @@ export interface SubjectSummary {
 // R6: every page under the subject at any depth, regardless of template, with all of its records.
 export function subjectSummary(workspace: WorkspaceState, subjectId: string): SubjectSummary {
   const pages = descendantPages(workspace, subjectId)
-  const records = pages.flatMap((p) => p.studyRecords)
+  const records = [...pages.flatMap((p) => p.studyRecords), ...subjectRecordsUnder(workspace, subjectId)]
   const understandingSum = records.reduce((sum, r) => sum + r.understanding, 0)
   return {
     pageCount: pages.length,
@@ -249,22 +284,24 @@ export interface ActivePlan {
 export function planProgress(workspace: WorkspaceState, plan: LearningPlan, today: string): ActivePlan {
   const { target } = plan
   let pages: StudyPage[] = workspace.pages
+  let records: StudyRecordFields[] = allRecords(workspace)
   let targetLabel = "전체 학습"
   let targetHref: string | null = null
   if (target.scope === "subject") {
     pages = descendantPages(workspace, target.subjectId)
+    records = [...pages.flatMap((p) => p.studyRecords), ...subjectRecordsUnder(workspace, target.subjectId)]
     targetLabel = workspace.groups.find((g) => g.id === target.subjectId)?.name ?? "삭제된 과목"
     targetHref = `/subject/${target.subjectId}`
   } else if (target.scope === "page") {
     const page = workspace.pages.find((p) => p.id === target.pageId)
     pages = page ? [page, ...descendantPages(workspace, page.id)] : []
+    records = pages.flatMap((p) => p.studyRecords)
     targetLabel = page ? page.title || "제목 없음" : "삭제된 페이지"
     targetHref = page ? `/record/${page.id}` : null
   }
   const phase: PlanPhase = today < plan.startDate ? "upcoming" : today > plan.endDate ? "ended" : "active"
   const until = phase === "ended" ? plan.endDate : today
-  const studiedMinutes = pages
-    .flatMap((p) => p.studyRecords)
+  const studiedMinutes = records
     .filter((r) => r.date >= plan.startDate && r.date <= until)
     .reduce((sum, r) => sum + r.durationMinutes, 0)
   const totalDays = daysBetween(plan.startDate, plan.endDate) + 1
@@ -297,7 +334,7 @@ export interface StudyDay {
 // Days after today are included (future: true) so the last column is a full week.
 export function studyCalendar(workspace: WorkspaceState, today: string, weeks = 12): StudyDay[][] {
   const minutes = new Map<string, number>()
-  for (const record of workspace.pages.flatMap((p) => p.studyRecords)) {
+  for (const record of allRecords(workspace)) {
     minutes.set(record.date, (minutes.get(record.date) ?? 0) + record.durationMinutes)
   }
   const first = addDays(weekStart(today), -7 * (weeks - 1))
@@ -317,7 +354,7 @@ export interface StudyStreak {
 }
 
 export function studyStreak(workspace: WorkspaceState, today: string): StudyStreak {
-  const days = new Set(workspace.pages.flatMap((p) => p.studyRecords.filter((r) => r.date <= today).map((r) => r.date)))
+  const days = new Set(allRecords(workspace).filter((r) => r.date <= today).map((r) => r.date))
   const studiedToday = days.has(today)
   let current = 0
   for (let day = studiedToday ? today : addDays(today, -1); days.has(day); day = addDays(day, -1)) current += 1
@@ -348,7 +385,7 @@ export function weeklyTrend(workspace: WorkspaceState, today: string, weeks = 8)
     isCurrent: i === weeks - 1,
   }))
   const first = totals[0].start
-  for (const record of workspace.pages.flatMap((p) => p.studyRecords)) {
+  for (const record of allRecords(workspace)) {
     if (record.date < first || record.date > today) continue
     const index = Math.floor(daysBetween(first, record.date) / 7)
     if (totals[index]) totals[index].minutes += record.durationMinutes
@@ -360,7 +397,7 @@ export type Insight = { tone: "up" | "down" | "info"; text: string }
 
 // A few plain-language readings of the records: pace against last week, understanding trend, weakest subject.
 export function studyInsights(workspace: WorkspaceState, today: string): Insight[] {
-  const records = workspace.pages.flatMap((p) => p.studyRecords).filter((r) => r.date <= today)
+  const records = allRecords(workspace).filter((r) => r.date <= today)
   const sum = (from: string, to: string) =>
     records.filter((r) => r.date >= from && r.date <= to).reduce((total, r) => total + r.durationMinutes, 0)
   const insights: Insight[] = []

@@ -3,14 +3,15 @@
 import { useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { AlertCircle, FilePlus2, Loader2 } from "lucide-react"
+import { AlertCircle, Loader2 } from "lucide-react"
+import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { loadUserData, useDataStatus, type DataStatus } from "@/lib/db/sync"
 import { importExampleData, useWorkspace } from "@/lib/workspace"
 
 // Home banner for the data load: loading, a failed load with retry, or a first-step guide for an empty workspace.
 export function DataStatusNotice() {
   const status = useDataStatus()
-  const { groups, pages } = useWorkspace()
+  const { groups, pages, subjectRecords } = useWorkspace()
   const [importing, setImporting] = useState(false)
 
   const handleImport = async () => {
@@ -52,43 +53,59 @@ export function DataStatusNotice() {
     )
   }
 
-  if (pages.length > 0) return null
+  if (pages.length > 0 || subjectRecords.length > 0) return null
 
+  // 시작하기: what to do first, in three lines. Shown until the first page or record exists.
   return (
-    <div className="mb-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/50 px-6 py-8 text-center">
-      <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <FilePlus2 className="size-5" />
-      </div>
-      <p className="text-sm font-medium text-foreground">아직 학습 페이지가 없어요</p>
-      <p className="mt-1 max-w-xs text-xs text-muted-foreground text-pretty">
-        학습 페이지를 만들고 그 페이지에서 학습 기록을 추가하면 홈에 오늘의 기록과 주간 통계가 보여요.
-      </p>
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-        <Link
-          href="/new"
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-        >
-          첫 학습 페이지 만들기
-        </Link>
-        {/* Only for a fully empty workspace; importExampleData re-checks the DB before writing. */}
-        {groups.length === 0 && (
+    <section aria-labelledby="getting-started" className="mb-6 rounded-xl border border-border bg-card px-5 py-5">
+      <h2 id="getting-started" className="text-base font-semibold text-foreground">
+        시작하기
+      </h2>
+      <ol className="mt-3 flex flex-col gap-3 text-sm text-foreground">
+        <Step n={1}>
+          공부를 마치면 과목 · 시간 · 이해도를 기록해요.{" "}
+          <button type="button" onClick={() => openQuickRecord()} className={stepLink}>
+            + 기록 남기기
+          </button>
+        </Step>
+        <Step n={2}>
+          정리할 노트가 필요하면 템플릿으로 페이지를 만들어요.{" "}
+          <Link href="/new" className={stepLink}>
+            새 페이지
+          </Link>
+        </Step>
+        <Step n={3}>기록이 쌓이면 복습할 날과 주간 통계가 홈에 보여요.</Step>
+      </ol>
+      {/* Only for a fully empty workspace; importExampleData re-checks the DB before writing. */}
+      {groups.length === 0 && (
+        <p className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground text-pretty">
+          먼저 둘러보고 싶다면{" "}
           <button
             type="button"
             onClick={() => void handleImport()}
             disabled={importing}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-1 font-medium text-foreground underline underline-offset-4 disabled:opacity-60"
           >
-            {importing && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+            {importing && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
             {importing ? "가져오는 중…" : "예시 데이터 가져오기"}
           </button>
-        )}
-      </div>
-      {groups.length === 0 && (
-        <p className="mt-2 max-w-xs text-xs text-muted-foreground text-pretty">
-          예시 데이터는 내 계정에 저장되고, 일반 페이지처럼 고치거나 지울 수 있어요.
+          . 내 계정에 저장되고, 일반 페이지처럼 고치거나 지울 수 있어요.
         </p>
       )}
-    </div>
+    </section>
+  )
+}
+
+const stepLink = "font-medium text-indigo-700 underline-offset-4 hover:underline"
+
+function Step({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+        {n}
+      </span>
+      <span className="leading-relaxed">{children}</span>
+    </li>
   )
 }
 

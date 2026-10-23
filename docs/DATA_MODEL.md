@@ -30,21 +30,22 @@
 | templateId | `"study-note"` \| `"blank"` | 템플릿 레지스트리의 키. DB에는 이것만 저장한다 |
 | createdAt | `"YYYY-MM-DD"` | 날짜 문자열 |
 | studyType | `강의｜문제풀이｜복습｜정리` (선택) | |
-| blocks | Block[] | 빈 페이지 본문. 블록 종류는 아래 "블록" 참고 |
-| note | StudyNoteContent (선택) | 학습 노트 본문. 아래 참고 |
+| blocks | Block[] | 페이지 본문(모든 페이지, D-23). 블록 종류는 아래 "블록" 참고 |
+| note | StudyNoteContent (선택) | 옛 학습 노트 본문. 읽기 전용(아래 참고) |
 | tags | string[] | |
 | studyRecords | PageStudyRecord[] | 이 페이지의 학습 기록 |
 | status | `시작 전｜학습 중｜복습 필요｜완료` (선택) | **사용자가 직접 고른 값.** 없으면 파생 |
 | understanding | number 1~5 (선택) | **사용자가 직접 고른 값.** 없으면 최신 기록에서 파생 |
 | studyEnabled | boolean (선택) | 학습 기능이 "선택"인 템플릿에서 사용자가 켰는지 |
 
-### StudyNoteContent (학습 노트 본문)
-- `learned`: Block[] — 오늘 배운 내용. 학습 노트의 첨부와 그림 블록은 여기에만 들어간다
-- `concepts`: `{id, text}[]` — 핵심 개념. `"용어: 설명"` 형태로 쓰면 복습 카드의 앞면/뒷면으로 나뉜다(`splitConcept`)
-- `confusions`: `{id, text, resolved}[]` — 헷갈린 점. 항목별 해결 여부
+### StudyNoteContent (옛 학습 노트 본문, 읽기 전용)
+- `{learned: Block[], concepts: {id, text}[], confusions: {id, text, resolved}[]}`. D-23 이전 학습 노트의 본문이다
+- `blocks`가 비어 있으면 불러올 때 블록으로 바꿔 보여준다(`withNoteBlocks`). 앱은 이 칸을 다시 쓰지 않는다
 
 ### 블록 (`Block = TextBlock | AttachmentBlock | DrawingBlock | DividerBlock | PageLinkBlock`)
-**글 블록**: `{id, type, text, checked?, body?, open?}`. `type`은 h1｜h2｜h3｜p｜li｜ol｜todo｜toggle｜quote｜callout｜code
+**글 블록**: `{id, type, text, checked?, body?, open?}`. `type`은 h1｜h2｜h3｜p｜li｜ol｜todo｜toggle｜quote｜callout｜code｜concept｜confusion
+- `concept`(핵심 개념): `"용어: 설명"`으로 쓰면 복습 카드의 앞면/뒷면으로 나뉜다(`splitConcept`)
+- `confusion`(헷갈린 점): `checked`가 해결함. 미해결 수는 이 블록으로 센다(`unresolvedConfusionCount`)
 - `ol`(번호 목록): 번호는 저장하지 않고 바로 위로 이어진 `ol` 블록 수로 매긴다
 - `todo`(체크 목록): `checked`. 홈의 "오늘의 체크리스트"(`todos` 테이블)와는 따로다
 - `toggle`(토글): `text`가 제목, `body`가 접히는 내용(여러 줄 글), `open`이 펼침 상태. 검색과 AI는 `body`도 읽는다(`textBlockWords`)
@@ -65,11 +66,18 @@
 
 **공통**: 첨부와 그림은 텍스트가 아니므로 AI 도구용 본문 텍스트(`blocksPlainText`)에서 빠진다. 페이지를 복제하면 그림은 획 데이터까지 깊은 복사하고(`cloneBlock`), 첨부는 블록만 복사해서 **복제본이 원본과 같은 파일을 가리킨다.**
 
-### PageStudyRecord (학습 기록)
+### 학습 기록 (PageStudyRecord / SubjectStudyRecord)
+기록은 **페이지** 또는 **과목** 중 하나에 붙는다(D-24). 페이지 기록은 `page.studyRecords`, 페이지 없이 과목에 바로 남긴 기록은 `WorkspaceState.subjectRecords`에 있다. DB에서는 같은 `study_records` 테이블이고 `page_id`와 `subject_id` 중 하나만 채운다(`supabase/migrations/20261024_subject_records.sql`).
+- 페이지 기록의 과목은 저장하지 않고 페이지 위치에서 계산한다(`nearestSubject`). 그래서 페이지 기록의 `subject_id`는 비워 둔다
+- 과목 기록을 고칠 때 페이지를 고르면 같은 행이 그 페이지 기록이 된다(`attachRecordToPage`: `page_id` 채우고 `subject_id` 비움)
+- 학습 기능이 꺼진 페이지에 밖에서(빠른 기록, 과목 기록 연결) 기록을 붙이면 그 페이지의 학습 기능을 켠다
+- 과목을 지우면 그 과목의 기록도 지워진다(cascade, 되돌리기 가능). 과목 기록이 있는 과목은 폴더로 바꿀 수 없다
+- 마이그레이션 전(`subject_id` 컬럼 없음)에는 페이지 기록만 읽고, 빠른 기록은 페이지를 골라야 저장된다(`useSubjectRecordsReady`)
+
 | 필드 | 타입 | 메모 |
 |---|---|---|
-| id | string | 새 기록은 `<pageId>-r-<생성 ms>`. 시드는 `ds1-r1` |
-| pageId | string | |
+| id | string | uuid. 옛 기록은 `<pageId>-r-<생성 ms>`, 시드는 `ds1-r1` |
+| pageId / subjectId | string | 페이지 기록은 `pageId`, 과목 기록은 `subjectId` |
 | date | `"YYYY-MM-DD"` | 공부한 날 |
 | createdAt | number(ms), 선택 | 기록 생성 시각. 세션 시간 중복 집계 판단에 쓴다. 옛 기록은 없을 수 있다 |
 | durationMinutes | number | |
@@ -96,7 +104,8 @@
 
 ### 세션 (브라우저 전용, localStorage `studyhaeyo:study-session`)
 - `startedAt`, `segments[{pageId,start,end}]`, `openSegment`, `lastActiveAt`, `log: FinishedSession[]`
-- `FinishedSession = {id, startedAt, endedAt, segments, autoEnded?}`
+- `FinishedSession = {id, startedAt, endedAt, segments, subjectId?, autoEnded?}`
+- `subjectId`: 타이머에서 고른 과목(선택). 세션 요약에서 "페이지 밖" 시간(세션 경과 − 페이지 구간 합)을 이 과목의 기록으로 남기라고 제안한다(빠른 기록 창을 미리 채워 연다)
 
 ### 템플릿 (코드로 정의, D-23)
 - 모든 페이지의 본문은 `blocks` 하나다. 템플릿(`pageStarters`)은 **새 페이지가 어떤 블록으로 시작하는지**만 정한다(빈 페이지 · 학습 노트 · 강의 노트 · 오답 노트 · 시험 정리)
@@ -156,9 +165,9 @@ User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유�
 - 지금 없는 페이지(삭제했거나 새로고침으로 사라진 페이지)의 구간은 더하지 않는다. 그 페이지의 기록도 이미 합계에서 빠졌기 때문이다
 
 **R6. 학습 분석 합계**
-- 총 학습 시간 = **모든 페이지**(템플릿 무관)의 기록 `durationMinutes` 합 + 기록되지 않은 세션 시간
-- 학습 기록 수, 평균 이해도도 모든 페이지의 기록 기준
-- 즉 빈 페이지의 기록은 합계에는 들어가지만 Home 복습 후보에서는 빠진다
+- 총 학습 시간 = **모든 기록**(페이지 기록 + 과목 기록)의 `durationMinutes` 합 + 기록되지 않은 세션 시간
+- 학습 기록 수, 평균 이해도, 잔디, 주별 추세, 과목별 통계, 학습 계획 진행도도 과목 기록을 포함한다(`allRecordEntries`). 과목 요약과 과목 대상 계획은 그 과목과 하위 과목의 과목 기록을 더한다
+- 과목 기록은 페이지가 없으므로 복습 후보와 다음 복습일에는 들어가지 않는다. 목록에서 누르면 과목 화면으로 간다
 
 **R7. 트리**
 - 깊이 제한이 없다. 그룹은 그룹/페이지를 담고, 페이지도 하위 페이지를 담는다

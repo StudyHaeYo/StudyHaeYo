@@ -29,6 +29,7 @@ export function GroupActionsMenu({
 
   const isSubject = group.kind === "subject"
   const blockingPlans = isSubject ? plansTargetingSubject(plans, group.id).length : 0
+  const subjectRecordCount = isSubject ? workspace.subjectRecords.filter((r) => r.subjectId === group.id).length : 0
   const nested = flattenTree(workspace, group.id)
   const kindLabel = isSubject ? "과목" : "폴더"
 
@@ -104,6 +105,13 @@ export function GroupActionsMenu({
 
           {blockingPlans > 0 ? (
             blockedNote("폴더로 바꿀 수 없어요")
+          ) : subjectRecordCount > 0 ? (
+            <div role="menuitem" aria-disabled="true" tabIndex={-1} className="flex items-start gap-2 px-2 py-1.5">
+              <Lock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span className="text-xs leading-relaxed text-muted-foreground">
+                {`이 과목에 바로 남긴 학습 기록이 ${subjectRecordCount}개 있어서 폴더로 바꿀 수 없어요.`}
+              </span>
+            </div>
           ) : (
             <button
               role="menuitem"
@@ -143,7 +151,11 @@ export function GroupActionsMenu({
         open={confirmOpen}
         title={group.name}
         targetLabel={kindLabel}
-        note={deleteNoteText(nested.length, plansInSubtree(workspace, group.id).length)}
+        note={deleteNoteText(
+          nested.length,
+          plansInSubtree(workspace, group.id).length,
+          workspace.subjectRecords.filter((r) => nested.some((e) => e.node.id === r.subjectId) || r.subjectId === group.id).length,
+        )}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
           setConfirmOpen(false)

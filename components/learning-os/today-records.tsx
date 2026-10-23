@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Clock, Gauge, NotebookPen, Tag } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
-import { todayRecords, type RecordEntry } from "@/lib/study-stats"
+import { entryHref, entryTitle, todayRecords, type RecordEntry } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
 
 export function TodayRecords() {
@@ -29,7 +29,7 @@ export function TodayRecords() {
           </div>
           <p className="text-sm font-medium text-foreground">오늘 아직 학습 기록이 없어요</p>
           <p className="mt-1 max-w-xs text-xs text-muted-foreground text-pretty">
-            학습 노트를 열고 학습 기록을 추가하면 여기에 보여요.
+            공부를 마치고 [+ 기록]으로 남기면 여기에 보여요.
           </p>
         </div>
       ) : (
@@ -49,12 +49,12 @@ function TodayRecordCard({ entry }: { entry: RecordEntry }) {
   const { record } = entry
   return (
     <Link
-      href={`/record/${entry.pageId}`}
+      href={entryHref(entry)}
       className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex flex-col gap-1">
-        <h3 className="text-base font-medium text-card-foreground">{entry.pageTitle}</h3>
-        {record.studyContent && (
+        <h3 className="text-base font-medium text-card-foreground">{entryTitle(entry)}</h3>
+        {record.studyContent && entry.pageId && (
           <p className="line-clamp-1 text-sm text-muted-foreground">{record.studyContent}</p>
         )}
       </div>
