@@ -80,6 +80,20 @@ export function flushScheduledWrites() {
   for (const key of [...scheduled.keys()]) flushPatch(key)
 }
 
+// Sends one pending patch now (if any), e.g. a node's unsaved title before the node is deleted.
+export function flushScheduledKey(key: string) {
+  flushPatch(key)
+}
+
+// Cancels a pending write and says whether it was still waiting (false = already sent, too late to undo).
+export function cancelScheduled(key: string) {
+  const entry = scheduled.get(key)
+  if (!entry) return false
+  if (entry.timer) clearTimeout(entry.timer)
+  scheduled.delete(key)
+  return true
+}
+
 // Drops a pending patch for something that is about to be deleted.
 export function dropScheduled(key: string) {
   const entry = scheduled.get(key)
