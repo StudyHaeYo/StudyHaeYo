@@ -588,7 +588,16 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
             )
           }
           if (!isTextBlock(block)) {
-            return wrap(<AttachmentBlockView block={block} onRemove={() => removeBlock(block.id)} />)
+            return wrap(
+              <AttachmentBlockView
+                block={block}
+                onRemove={() => removeBlock(block.id)}
+                onChange={(next) => {
+                  const current = latest.current
+                  current.onChange(current.blocks.map((b) => (b.id === next.id ? next : b)))
+                }}
+              />,
+            )
           }
           const hint = hintFor(index)
           const slashOpen = slash?.blockId === block.id && block.text.startsWith("/")

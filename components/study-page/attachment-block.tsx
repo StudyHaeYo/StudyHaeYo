@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
-import { Download, Eye, File, FileText, ExternalLink, FileWarning, X } from "lucide-react"
+import { Download, Eye, File, FileText, ExternalLink, FileWarning, PenLine, X } from "lucide-react"
 import { downloadAttachment, formatFileSize, previewKind, useAttachmentUrl } from "@/lib/attachments"
 import type { AttachmentBlock } from "@/lib/study-pages"
+import { PdfAnnotator } from "@/components/study-page/pdf-annotator"
 
 interface AttachmentBlockViewProps {
   block: AttachmentBlock
   onRemove: () => void
+  // Saves PDF notes (annotations). Without it the PDF opens read-only in the plain viewer.
+  onChange?: (block: AttachmentBlock) => void
 }
 
-export function AttachmentBlockView({ block, onRemove }: AttachmentBlockViewProps) {
+export function AttachmentBlockView({ block, onRemove, onChange }: AttachmentBlockViewProps) {
   const [viewing, setViewing] = useState(false)
   const kind = previewKind(block.mime)
   const source = useAttachmentUrl(block)
@@ -49,13 +52,21 @@ export function AttachmentBlockView({ block, onRemove }: AttachmentBlockViewProp
           <img src={source.url} alt={block.name} className="mx-auto block h-auto max-w-full" />
         </button>
       ) : (
-        <FileCard block={block} url={source.url} pdf={kind === "pdf"} onPreview={() => setViewing(true)} />
+        <FileCard
+          block={block}
+          url={source.url}
+          pdf={kind === "pdf"}
+          annotatable={onChange !== undefined}
+          onPreview={() => setViewing(true)}
+        />
       )}
       {removeButton}
 
-      {viewing && source.url && (
+      {viewing && source.url && kind === "pdf" && onChange ? (
+        <PdfAnnotator block={block} url={source.url} onChange={onChange} onClose={() => setViewing(false)} />
+      ) : viewing && source.url ? (
         <AttachmentViewer block={block} url={source.url} pdf={kind === "pdf"} onClose={() => setViewing(false)} />
-      )}
+      ) : null}
     </div>
   )
 }
@@ -75,7 +86,20 @@ function MissingCard({ block }: { block: AttachmentBlock }) {
   )
 }
 
-function FileCard({ block, url, pdf, onPreview }: { block: AttachmentBlock; url: string; pdf: boolean; onPreview: () => void }) {
+function FileCard({
+  block,
+  url,
+  pdf,
+  annotatable,
+  onPreview,
+}: {
+  block: AttachmentBlock
+  url: string
+  pdf: boolean
+  annotatable: boolean
+  onPreview: () => void
+}) {
+  const notedPages = Object.keys(block.annotations ?? {}).length
   const Icon = pdf ? FileText : File
   const actionClass =
     "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -93,14 +117,26 @@ function FileCard({ block, url, pdf, onPreview }: { block: AttachmentBlock; url:
         <span className="truncate text-sm font-medium text-foreground">{block.name}</span>
         <span className="text-xs text-muted-foreground">
           {pdf ? "PDF" : block.mime.split("/")[1]?.toUpperCase() || "파일"} · {formatFileSize(block.size)}
+          {notedPages > 0 && <span className="text-indigo-600"> · 필기 {notedPages}쪽</span>}
         </span>
       </div>
       <div className="flex items-center gap-1">
-        {pdf && (
-          <button type="button" onClick={onPreview} className={actionClass}>
-            <Eye className="size-3.5" aria-hidden="true" />
-            미리보기
+        {pdf && annotatable ? (
+          <button
+            type="button"
+            onClick={onPreview}
+            className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
+          >
+            <PenLine className="size-3.5" aria-hidden="true" />
+            보기·필기
           </button>
+        ) : (
+          pdf && (
+            <button type="button" onClick={onPreview} className={actionClass}>
+              <Eye className="size-3.5" aria-hidden="true" />
+              미리보기
+            </button>
+          )
         )}
         <a href={url} target="_blank" rel="noopener noreferrer" className={actionClass}>
           <ExternalLink className="size-3.5" aria-hidden="true" />

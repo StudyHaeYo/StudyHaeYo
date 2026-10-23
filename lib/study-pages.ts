@@ -24,6 +24,9 @@ export interface AttachmentBlock {
   // Supabase Storage path in the "attachments" bucket: "<user id>/<file id>". Missing on files
   // attached before Storage was connected (or while it was unavailable).
   path?: string
+  // PDF note-taking: strokes drawn over each PDF page, keyed by 1-based page number ("1", "2", …).
+  // Points are fractions of the page width (y too), like drawing blocks. Pages without strokes are left out.
+  annotations?: Record<string, DrawingStroke[]>
 }
 
 export type DrawingTool = "pen" | "highlighter"

@@ -46,7 +46,7 @@
 ### 블록 (`Block = TextBlock | AttachmentBlock | DrawingBlock`)
 **글 블록**: `{id, type: h1｜h2｜h3｜p｜li｜code, text}`
 
-**첨부 블록** (`type: "image"｜"file"`): `{id, type, name, mime, size, url, path?}`. `path`는 Supabase Storage `attachments` 버킷 안의 위치(`<사용자 id>/<파일 id>`)이고, 있으면 화면은 `url` 대신 `path`로 1시간짜리 임시 주소(signed URL)를 받아 연다. `url`은 올린 탭에서만 쓰는 `blob:` 주소라 다른 탭이나 새로고침 뒤에는 쓰지 않는다
+**첨부 블록** (`type: "image"｜"file"`): `{id, type, name, mime, size, url, path?, annotations?}`. `annotations`는 PDF 위 필기로, 쪽 번호(1부터, 문자열 키)마다 그림 블록과 같은 획 배열을 둔다. 좌표도 그림 블록처럼 쪽 너비 기준 비율이라 화면 크기가 달라도 같은 자리에 그려진다. 필기가 없는 쪽은 키를 두지 않는다. `path`는 Supabase Storage `attachments` 버킷 안의 위치(`<사용자 id>/<파일 id>`)이고, 있으면 화면은 `url` 대신 `path`로 1시간짜리 임시 주소(signed URL)를 받아 연다. `url`은 올린 탭에서만 쓰는 `blob:` 주소라 다른 탭이나 새로고침 뒤에는 쓰지 않는다
 - `url`은 지금 브라우저 임시 주소(`URL.createObjectURL`)라 새로고침하면 사라진다. 파일을 저장하고 url을 만드는 곳은 `lib/attachments.ts`의 `storeAttachmentFile` 하나뿐이다.
 
 **그림 블록** (`type: "drawing"`): `{id, type: "drawing", strokes, height}`
@@ -169,6 +169,7 @@ User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유�
 - 저장(`lib/attachments.ts`): 로그인 상태면 Storage에 올린 뒤 블록을 넣는다(올리는 중 알림). 올리기에 실패하거나 로그인 정보가 없으면 그 탭에서만 보이는 첨부로 넣고 "새로고침하면 사라져요"라고 알린다. 파일은 덮어쓰지 않고 매번 새 id로 올린다
 - `path`가 없고 다른 탭에서 만든 `blob:` 주소인 옛 첨부, 또는 Storage에서 열 수 없는 첨부는 "저장되지 않은 파일" 카드로 보이고 지우기만 된다
 - 다운로드는 원래 파일 이름으로 받도록 다운로드용 임시 주소를 따로 받는다(브라우저가 다른 도메인 링크의 `download` 속성을 무시해서)
+- PDF 필기: PDF 첨부 카드의 [보기·필기]로 전체 화면을 연다. 쪽마다 펜·형광펜·지우개를 쓰고, 필기는 바로 그 첨부 블록의 `annotations`에 저장된다(본문 저장과 같은 경로). 되돌리기는 쪽을 넘나들며 순서대로, "이 쪽 필기 지우기"는 화면 가운데에 걸친 쪽. 터치 화면은 스크롤할 수 있게 이동(손) 도구로 시작한다. PDF 파일 자체는 바꾸지 않는다
 - 위치: 마지막으로 클릭한 줄 바로 뒤, 없으면 본문 끝. 학습 노트는 항상 "오늘 배운 내용" 영역에 들어간다(핵심 개념, 헷갈린 점은 글 항목이라 넣을 수 없다)
 - AI 요약/문제 생성은 글 블록만 사용한다
 
