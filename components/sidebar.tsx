@@ -16,6 +16,7 @@ import {
   Home,
   LogOut,
   Menu,
+  Search,
   Plus,
   Settings,
   X,
@@ -34,6 +35,7 @@ import {
 } from "@/lib/workspace"
 import { RecordItem } from "@/components/sidebar/record-item"
 import { GroupActionsMenu } from "@/components/sidebar/group-actions-menu"
+import { SearchDialog, SearchTrigger, openSearch } from "@/components/search-dialog"
 import { signOut, useCurrentUser } from "@/lib/auth"
 import { resolveTreeAppearance } from "@/lib/templates"
 import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
@@ -115,7 +117,16 @@ export function Sidebar(_props: SidebarProps = {}) {
           </span>
           <span className="text-sm font-semibold tracking-tight text-foreground">스터디 해요</span>
         </Link>
+        <button
+          type="button"
+          onClick={openSearch}
+          aria-label="노트 검색"
+          className="ml-auto flex size-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent"
+        >
+          <Search className="size-5" />
+        </button>
       </header>
+      <SearchDialog />
 
       {mobileOpen && (
         <div className="fixed inset-0 z-40 bg-foreground/30 md:hidden" aria-hidden="true" onClick={() => setMobileOpen(false)} />
@@ -147,6 +158,8 @@ export function Sidebar(_props: SidebarProps = {}) {
           <X className="size-4" />
         </button>
       </div>
+
+      <SearchTrigger />
 
       {/* Top: main navigation */}
       <nav className="flex flex-col gap-0.5 px-2 pb-2" aria-label="메인 메뉴">
