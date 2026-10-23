@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import {
   ANSWER_HEADING,
+  answerToPageBlocks,
   askStudyAI,
   markdownToBlocks,
   MAX_AI_PDFS,
@@ -291,8 +292,9 @@ function AssistantMessage({
   const confusions = blocks.filter((b) => b.type === "confusion").map((b) => b.text)
 
   const insert = () => {
-    if (blocks.length === 0) return
-    onInsert([{ id: blocks[0].id + "-h", type: "h3", text: "AI 정리" }, ...blocks])
+    const pageBlocks = answerToPageBlocks(content)
+    if (pageBlocks.length === 0) return
+    onInsert([{ id: pageBlocks[0].id + "-h", type: "h3", text: "AI 정리" }, ...pageBlocks])
     toast.success("본문 끝에 추가했어요")
   }
 

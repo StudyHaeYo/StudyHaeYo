@@ -145,3 +145,19 @@ export function scoreToUnderstanding({ correct, total }: { correct: number; tota
 }
 
 export const ANSWER_HEADING = /^정답\s*(과|및)?\s*해설/
+
+// Lines the AI says to the user rather than about the topic: "…만들어 드릴까요?", "답을 보내 주면 채점해 드릴게요."
+const CHAT_LINE =
+  /(\?|？|까요[.!]?|드릴게요[.!]?|드리겠습니다[.!]?|드려요[.!]?|보내\s*주(세요|면)[^.]*[.!]?|말씀해\s*주세요[.!]?|알려\s*주세요[.!]?|원하시면[^.]*[.!]?)\s*$/
+const isChatLine = (b: TextBlock) => b.type === "p" && CHAT_LINE.test(b.text.trim())
+
+// What goes into the page from an answer: the content without the chat around it (opening and closing
+// lines addressed to the user, the "점수: 4/5" line). The "자료 없이 만든 내용" warning (a quote) stays.
+export function answerToPageBlocks(markdown: string): TextBlock[] {
+  const blocks = markdownToBlocks(markdown).filter((b) => !(b.type === "p" && /^점수\s*[:：]/.test(b.text)))
+  let start = 0
+  let end = blocks.length
+  while (start < end && isChatLine(blocks[start])) start++
+  while (end > start && isChatLine(blocks[end - 1])) end--
+  return blocks.slice(start, end)
+}
