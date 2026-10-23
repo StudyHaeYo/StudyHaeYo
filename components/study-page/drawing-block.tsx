@@ -1,20 +1,10 @@
 "use client"
 
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react"
-import { ChevronsDown, Eraser, Highlighter, PenLine, Redo2, Trash2, Undo2, X } from "lucide-react"
-import {
-  DRAWING_COLORS,
-  DRAWING_GROW_STEP,
-  HIGHLIGHTER_OPACITY,
-  STROKE_WIDTHS,
-  hitStrokeIndex,
-  shouldAppend,
-  strokePath,
-  toDrawingPoint,
-} from "@/lib/drawing"
-import type { DrawingBlock, DrawingStroke, DrawingTool } from "@/lib/study-pages"
-
-type Tool = DrawingTool | "eraser"
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react"
+import { ChevronsDown, X } from "lucide-react"
+import { DRAWING_GROW_STEP } from "@/lib/drawing"
+import type { DrawingBlock, DrawingStroke } from "@/lib/study-pages"
+import { DrawingToolbar, StrokeLayer, useStrokeInput, useToolState } from "@/components/study-page/drawing-kit"
 
 const HISTORY_LIMIT = 100
 
@@ -30,21 +20,12 @@ interface DrawingBlockViewProps {
 
 export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActivate, autoEdit = false }: DrawingBlockViewProps) {
   const [editing, setEditing] = useState(autoEdit)
-  const [tool, setTool] = useState<Tool>("pen")
-  const [colors, setColors] = useState<Record<DrawingTool, string>>({
-    pen: DRAWING_COLORS[0].value,
-    highlighter: DRAWING_COLORS[4].value,
-  })
-  const [widthLevel, setWidthLevel] = useState<Record<DrawingTool, 0 | 1 | 2>>({ pen: 1, highlighter: 1 })
-  const [draft, setDraft] = useState<DrawingStroke | null>(null)
+  const [toolState, setToolState] = useToolState()
   const [past, setPast] = useState<DrawingStroke[][]>([])
   const [future, setFuture] = useState<DrawingStroke[][]>([])
   const rootRef = useRef<HTMLDivElement>(null)
-  const surfaceRef = useRef<HTMLDivElement>(null)
-  // Pointer events fire faster than React re-renders; handlers read and write these refs directly.
+  // Pointer events fire faster than React re-renders; handlers read and write this ref directly.
   const latest = useRef(block)
-  const draftRef = useRef<DrawingStroke | null>(null)
-  const gesture = useRef<{ pointerId: number; before: DrawingStroke[]; changed: boolean } | null>(null)
 
   useLayoutEffect(() => {
     latest.current = block
@@ -95,70 +76,13 @@ export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActi
     apply([])
   }
 
-  const eraseAt = (clientX: number, clientY: number, rect: DOMRect) => {
-    const strokes = latest.current.strokes
-    const index = hitStrokeIndex(strokes, toDrawingPoint(clientX, clientY, rect), rect.width)
-    if (index === -1 || !gesture.current) return
-    gesture.current.changed = true
-    apply(strokes.filter((_, i) => i !== index))
-  }
-
-  const handlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    if (!editing || gesture.current) return
-    if (e.pointerType === "mouse" && e.button !== 0) return
-    e.preventDefault()
-    e.currentTarget.setPointerCapture(e.pointerId)
-    const rect = e.currentTarget.getBoundingClientRect()
-    gesture.current = { pointerId: e.pointerId, before: latest.current.strokes, changed: false }
-    if (tool === "eraser") {
-      eraseAt(e.clientX, e.clientY, rect)
-      return
-    }
-    const stroke: DrawingStroke = {
-      tool,
-      color: colors[tool],
-      width: STROKE_WIDTHS[tool][widthLevel[tool]],
-      points: [toDrawingPoint(e.clientX, e.clientY, rect)],
-    }
-    draftRef.current = stroke
-    setDraft(stroke)
-  }
-
-  const handlePointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    if (gesture.current?.pointerId !== e.pointerId) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const samples = e.nativeEvent.getCoalescedEvents?.() ?? []
-    const events = samples.length > 0 ? samples : [e.nativeEvent]
-    if (tool === "eraser") {
-      for (const sample of events) eraseAt(sample.clientX, sample.clientY, rect)
-      return
-    }
-    const current = draftRef.current
-    if (!current) return
-    const points = [...current.points]
-    for (const sample of events) {
-      const point = toDrawingPoint(sample.clientX, sample.clientY, rect)
-      if (shouldAppend(points, point)) points.push(point)
-    }
-    if (points.length === current.points.length) return
-    draftRef.current = { ...current, points }
-    setDraft(draftRef.current)
-  }
-
-  const finishGesture = (e: PointerEvent<HTMLDivElement>) => {
-    const active = gesture.current
-    if (active?.pointerId !== e.pointerId) return
-    gesture.current = null
-    const stroke = draftRef.current
-    draftRef.current = null
-    setDraft(null)
-    if (stroke) {
-      record(active.before)
-      apply([...latest.current.strokes, stroke])
-    } else if (active.changed) {
-      record(active.before)
-    }
-  }
+  const input = useStrokeInput({
+    enabled: editing,
+    toolState,
+    getStrokes: () => latest.current.strokes,
+    setStrokes: apply,
+    onGesture: record,
+  })
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.nativeEvent.isComposing || e.keyCode === 229) return
@@ -193,9 +117,8 @@ export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActi
     }
   }
 
-  const strokes = draft ? [...block.strokes, draft] : block.strokes
-  const isEmpty = block.strokes.length === 0 && !draft
-  const activeTool: DrawingTool | null = tool === "eraser" ? null : tool
+  const strokes = input.draft ? [...block.strokes, input.draft] : block.strokes
+  const isEmpty = block.strokes.length === 0 && !input.draft
 
   return (
     <div
@@ -206,124 +129,38 @@ export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActi
       onPointerDown={() => {
         onActivate()
         if (!editing) setEditing(true)
+        // Drawing calls preventDefault, which skips focus; focus here so Ctrl+Z / Esc reach this block.
+        rootRef.current?.focus({ preventScroll: true })
       }}
       onFocus={onActivate}
       onKeyDown={handleKeyDown}
       className="group relative flex flex-col gap-2 rounded-lg py-1 outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
     >
       {editing && (
-        <div
-          role="toolbar"
-          aria-label="그리기 도구"
-          className="sticky top-16 z-[5] flex flex-wrap items-center gap-1 self-start rounded-lg border border-border bg-card p-1"
-        >
-          <ToolButton label="펜" active={tool === "pen"} onClick={() => setTool("pen")}>
-            <PenLine className="size-4" />
-          </ToolButton>
-          <ToolButton label="형광펜" active={tool === "highlighter"} onClick={() => setTool("highlighter")}>
-            <Highlighter className="size-4" />
-          </ToolButton>
-          <ToolButton label="지우개 (닿은 획 지우기)" active={tool === "eraser"} onClick={() => setTool("eraser")}>
-            <Eraser className="size-4" />
-          </ToolButton>
-
-          <Divider />
-          <div role="radiogroup" aria-label="색상" className="flex items-center gap-0.5">
-            {DRAWING_COLORS.map((c) => {
-              const selected = activeTool !== null && colors[activeTool] === c.value
-              return (
-                <button
-                  key={c.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  aria-label={c.label}
-                  title={c.label}
-                  disabled={activeTool === null}
-                  onClick={() => activeTool && setColors({ ...colors, [activeTool]: c.value })}
-                  className="flex size-8 items-center justify-center rounded-md transition-colors hover:bg-muted disabled:opacity-40"
-                >
-                  <span
-                    className={`size-4 rounded-full ${selected ? "ring-2 ring-foreground ring-offset-2 ring-offset-card" : ""}`}
-                    style={{ backgroundColor: c.value }}
-                  />
-                </button>
-              )
-            })}
-          </div>
-
-          <Divider />
-          <div role="radiogroup" aria-label="굵기" className="flex items-center gap-0.5">
-            {(["가늘게", "보통", "굵게"] as const).map((label, level) => {
-              const selected = activeTool !== null && widthLevel[activeTool] === level
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  aria-label={`굵기 ${label}`}
-                  title={label}
-                  disabled={activeTool === null}
-                  onClick={() => activeTool && setWidthLevel({ ...widthLevel, [activeTool]: level as 0 | 1 | 2 })}
-                  className={`flex size-8 items-center justify-center rounded-md transition-colors hover:bg-muted disabled:opacity-40 ${
-                    selected ? "bg-muted" : ""
-                  }`}
-                >
-                  <span className="rounded-full bg-foreground" style={{ width: 4 + level * 4, height: 4 + level * 4 }} />
-                </button>
-              )
-            })}
-          </div>
-
-          <Divider />
-          <ToolButton label="되돌리기" disabled={past.length === 0} onClick={undo}>
-            <Undo2 className="size-4" />
-          </ToolButton>
-          <ToolButton label="다시 실행" disabled={future.length === 0} onClick={redo}>
-            <Redo2 className="size-4" />
-          </ToolButton>
-          <ToolButton label="전체 지우기" disabled={block.strokes.length === 0} onClick={clearAll}>
-            <Trash2 className="size-4" />
-          </ToolButton>
-        </div>
+        <DrawingToolbar
+          state={toolState}
+          onState={setToolState}
+          canUndo={past.length > 0}
+          canRedo={future.length > 0}
+          onUndo={undo}
+          onRedo={redo}
+          onClear={clearAll}
+          canClear={block.strokes.length > 0}
+          className="sticky top-16 z-[5] self-start rounded-lg border border-border bg-card p-1"
+        />
       )}
 
       <div className="relative">
         <div
-          ref={surfaceRef}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={finishGesture}
-          onPointerCancel={finishGesture}
-          style={{ height: block.height, touchAction: editing ? "none" : "auto" }}
+          {...input.handlers}
+          style={{ height: block.height, touchAction: input.touchAction }}
           className={`relative overflow-hidden rounded-lg border bg-card transition-colors ${
             editing
-              ? `border-indigo-300 ring-2 ring-indigo-100 ${tool === "eraser" ? "cursor-cell" : "cursor-crosshair"}`
+              ? `border-indigo-300 ring-2 ring-indigo-100 ${input.cursor}`
               : "cursor-pointer border-border hover:border-muted-foreground/40"
           }`}
         >
-          {/* viewBox width 1 + "slice" scales by the block width, matching the stored width-fraction coordinates. */}
-          <svg
-            viewBox="0 0 1 1000"
-            preserveAspectRatio="xMinYMin slice"
-            className="pointer-events-none absolute inset-0 size-full"
-            aria-hidden="true"
-          >
-            {strokes.map((stroke, i) => (
-              <path
-                key={i}
-                d={strokePath(stroke.points)}
-                fill="none"
-                stroke={stroke.color}
-                strokeWidth={stroke.width}
-                strokeOpacity={stroke.tool === "highlighter" ? HIGHLIGHTER_OPACITY : 1}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
-          </svg>
+          <StrokeLayer strokes={strokes} />
           {isEmpty && (
             <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
               {editing ? "펜이나 손가락으로 그려보세요" : "클릭해서 그리기"}
@@ -355,38 +192,4 @@ export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActi
       </button>
     </div>
   )
-}
-
-function ToolButton({
-  label,
-  active,
-  disabled,
-  onClick,
-  children,
-}: {
-  label: string
-  active?: boolean
-  disabled?: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-pressed={active}
-      title={label}
-      disabled={disabled}
-      onClick={onClick}
-      className={`flex size-8 items-center justify-center rounded-md transition-colors disabled:pointer-events-none disabled:opacity-40 ${
-        active ? "bg-indigo-50 text-indigo-700" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-      }`}
-    >
-      {children}
-    </button>
-  )
-}
-
-function Divider() {
-  return <span aria-hidden="true" className="mx-0.5 h-5 w-px bg-border" />
 }

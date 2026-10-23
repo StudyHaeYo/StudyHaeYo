@@ -375,7 +375,12 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
           if (!isTextBlock(block)) {
             return (
               <div key={block.id} data-block-index={index} className={selectedClass}>
-                <AttachmentBlockView block={block} onRemove={() => removeBlock(block.id)} />
+                <AttachmentBlockView block={block} onRemove={() => removeBlock(block.id)}
+                onChange={(next) => {
+                  const current = latest.current
+                  current.onChange(current.blocks.map((b) => (b.id === next.id ? next : b)))
+                }}
+              />
               </div>
             )
           }
