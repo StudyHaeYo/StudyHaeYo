@@ -3,8 +3,25 @@ import { createStore } from "@/lib/create-store"
 import { addDays, cloneBlock, daysBetween, studyPages, todayISO, type PageStudyRecord, type StudyPage } from "@/lib/study-pages"
 import { studyTree } from "@/lib/study-tree"
 import { getTemplate, type TemplateId } from "@/lib/templates"
-import { examplePlans, getPlans, insertPlans, plansTargetingSubject, removePlans, type LearningPlan } from "@/lib/plans"
-import { check, currentUserId, db, dropScheduled, enqueueWrite, schedulePatch } from "@/lib/db/queue"
+import {
+  deletePlanRows,
+  detachPlans,
+  examplePlans,
+  getPlans,
+  insertPlans,
+  plansTargetingSubject,
+  reattachPlans,
+  type LearningPlan,
+} from "@/lib/plans"
+import {
+  cancelScheduled,
+  check,
+  currentUserId,
+  db,
+  enqueueWrite,
+  flushScheduledKey,
+  schedulePatch,
+} from "@/lib/db/queue"
 import {
   changedPageColumns,
   DEBOUNCED_PAGE_COLUMNS,
@@ -245,28 +262,82 @@ export function plansInSubtree(tree: TreeSource, rootId: string) {
 // Removes a node and everything under it, and the plans that target any of it. In the DB the plans go first
 // (learning_plans.target_node_id is ON DELETE RESTRICT), then only the root row: workspace_nodes.parent_id and
 // study_records.page_id cascade. Writes run in call order, so the plan deletes land before the node delete.
+// Deleting is undoable for a few seconds: the node leaves the screen at once, but the DB delete waits in the
+// scheduled-write queue. [되돌리기] cancels it and puts everything back; closing or hiding the tab, or signing
+// out, sends it right away (the queue flushes then), so a delete is never silently lost.
+export const UNDO_DELETE_MS = 8000
+
 function removeSubtree(rootId: string) {
   const s = store.get()
   const removed = subtreeIds(s, rootId)
   if (removed.size === 0) return false
 
-  removePlans(plansInSubtree(s, rootId).map((p) => p.id))
+  // Save pending edits (a just-typed title, body) first, so an undo brings back what was on screen.
+  for (const nodeId of removed) flushScheduledKey(`node:${nodeId}`)
+
+  // Whole lists, not just the removed nodes: when `order` doesn't rank a node, list position decides its place.
+  const snapshot = {
+    pages: s.pages,
+    groups: s.groups,
+    order: s.order,
+    removed,
+    plans: detachPlans(plansInSubtree(s, rootId).map((p) => p.id)),
+  }
+  const name = findNode(s, rootId)?.node.name || "제목 없음"
 
   store.set((state) => ({
     pages: state.pages.filter((p) => !removed.has(p.id)),
     groups: state.groups.filter((g) => !removed.has(g.id)),
     order: state.order.filter((nodeId) => !removed.has(nodeId)),
   }))
-  for (const nodeId of removed) {
-    dropScheduled(`node:${nodeId}`)
-    savedPositions.delete(nodeId)
-  }
-
-  enqueueWrite(async (userId) => {
-    check(await db().from("workspace_nodes").delete().eq("id", rootId).eq("user_id", userId).select("id"), 1)
-  })
+  for (const nodeId of removed) savedPositions.delete(nodeId)
   syncPositions()
+
+  const key = `delete:${rootId}`
+  const planIds = snapshot.plans.map((p) => p.id)
+  schedulePatch(
+    key,
+    {},
+    async (_patch, userId) => {
+      // Plans first: learning_plans.target_node_id is ON DELETE RESTRICT (R7).
+      await deletePlanRows(planIds, userId)
+      check(await db().from("workspace_nodes").delete().eq("id", rootId).eq("user_id", userId).select("id"), 1)
+    },
+    UNDO_DELETE_MS,
+  )
+
+  toast(`“${name}” 삭제했어요`, {
+    duration: UNDO_DELETE_MS,
+    action: { label: "되돌리기", onClick: () => undoDelete(key, snapshot) },
+  })
   return true
+}
+
+function undoDelete(
+  key: string,
+  snapshot: { pages: StudyPage[]; groups: WorkspaceGroup[]; order: string[]; removed: Set<string>; plans: LearningPlan[] },
+) {
+  if (!cancelScheduled(key)) {
+    toast.error("이미 삭제가 저장돼서 되돌릴 수 없어요")
+    return
+  }
+  store.set((state) => {
+    // Old lists in their old order (current versions of nodes that stayed), then anything created since.
+    const merge = <T extends { id: string }>(before: T[], now: T[]) => {
+      const nowById = new Map(now.map((x) => [x.id, x]))
+      // Only this delete's nodes come back; something deleted separately since then stays deleted.
+      const restored = before.filter((x) => nowById.has(x.id) || snapshot.removed.has(x.id)).map((x) => nowById.get(x.id) ?? x)
+      return [...restored, ...now.filter((x) => !before.some((b) => b.id === x.id))]
+    }
+    const pages = merge(snapshot.pages, state.pages)
+    const groups = merge(snapshot.groups, state.groups)
+    const present = new Set([...pages.map((p) => p.id), ...groups.map((g) => g.id)])
+    const order = [...snapshot.order.filter((id) => present.has(id)), ...state.order.filter((id) => !snapshot.order.includes(id))]
+    return { pages, groups, order }
+  })
+  reattachPlans(snapshot.plans)
+  syncPositions()
+  toast.success("되돌렸어요")
 }
 
 // Removes the page and everything nested under it, including groups and the plans that target them.

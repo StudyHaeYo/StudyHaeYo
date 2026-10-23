@@ -86,6 +86,24 @@ export function removePlans(ids: string[]) {
   })
 }
 
+// Undoable delete (lib/workspace.ts removeSubtree): take plans off the screen now, write the delete later.
+export function detachPlans(ids: string[]) {
+  const taken = store.get().filter((p) => ids.includes(p.id))
+  if (taken.length > 0) store.set((plans) => plans.filter((p) => !ids.includes(p.id)))
+  return taken
+}
+
+export function reattachPlans(plans: LearningPlan[]) {
+  if (plans.length === 0) return
+  store.set((current) => [...current, ...plans.filter((p) => !current.some((c) => c.id === p.id))])
+}
+
+// The DB half of detachPlans, run when the undo window closes. Same write as removePlans.
+export async function deletePlanRows(ids: string[], userId: string) {
+  if (ids.length === 0) return
+  check(await db().from("learning_plans").delete().in("id", ids).eq("user_id", userId).select("id"), ids.length)
+}
+
 export function removePlan(id: string) {
   if (!store.get().some((p) => p.id === id)) return
   store.set((plans) => plans.filter((p) => p.id !== id))
