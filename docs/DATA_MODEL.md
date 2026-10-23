@@ -43,8 +43,17 @@
 - `concepts`: `{id, text}[]` — 핵심 개념. `"용어: 설명"` 형태로 쓰면 복습 카드의 앞면/뒷면으로 나뉜다(`splitConcept`)
 - `confusions`: `{id, text, resolved}[]` — 헷갈린 점. 항목별 해결 여부
 
-### 블록 (`Block = TextBlock | AttachmentBlock | DrawingBlock`)
-**글 블록**: `{id, type: h1｜h2｜h3｜p｜li｜code, text}`
+### 블록 (`Block = TextBlock | AttachmentBlock | DrawingBlock | DividerBlock | PageLinkBlock`)
+**글 블록**: `{id, type, text, checked?, body?, open?}`. `type`은 h1｜h2｜h3｜p｜li｜ol｜todo｜toggle｜quote｜callout｜code
+- `ol`(번호 목록): 번호는 저장하지 않고 바로 위로 이어진 `ol` 블록 수로 매긴다
+- `todo`(체크 목록): `checked`. 홈의 "오늘의 체크리스트"(`todos` 테이블)와는 따로다
+- `toggle`(토글): `text`가 제목, `body`가 접히는 내용(여러 줄 글), `open`이 펼침 상태. 검색과 AI는 `body`도 읽는다(`textBlockWords`)
+- `quote`(인용), `callout`(💡 강조 박스)은 모양만 다르다
+- 다른 종류로 바꾸면 그 종류가 안 쓰는 칸은 지운다(`withType`). 토글을 본문으로 되돌리면 `body`는 바로 아래 본문 블록이 된다
+
+**구분선** (`type: "divider"`): `{id, type}`
+
+**페이지 링크** (`type: "pagelink"`): `{id, type, pageId}`. 제목은 저장하지 않고 열 때마다 그 페이지에서 읽는다(이름을 바꾸면 따라 바뀜). 대상 페이지를 지우면 "삭제된 페이지"로 보인다
 
 **첨부 블록** (`type: "image"｜"file"`): `{id, type, name, mime, size, url, path?, annotations?}`. `annotations`는 PDF 위 필기로, 쪽 번호(1부터, 문자열 키)마다 그림 블록과 같은 획 배열을 둔다. 좌표도 그림 블록처럼 쪽 너비 기준 비율이라 화면 크기가 달라도 같은 자리에 그려진다. 필기가 없는 쪽은 키를 두지 않는다. `path`는 Supabase Storage `attachments` 버킷 안의 위치(`<사용자 id>/<파일 id>`)이고, 있으면 화면은 `url` 대신 `path`로 1시간짜리 임시 주소(signed URL)를 받아 연다. `url`은 올린 탭에서만 쓰는 `blob:` 주소라 다른 탭이나 새로고침 뒤에는 쓰지 않는다
 - `url`은 지금 브라우저 임시 주소(`URL.createObjectURL`)라 새로고침하면 사라진다. 파일을 저장하고 url을 만드는 곳은 `lib/attachments.ts`의 `storeAttachmentFile` 하나뿐이다.

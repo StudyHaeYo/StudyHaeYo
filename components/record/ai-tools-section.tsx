@@ -12,6 +12,11 @@ const blockClass: Record<TextBlock["type"], string> = {
   h3: "text-sm font-semibold pt-1",
   p: "text-sm leading-relaxed",
   li: "text-sm leading-relaxed pl-4 relative before:absolute before:left-1 before:content-['•'] before:text-muted-foreground",
+  ol: "text-sm leading-relaxed pl-4",
+  todo: "text-sm leading-relaxed pl-4 relative before:absolute before:left-0.5 before:content-['☐'] before:text-muted-foreground",
+  toggle: "text-sm font-medium leading-relaxed",
+  quote: "text-sm leading-relaxed border-l-2 border-foreground/50 pl-3",
+  callout: "text-sm leading-relaxed rounded-md bg-background/70 px-3 py-2",
   code: "rounded-md bg-muted px-3 py-2 font-mono text-xs whitespace-pre-wrap",
 }
 
@@ -156,8 +161,9 @@ export function AiToolsSection({ page, onInsert }: { page: StudyPage; onInsert: 
             ) : (
               <div key={i} className="flex flex-col gap-2 self-stretch">
                 <div className="flex flex-col gap-1.5 rounded-2xl rounded-bl-md bg-muted/60 px-4 py-3 text-foreground">
-                  {markdownToBlocks(message.content).map((block) => (
+                  {markdownToBlocks(message.content).map((block, i, all) => (
                     <p key={block.id} className={blockClass[block.type]}>
+                      {block.type === "ol" && <span className="tabular-nums text-muted-foreground">{olNumber(all, i)}. </span>}
                       {block.text}
                     </p>
                   ))}
@@ -227,4 +233,11 @@ export function AiToolsSection({ page, onInsert }: { page: StudyPage; onInsert: 
       <p className="text-[11px] text-muted-foreground">AI 답은 틀릴 수 있어요. 중요한 내용은 교재로 확인하세요.</p>
     </section>
   )
+}
+
+// Number for an "ol" line: its place in the run of consecutive ol lines.
+function olNumber(blocks: TextBlock[], index: number) {
+  let n = 1
+  for (let i = index - 1; i >= 0 && blocks.at(i)?.type === "ol"; i--) n += 1
+  return n
 }

@@ -13,32 +13,62 @@ import {
 import {
   ArrowDown,
   ArrowUp,
+  Check,
+  ChevronRight,
   Code,
   Copy,
+  FileSymlink,
   GripVertical,
   Heading1,
   Heading2,
   Heading3,
+  Lightbulb,
   List,
+  ListChecks,
+  ListOrdered,
+  ListCollapse,
+  Minus,
   Paperclip,
   PenLine,
   Pilcrow,
+  Quote,
   Trash2,
 } from "lucide-react"
-import { isDrawingBlock, isTextBlock, newBlockId, type Block, type BlockType, type TextBlock } from "@/lib/study-pages"
+import {
+  isDividerBlock,
+  isDrawingBlock,
+  isPageLinkBlock,
+  isTextBlock,
+  newBlockId,
+  type Block,
+  type BlockType,
+  type TextBlock,
+} from "@/lib/study-pages"
+import { usePagesForLinks } from "@/components/study-page/pages-context"
+import { PageLinkCard, PageLinkPicker } from "@/components/study-page/page-link"
 import { createAttachmentBlocks } from "@/lib/attachments"
 import { newDrawingBlock } from "@/lib/drawing"
 import { AttachmentBlockView } from "@/components/study-page/attachment-block"
 import { DrawingBlockView } from "@/components/study-page/drawing-block"
 
-const shortcuts: { prefix: string; type: BlockType }[] = [
+// Typed at the start of an empty-ish paragraph (Notion's markdown shortcuts). "---" makes a divider (handled apart).
+const shortcuts: { prefix: string; type: BlockType; checked?: boolean }[] = [
   { prefix: "### ", type: "h3" },
   { prefix: "## ", type: "h2" },
   { prefix: "# ", type: "h1" },
+  { prefix: "[] ", type: "todo" },
+  { prefix: "[ ] ", type: "todo" },
+  { prefix: "[x] ", type: "todo", checked: true },
   { prefix: "- ", type: "li" },
   { prefix: "* ", type: "li" },
+  { prefix: "1. ", type: "ol" },
+  { prefix: "> ", type: "toggle" },
+  { prefix: '" ', type: "quote" },
   { prefix: "```", type: "code" },
 ]
+
+// Types that continue on Enter (a new line of the same list); an empty one turns back into a paragraph.
+const LIST_TYPES = new Set<BlockType>(["li", "ol", "todo"])
 
 const blockStyles: Record<BlockType, string> = {
   h1: "text-2xl font-bold tracking-tight pt-4",
@@ -46,6 +76,11 @@ const blockStyles: Record<BlockType, string> = {
   h3: "text-lg font-semibold pt-1",
   p: "text-base leading-relaxed",
   li: "text-base leading-relaxed",
+  ol: "text-base leading-relaxed",
+  todo: "text-base leading-relaxed",
+  toggle: "text-base font-medium leading-relaxed",
+  quote: "text-base leading-relaxed",
+  callout: "text-base leading-relaxed",
   code: "rounded-lg bg-muted px-4 py-3 font-mono text-sm leading-relaxed",
 }
 
@@ -55,6 +90,11 @@ const placeholders: Record<BlockType, string> = {
   h3: "제목 3",
   p: "내용을 입력하세요. # 제목, - 목록, ``` 코드",
   li: "목록",
+  ol: "목록",
+  todo: "할 일",
+  toggle: "토글 제목 (예: 문제)",
+  quote: "인용",
+  callout: "강조할 내용",
   code: "코드를 입력하세요",
 }
 
@@ -65,17 +105,45 @@ const handleTop: Record<BlockType, string> = {
   h3: "top-[6px]",
   p: "top-0.5",
   li: "top-0.5",
+  ol: "top-0.5",
+  todo: "top-0.5",
+  toggle: "top-0.5",
+  quote: "top-0.5",
+  callout: "top-3",
   code: "top-2.5",
 }
 
 const emptyParagraph = (): TextBlock => ({ id: newBlockId(), type: "p", text: "" })
 
-const markdownPrefix: Record<BlockType, string> = { h1: "# ", h2: "## ", h3: "### ", li: "- ", p: "", code: "" }
+// Changes a text block's type, keeping only the fields that type uses.
+function withType(block: TextBlock, type: BlockType, checked = false): TextBlock {
+  const base: TextBlock = { id: block.id, type, text: block.text }
+  if (type === "todo") base.checked = block.checked ?? checked
+  if (type === "toggle") {
+    base.body = block.body ?? ""
+    base.open = block.open ?? true
+  }
+  return base
+}
+
+const markdownPrefix: Record<BlockType, string> = {
+  h1: "# ",
+  h2: "## ",
+  h3: "### ",
+  li: "- ",
+  ol: "1. ",
+  todo: "- [ ] ",
+  toggle: "▸ ",
+  quote: "> ",
+  callout: "> 💡 ",
+  p: "",
+  code: "",
+}
 
 // "/" menu: typed at the start of a line, filtered by what follows the slash.
 type SlashItem = { label: string; keywords: string; icon: typeof Pilcrow } & (
   | { type: BlockType }
-  | { action: "file" | "drawing" }
+  | { action: "file" | "drawing" | "divider" | "pagelink" }
 )
 
 const slashItems: SlashItem[] = [
@@ -84,6 +152,13 @@ const slashItems: SlashItem[] = [
   { label: "제목 2", keywords: "제목2 중간제목 heading h2", icon: Heading2, type: "h2" },
   { label: "제목 3", keywords: "제목3 작은제목 heading h3", icon: Heading3, type: "h3" },
   { label: "목록", keywords: "목록 리스트 글머리 list bullet li", icon: List, type: "li" },
+  { label: "번호 목록", keywords: "번호목록 순서 numbered ol 1.", icon: ListOrdered, type: "ol" },
+  { label: "체크 목록", keywords: "체크목록 할일 투두 todo check", icon: ListChecks, type: "todo" },
+  { label: "토글", keywords: "토글 접기 문제 정답 toggle", icon: ListCollapse, type: "toggle" },
+  { label: "인용", keywords: "인용 quote", icon: Quote, type: "quote" },
+  { label: "콜아웃", keywords: "콜아웃 강조 박스 중요 callout", icon: Lightbulb, type: "callout" },
+  { label: "구분선", keywords: "구분선 선 divider hr", icon: Minus, action: "divider" },
+  { label: "페이지 링크", keywords: "페이지링크 링크 연결 link page", icon: FileSymlink, action: "pagelink" },
   { label: "코드", keywords: "코드 code", icon: Code, type: "code" },
   { label: "그림", keywords: "그림 필기 손글씨 드로잉 drawing draw pen", icon: PenLine, action: "drawing" },
   { label: "파일 첨부", keywords: "파일 첨부 이미지 사진 pdf file image attach", icon: Paperclip, action: "file" },
@@ -93,7 +168,7 @@ function matchSlash(query: string, allowAttachments: boolean) {
   const q = query.trim().toLowerCase().replace(/\s+/g, "")
   return slashItems.filter(
     (item) =>
-      (allowAttachments || !("action" in item)) &&
+      (allowAttachments || !("action" in item) || item.action === "divider" || item.action === "pagelink") &&
       (q === "" || item.label.replace(/\s+/g, "").includes(q) || item.keywords.toLowerCase().includes(q)),
   )
 }
@@ -113,8 +188,26 @@ const BLOCK_DRAG_TYPE = "application/x-studyhaeyo-block"
 
 // Plain text of a block for copying a multi-block selection.
 function blockText(block: Block) {
-  if (isTextBlock(block)) return block.type === "code" ? "```\n" + block.text + "\n```" : markdownPrefix[block.type] + block.text
+  if (isTextBlock(block)) {
+    if (block.type === "code") return "```\n" + block.text + "\n```"
+    if (block.type === "todo") return (block.checked ? "- [x] " : "- [ ] ") + block.text
+    if (block.type === "toggle") return markdownPrefix.toggle + block.text + (block.body ? "\n" + block.body : "")
+    return markdownPrefix[block.type] + block.text
+  }
+  if (isDividerBlock(block)) return "---"
+  if (isPageLinkBlock(block)) return "[페이지 링크]"
   return isDrawingBlock(block) ? "[그림]" : `[첨부] ${block.name}`
+}
+
+// Number shown before an "ol" block: counts the run of consecutive ol blocks above it.
+function listNumber(blocks: Block[], index: number) {
+  let n = 1
+  for (let i = index - 1; i >= 0; i--) {
+    const b = blocks[i]
+    if (!isTextBlock(b) || b.type !== "ol") break
+    n += 1
+  }
+  return n
 }
 
 function blockIndexAt(target: EventTarget | null) {
@@ -177,6 +270,9 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
   const [moving, setMoving] = useState<number | null>(null)
   const [dropAt, setDropAt] = useState<{ index: number; side: "before" | "after" } | null>(null)
   const [handleMenu, setHandleMenu] = useState<string | null>(null)
+  // "/페이지 링크": the empty block that will become a page link while its picker is open.
+  const [linkPicker, setLinkPicker] = useState<string | null>(null)
+  const pages = usePagesForLinks()
   const selStart = selection ? Math.min(selection.anchor, selection.focus) : -1
   const selEnd = selection ? Math.max(selection.anchor, selection.focus) : -1
   const isSelected = (index: number) => index >= selStart && index <= selEnd
@@ -323,24 +419,32 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
       else if (!raw.startsWith("/") && slash?.blockId === block.id) setSlash(null)
       else if (slash?.blockId === block.id) setSlash({ blockId: block.id, active: 0 })
     }
-    let type = block.type
-    let text = raw
+    if (block.type === "p" && raw === "---") {
+      const index = blocks.findIndex((b) => b.id === block.id)
+      const after = emptyParagraph()
+      onChange([...blocks.slice(0, index), { id: block.id, type: "divider" }, after, ...blocks.slice(index + 1)])
+      setPendingFocus({ id: after.id, caret: 0 })
+      return
+    }
+    let next: TextBlock = { ...block, text: raw }
     if (block.type === "p") {
       const match = shortcuts.find((s) => raw.startsWith(s.prefix))
-      if (match) {
-        type = match.type
-        text = raw.slice(match.prefix.length)
-      }
+      if (match) next = withType({ ...block, text: raw.slice(match.prefix.length) }, match.type, match.checked)
     }
-    onChange(blocks.map((b) => (b.id === block.id ? { ...block, type, text } : b)))
+    onChange(blocks.map((b) => (b.id === block.id ? next : b)))
   }
 
   const applySlash = (block: TextBlock, item: SlashItem) => {
     setSlash(null)
     const cleared = blocks.map((b) => (b.id === block.id ? { ...block, text: "" } : b))
     if ("type" in item) {
-      onChange(cleared.map((b) => (b.id === block.id ? { ...block, type: item.type, text: "" } : b)))
+      onChange(cleared.map((b) => (b.id === block.id ? withType({ ...block, text: "" }, item.type) : b)))
       setPendingFocus({ id: block.id, caret: 0 })
+    } else if (item.action === "divider") {
+      onChange(insertBlocks(cleared, [{ id: newBlockId(), type: "divider" }], block.id))
+    } else if (item.action === "pagelink") {
+      onChange(cleared)
+      setLinkPicker(block.id)
     } else if (item.action === "drawing") {
       const drawing = newDrawingBlock()
       onChange(insertBlocks(cleared, [drawing], block.id))
@@ -401,13 +505,19 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
 
     if (e.key === "Enter" && !e.shiftKey && block.type !== "code") {
       e.preventDefault()
-      if (block.type === "li" && block.text === "") {
-        onChange(blocks.map((b) => (b.id === block.id ? { ...block, type: "p" } : b)))
+      if (LIST_TYPES.has(block.type) && block.text === "") {
+        onChange(blocks.map((b) => (b.id === block.id ? withType(block, "p") : b)))
+        return
+      }
+      // A toggle's title: open it and continue in its body.
+      if (block.type === "toggle") {
+        onChange(blocks.map((b) => (b.id === block.id ? { ...block, open: true } : b)))
+        setPendingFocus({ id: `${block.id}:body`, caret: block.body?.length ?? 0 })
         return
       }
       const before = block.text.slice(0, el.selectionStart)
       const after = block.text.slice(el.selectionEnd)
-      const next: TextBlock = { id: newBlockId(), type: block.type === "li" ? "li" : "p", text: after }
+      const next = withType({ id: newBlockId(), type: "p", text: after }, LIST_TYPES.has(block.type) ? block.type : "p")
       onChange([...blocks.slice(0, index), { ...block, text: before }, next, ...blocks.slice(index + 1)])
       setPendingFocus({ id: next.id, caret: 0 })
       return
@@ -416,7 +526,9 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
     if (e.key === "Backspace" && caretAtStart) {
       if (block.type !== "p") {
         e.preventDefault()
-        onChange(blocks.map((b) => (b.id === block.id ? { ...block, type: "p" } : b)))
+        // A toggle's folded body becomes the paragraph below, so nothing is lost.
+        const unfolded: Block[] = block.body ? [{ id: newBlockId(), type: "p", text: block.body }] : []
+        onChange([...blocks.slice(0, index), withType(block, "p"), ...unfolded, ...blocks.slice(index + 1)])
         return
       }
       if (index > 0) {
@@ -587,6 +699,12 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
               />,
             )
           }
+          if (isDividerBlock(block)) {
+            return wrap(<hr className="my-3 border-border" aria-label="구분선" />)
+          }
+          if (isPageLinkBlock(block)) {
+            return wrap(<PageLinkCard pageId={block.pageId} pages={pages} />)
+          }
           if (!isTextBlock(block)) {
             return wrap(
               <AttachmentBlockView
@@ -604,11 +722,56 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
           const slashMatches = slashOpen ? matchSlash(block.text.slice(1), allowAttachments) : []
           return wrap(
             <>
-              <div className="flex items-start gap-2">
+              <div
+                className={`flex items-start gap-2 ${
+                  block.type === "quote"
+                    ? "border-l-[3px] border-foreground/70 pl-3"
+                    : block.type === "callout"
+                      ? "rounded-lg bg-muted/70 px-3 py-2.5"
+                      : ""
+                }`}
+              >
                 {block.type === "li" && (
                   <span aria-hidden="true" className="select-none pt-0.5 text-base leading-relaxed text-muted-foreground">
                     •
                   </span>
+                )}
+                {block.type === "ol" && (
+                  <span aria-hidden="true" className="min-w-5 select-none pt-0.5 text-base leading-relaxed tabular-nums text-muted-foreground">
+                    {listNumber(blocks, index)}.
+                  </span>
+                )}
+                {block.type === "callout" && (
+                  <span aria-hidden="true" className="select-none pt-0.5 text-base leading-relaxed">
+                    💡
+                  </span>
+                )}
+                {block.type === "todo" && (
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={block.checked === true}
+                    aria-label={block.checked ? "완료 취소" : "완료"}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => onChange(blocks.map((b) => (b.id === block.id ? { ...block, checked: !block.checked } : b)))}
+                    className={`mt-1 flex size-[18px] shrink-0 items-center justify-center rounded border transition-colors ${
+                      block.checked ? "border-foreground bg-foreground text-background" : "border-muted-foreground/50 hover:border-foreground"
+                    }`}
+                  >
+                    {block.checked && <Check className="size-3" />}
+                  </button>
+                )}
+                {block.type === "toggle" && (
+                  <button
+                    type="button"
+                    aria-expanded={block.open !== false}
+                    aria-label={block.open !== false ? "접기" : "펼치기"}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => onChange(blocks.map((b) => (b.id === block.id ? { ...block, open: block.open === false } : b)))}
+                    className="mt-1 flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+                  >
+                    <ChevronRight className={`size-4 transition-transform ${block.open !== false ? "rotate-90" : ""}`} />
+                  </button>
                 )}
                 <textarea
                   ref={(el) => {
@@ -652,9 +815,45 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
                     hint || isSoleEmptyBlock
                       ? "placeholder:text-muted-foreground/60"
                       : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
-                  } ${blockStyles[block.type]}`}
+                  } ${blockStyles[block.type]} ${block.type === "todo" && block.checked ? "text-muted-foreground line-through" : ""}`}
                 />
               </div>
+              {block.type === "toggle" && block.open !== false && (
+                <textarea
+                  ref={(el) => {
+                    if (el) refs.current.set(`${block.id}:body`, el)
+                    else refs.current.delete(`${block.id}:body`)
+                  }}
+                  value={block.body ?? ""}
+                  rows={1}
+                  spellCheck={false}
+                  aria-label={`${block.text || "토글"} 내용`}
+                  placeholder="펼치면 보이는 내용 (예: 정답과 풀이)"
+                  onChange={(e) => onChange(blocks.map((b) => (b.id === block.id ? { ...block, body: e.target.value } : b)))}
+                  onKeyDown={(e) => {
+                    if (e.nativeEvent.isComposing || e.keyCode === 229) return
+                    const el = e.currentTarget
+                    if (e.key === "Backspace" && el.selectionStart === 0 && el.selectionEnd === 0 && !block.body) {
+                      e.preventDefault()
+                      setPendingFocus({ id: block.id, caret: block.text.length })
+                    }
+                  }}
+                  className="ml-7 w-[calc(100%-1.75rem)] resize-none bg-transparent text-base leading-relaxed text-foreground outline-none [field-sizing:content] placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
+                />
+              )}
+              {linkPicker === block.id && (
+                <PageLinkPicker
+                  pages={pages}
+                  onPick={(pageId) => {
+                    setLinkPicker(null)
+                    onChange(insertBlocks(latest.current.blocks, [{ id: newBlockId(), type: "pagelink", pageId }], block.id))
+                  }}
+                  onClose={() => {
+                    setLinkPicker(null)
+                    setPendingFocus({ id: block.id, caret: 0 })
+                  }}
+                />
+              )}
               {slashMatches.length > 0 && slash && (
                 <ul
                   id={`slash-${block.id}`}
