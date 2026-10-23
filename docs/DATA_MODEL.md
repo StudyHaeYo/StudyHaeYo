@@ -98,10 +98,11 @@
 - `startedAt`, `segments[{pageId,start,end}]`, `openSegment`, `lastActiveAt`, `log: FinishedSession[]`
 - `FinishedSession = {id, startedAt, endedAt, segments, autoEnded?}`
 
-### 템플릿 (코드로 정의, DB에 저장하지 않는다)
-`{id, name, tagline, treeIcon, bodyTemplate, reviewTemplate?, studyMode, createContent}`
-- `studyMode`는 `"locked-on"`(학습 기능이 항상 켜져 있고 끌 수 없음) 또는 `"optional"`(페이지마다 켜고 끔)
-- `studyMode`는 템플릿에서 정해지므로 페이지에 따로 저장하지 않는다.
+### 템플릿 (코드로 정의, D-23)
+- 모든 페이지의 본문은 `blocks` 하나다. 템플릿(`pageStarters`)은 **새 페이지가 어떤 블록으로 시작하는지**만 정한다(빈 페이지 · 학습 노트 · 강의 노트 · 오답 노트 · 시험 정리)
+- DB의 `template_id`는 여전히 `"study-note"` | `"blank"`만 쓴다. 학습용 템플릿은 모두 `"study-note"`로 저장된다(학습 기능이 기본으로 켜짐). 그래서 DB 변경이 없다
+- 핵심 개념 = `concept` 블록("용어: 설명"), 헷갈린 점 = `confusion` 블록(`checked` = 해결함). 어느 페이지에든 `/핵심 개념`, `/헷갈린 점`으로 넣을 수 있다
+- 옛 학습 노트의 `note` 컬럼(`{learned, concepts, confusions}`)은 **읽기만 한다.** `blocks`가 비어 있고 `note`가 있으면 불러올 때 블록으로 바꿔 보여준다(`withNoteBlocks`, id가 고정이라 매번 같은 결과). 편집하면 `blocks`만 저장되고 `note`는 그대로 남는다(이전 빌드로 되돌려도 옛 노트가 보이게)
 
 ### 없는 것
 User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유자를 가리키고, 앱은 `user_id`를 `auth.getUser()`로 검증한 값으로만 채운다. `profiles`는 아직 화면에서 쓰지 않는다. 사이드바와 설정 화면의 이름·이메일은 `lib/auth.ts`의 `useCurrentUser`(가입 때 넣은 `display_name`, 없으면 이메일 앞부분)에서 온다. 로그아웃(`signOut`)은 대기 중인 저장을 먼저 끝낸다(`settleWrites`).
@@ -127,21 +128,20 @@ User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유�
 ## 3. 동작 규칙
 
 **R1. 템플릿과 학습 기능**
-학습 기능이 켜진 모든 페이지는 템플릿과 무관하게 같은 속성 패널 + 학습 기록 + AI 학습 도구를 가진다. "locked-on" 템플릿은 항상 켜져 있다. "optional" 템플릿은 `studyEnabled`로 결정하고, 이 값이 없는 옛 페이지는 기록이 하나라도 있으면 켜진 것으로 본다. 학습 기능을 꺼도 본문과 기록 데이터는 지우지 않는다.
+학습 기능이 켜진 모든 페이지는 템플릿과 무관하게 같은 속성 패널 + 학습 기록 + AI 학습 도구를 가진다. 모든 페이지에서 켜고 끌 수 있다(`studyEnabled`). 값이 없으면 `"study-note"` 페이지는 켜짐, 빈 페이지는 기록이 하나라도 있으면 켜짐으로 본다. 학습 기능을 꺼도 본문과 기록 데이터는 지우지 않는다.
 
 **R2. Home 복습 후보** (`reviewCandidates`)
-- 후보는 "locked-on" 템플릿의 페이지만. 빈 페이지는 학습 기능이 켜져 있어도 제외
+- 후보는 학습 기능이 켜진 페이지(기록이 있어야 복습일이 생긴다)
 - status가 "완료"면 제외. status가 "복습 필요"이거나 `nextReviewAt <= 내일`이면 포함
 - 정렬: `nextReviewAt` 오름차순 → 이해도 오름차순 → 미해결 헷갈린 점이 많은 순
 - 날짜 표시: "N일 지남"/"오늘"/"내일"(`dueLabel`)
 
 **R3. 복습 모드** (`/record/<id>?mode=review`)
-- 복습 본문이 정의된 "locked-on" 템플릿(학습 노트)에서만 열린다. 아니면 일반 페이지로 보인다
-- 핵심 개념을 카드로 하나씩 확인하고 "기억났어요 / 헷갈려요"를 고른다
-- 완료할 때만 반영한다: "헷갈려요"로 고른 개념이 열린 헷갈린 점과 같은 문구가 아니면 `confusions`에 추가하고, 학습 기록을 자동 생성한다(복습 시작부터 경과한 분, 입력한 이해도, `createdAt`=지금). 중간에 나가면 아무것도 저장하지 않는다
+- 학습 기능이 켜진 페이지에서 열린다. 핵심 개념 블록이 있으면 본문 대신 카드로 하나씩 확인하고 "기억났어요 / 헷갈려요"를 고른다. 없으면 이해도만 묻고 본문은 아래에 그대로 보여준다
+- 완료할 때만 반영한다: "헷갈려요"로 고른 개념이 열린 헷갈린 점과 같은 문구가 아니면 헷갈린 점 블록으로 추가하고(마지막 헷갈린 점 아래, 없으면 "헷갈린 점" 제목과 함께 맨 끝), 학습 기록을 자동 생성한다(복습 시작부터 경과한 분, 입력한 이해도, `createdAt`=지금). 중간에 나가면 아무것도 저장하지 않는다
 
 **R4. 세션과 구간**
-- 홈에서 시작/종료한다. 세션 중 **보이는 탭에서 "locked-on" 페이지(`/record/<id>`)를 열고 있는 동안만** 구간(`pageId, start, end`)으로 기록한다. 빈 페이지에 머문 시간은 기록하지 않는다
+- 홈에서 시작/종료한다. 세션 중 **보이는 탭에서 학습 기능이 켜진 페이지(`/record/<id>`)를 열고 있는 동안만** 구간(`pageId, start, end`)으로 기록한다. 학습 기능이 꺼진 페이지에 머문 시간은 기록하지 않는다
 - 30초마다 `lastActiveAt`을 갱신한다(heartbeat)
 - 탭이 숨겨지거나 `pagehide`되면 열린 구간을 그 시각에 닫는다
 - 앱이 다시 로드될 때 열려 있던 구간은 "지금"이 아니라 **마지막 활동 시각**에 닫는다. 세션이 30분 이상 활동이 없었으면 마지막 활동 시각에 세션을 자동 종료한다(`autoEnded`)
@@ -246,7 +246,7 @@ DB를 붙일 때는 이 시그니처를 유지하는 어댑터를 우선 고려�
    - 오늘의 기록: `date`가 오늘인 기록, 최신순(`createdAt`, 없으면 id의 시각, 그것도 없으면 `date`)
    - 이번 주 학습 통계: 월요일~오늘의 `date` 기준 과목별 `durationMinutes` 합. 목표는 `WEEKLY_GOAL_MINUTES`(600분, 설정 화면과 같은 상수)
    - 취약 학습 영역: 페이지 이해도(R1) ≤ 2 이거나 미해결 헷갈린 점 ≥ 1. 미해결 많은 순 → 이해도 낮은 순, 최대 5개
-   - 복습 예정: R2와 같은 페이지 범위(locked-on 템플릿), 상태가 완료가 아니고 다음 복습일이 있는 페이지, 날짜순 최대 5개. 날짜 옆에 "3일 지남"/"오늘"/"내일"/"5일 후"(`dueLabel`, Home 복습 목록과 같은 표시)
+   - 복습 예정: R2와 같은 페이지 범위(학습 기능 켜짐), 상태가 완료가 아니고 다음 복습일이 있는 페이지, 날짜순 최대 5개. 날짜 옆에 "3일 지남"/"오늘"/"내일"/"5일 후"(`dueLabel`, Home 복습 목록과 같은 표시)
    - 최근 학습 활동: 전체 기록 최신순 5개
    - `lib/learning-os.ts`의 고정값과 `dummy-data.ts`의 records/weeklyStats는 더 이상 화면에서 쓰지 않는다(파일은 남겨둠).
 3. **`StudyRecord`가 두 가지다.** `lib/types.ts`의 `StudyRecord`(title/category/type...)는 옛 형태로 `components/record-card.tsx`에만 남아 있고(Home과 과목 화면은 더 이상 쓰지 않음), 실제 학습 기록은 `lib/study-pages.ts`의 `PageStudyRecord`다. DB는 `PageStudyRecord` 기준으로 설계한다.

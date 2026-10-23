@@ -4,7 +4,7 @@ import { useRef, useState, type FormEvent } from "react"
 import { toast } from "sonner"
 import { ArrowUp, Check, Copy, FilePlus2, FileText, Loader2, RotateCcw, Sparkles } from "lucide-react"
 import { askStudyAI, markdownToBlocks, MAX_AI_PDFS, pageContextText, pagePdfs, type ChatMessage } from "@/lib/ai"
-import type { StudyPage, TextBlock } from "@/lib/study-pages"
+import { unresolvedConfusionCount, type StudyPage, type TextBlock } from "@/lib/study-pages"
 
 const blockClass: Record<TextBlock["type"], string> = {
   h1: "text-base font-semibold pt-2",
@@ -18,6 +18,8 @@ const blockClass: Record<TextBlock["type"], string> = {
   quote: "text-sm leading-relaxed border-l-2 border-foreground/50 pl-3",
   callout: "text-sm leading-relaxed rounded-md bg-background/70 px-3 py-2",
   code: "rounded-md bg-muted px-3 py-2 font-mono text-xs whitespace-pre-wrap",
+  concept: "text-sm leading-relaxed pl-4 relative before:absolute before:left-0.5 before:content-['◆'] before:text-[10px] before:top-1 before:text-indigo-500",
+  confusion: "text-sm leading-relaxed pl-4 relative before:absolute before:left-0.5 before:content-['?'] before:text-amber-600",
 }
 
 // AI 학습 도우미: chat about this page. Quick prompts for the common asks; any answer can be added to the page body.
@@ -32,7 +34,7 @@ export function AiToolsSection({ page, onInsert }: { page: StudyPage; onInsert: 
   const pdfs = pagePdfs(page)
   const picked = pdfs.filter((p) => p.stored && pickedIds.includes(p.block.id)).map((p) => p.block)
 
-  const hasConfusions = (page.note?.confusions.filter((c) => !c.resolved).length ?? 0) > 0
+  const hasConfusions = unresolvedConfusionCount(page) > 0
   const quickPrompts =
     picked.length > 0
       ? ["PDF 핵심을 쪽별로 요약해줘", "PDF로 시험 대비 정리 노트 만들어줘", "PDF 내용으로 확인 문제 5개 만들어줘"]

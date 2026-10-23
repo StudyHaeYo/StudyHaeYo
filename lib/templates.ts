@@ -1,71 +1,110 @@
-import type { ComponentType } from "react"
-import { FilePlus, FileText, GraduationCap, NotebookPen, type LucideIcon } from "lucide-react"
-import { newBlockId, type Block, type StudyNoteContent } from "@/lib/study-pages"
-import { FreeBody, StudyNoteBody, type PageBodyProps } from "@/components/study-page/page-bodies"
-import { StudyNoteReview, type ReviewBodyProps } from "@/components/study-page/study-note-review"
+import { FilePlus, FileText, GraduationCap, NotebookPen, Presentation, ClipboardCheck, XCircle, type LucideIcon } from "lucide-react"
+import { newBlockId, type Block, type BlockType } from "@/lib/study-pages"
 
-// Initial body for a new page. `note` is only set by structured-note templates.
-export interface PageContent {
-  blocks: Block[]
-  note?: StudyNoteContent
-}
-
-// Two independent axes describe a page type:
-// - studyMode: whether study features (속성 패널 · 학습 기록 · AI 학습 도구) can be turned off.
-//   "locked-on" → always on and tracked; "optional" → the user toggles it per page.
-// - bodyTemplate: how the page body is rendered.
-export type StudyMode = "locked-on" | "optional"
-
-export interface PageTemplate {
-  id: string
-  name: string
-  // Short copy on the "+ 새 페이지" type cards.
-  tagline: string
-  // Icon on the "+ 새 페이지" type card.
-  cardIcon: LucideIcon
-  // Icon in the sidebar page tree.
-  treeIcon: LucideIcon
-  bodyTemplate: ComponentType<PageBodyProps>
-  // Optional body used when the page is opened with ?mode=review.
-  reviewTemplate?: ComponentType<ReviewBodyProps>
-  studyMode: StudyMode
-  createContent: () => PageContent
-}
-
-// Add a template (강의 노트, 시험 대비 ...) by appending to this array; the new-page cards follow automatically.
+// Every page is one block body (D-23). A template only decides what a new page starts with:
+// its first blocks and whether study features (속성 · 학습 기록 · AI 도구) start on.
+//
+// `templateId` is what the DB stores (workspace_nodes.template_id). It stays "study-note" | "blank":
+// study templates all save as "study-note" (study on by default), so no DB change is needed
+// and an older build can still open every page.
 export const templateRegistry = [
-  {
-    id: "study-note",
-    name: "학습 노트",
-    tagline: "진도와 이해도를 체계적으로 관리하고 싶을 때",
-    cardIcon: NotebookPen,
-    treeIcon: GraduationCap,
-    bodyTemplate: StudyNoteBody,
-    reviewTemplate: StudyNoteReview,
-    studyMode: "locked-on",
-    createContent: () => ({
-      blocks: [],
-      note: { learned: [{ id: newBlockId(), type: "p", text: "" }], concepts: [], confusions: [] },
-    }),
-  },
-  {
-    id: "blank",
-    name: "빈 페이지",
-    tagline: "자유롭게 기록하다가, 필요하면 학습 기능만 살짝 추가",
-    cardIcon: FilePlus,
-    treeIcon: FileText,
-    bodyTemplate: FreeBody,
-    studyMode: "optional",
-    createContent: () => ({ blocks: [{ id: newBlockId(), type: "p", text: "" }] }),
-  },
-] as const satisfies readonly PageTemplate[]
+  { id: "study-note", treeIcon: GraduationCap },
+  { id: "blank", treeIcon: FileText },
+] as const satisfies readonly { id: string; treeIcon: LucideIcon }[]
 
 export type TemplateId = (typeof templateRegistry)[number]["id"]
 
-export const defaultTemplateId: TemplateId = templateRegistry[0].id
-
-export function getTemplate(id: TemplateId): PageTemplate {
+export function getTemplate(id: TemplateId) {
   return templateRegistry.find((t) => t.id === id) ?? templateRegistry[0]
+}
+
+const t = (type: BlockType, text = ""): Block => ({ id: newBlockId(), type, text })
+
+// The cards on "+ 새 페이지". Add a template by appending here.
+export interface PageStarter {
+  id: string
+  name: string
+  tagline: string
+  icon: LucideIcon
+  templateId: TemplateId
+  createBlocks: () => Block[]
+}
+
+export const pageStarters: PageStarter[] = [
+  {
+    id: "blank",
+    name: "빈 페이지",
+    tagline: "아무것도 없는 페이지. / 로 원하는 블록을 넣어요",
+    icon: FilePlus,
+    templateId: "blank",
+    createBlocks: () => [t("p")],
+  },
+  {
+    id: "study-note",
+    name: "학습 노트",
+    tagline: "배운 내용 · 핵심 개념 · 헷갈린 점. 핵심 개념은 복습 카드가 돼요",
+    icon: NotebookPen,
+    templateId: "study-note",
+    createBlocks: () => [
+      t("h2", "오늘 배운 내용"),
+      t("p"),
+      t("h2", "핵심 개념"),
+      t("concept"),
+      t("h2", "헷갈린 점"),
+      t("confusion"),
+    ],
+  },
+  {
+    id: "lecture",
+    name: "강의 노트",
+    tagline: "수업 들으면서 필기하고, 끝나고 핵심만 추리기",
+    icon: Presentation,
+    templateId: "study-note",
+    createBlocks: () => [
+      t("callout", "강의: 몇 주차 · 범위"),
+      t("h2", "필기"),
+      t("li"),
+      t("h2", "핵심 개념"),
+      t("concept"),
+      t("h2", "질문할 것"),
+      t("confusion"),
+    ],
+  },
+  {
+    id: "wrong-answers",
+    name: "오답 노트",
+    tagline: "틀린 문제와 풀이를 접어 두고 다시 풀어보기",
+    icon: XCircle,
+    templateId: "study-note",
+    createBlocks: () => [
+      t("h2", "틀린 문제"),
+      { id: newBlockId(), type: "toggle", text: "문제 1", body: "", open: true },
+      t("h2", "왜 틀렸나"),
+      t("li"),
+      t("h2", "핵심 개념"),
+      t("concept"),
+    ],
+  },
+  {
+    id: "exam",
+    name: "시험 정리",
+    tagline: "범위를 체크하며 정리하고, 자주 틀리는 것 모아 두기",
+    icon: ClipboardCheck,
+    templateId: "study-note",
+    createBlocks: () => [
+      t("callout", "시험일 · 범위"),
+      t("h2", "범위 체크"),
+      { id: newBlockId(), type: "todo", text: "", checked: false },
+      t("h2", "핵심 개념"),
+      t("concept"),
+      t("h2", "자주 틀리는 것"),
+      t("confusion"),
+    ],
+  },
+]
+
+export function getStarter(id: string) {
+  return pageStarters.find((s) => s.id === id) ?? pageStarters[0]
 }
 
 type PageLike = {
@@ -74,50 +113,24 @@ type PageLike = {
   studyRecords: unknown[]
 }
 
-export function isLockedOn(page: Pick<PageLike, "templateId">) {
-  return getTemplate(page.templateId).studyMode === "locked-on"
-}
-
+// Study features can be turned on or off on any page. Pages from a study template start on.
 export function isStudyOn(page: PageLike) {
-  if (isLockedOn(page)) return true
-  // Older pages saved before the flag existed: show their records rather than hide them.
-  if (page.studyEnabled === undefined) return page.studyRecords.length > 0
-  return page.studyEnabled
-}
-
-export interface PageLayout {
-  Body: ComponentType<PageBodyProps>
-  // Set only for locked-on templates that define a review body.
-  ReviewBody: ComponentType<ReviewBodyProps> | null
-  studyOn: boolean
-  // "locked": study is always on (menu shows a notice), "toggle": the user can turn it off.
-  studyControl: "locked" | "toggle"
-}
-
-// What a page renders comes only from its template definition plus its own study flag.
-// Every page uses the same single-column frame; with study on it gets 속성 + 학습 기록 + AI 학습 도구.
-export function resolvePageLayout(page: PageLike): PageLayout {
-  const template = getTemplate(page.templateId)
-  const lockedOn = template.studyMode === "locked-on"
-  return {
-    Body: template.bodyTemplate,
-    ReviewBody: lockedOn ? (template.reviewTemplate ?? null) : null,
-    studyOn: isStudyOn(page),
-    studyControl: lockedOn ? "locked" : "toggle",
-  }
+  if (page.studyEnabled !== undefined) return page.studyEnabled
+  if (page.templateId === "study-note") return true
+  // Older blank pages saved before the flag existed: show their records rather than hide them.
+  return page.studyRecords.length > 0
 }
 
 export interface TreeAppearance {
   icon: LucideIcon
-  // An optional-study page that is collecting study records.
+  // A blank page that is collecting study records.
   studyBadge: boolean
 }
 
 export function resolveTreeAppearance(page: PageLike): TreeAppearance {
-  const template = getTemplate(page.templateId)
-  return { icon: template.treeIcon, studyBadge: template.studyMode === "optional" && isStudyOn(page) }
+  return { icon: getTemplate(page.templateId).treeIcon, studyBadge: page.templateId === "blank" && isStudyOn(page) }
 }
 
-// Home's 우선 학습 / 복습 widgets and the session timer only consider locked-on pages.
-// Optional pages with study on still count toward cumulative analytics.
-export const isReviewCandidate = isLockedOn
+// Home's 복습 widgets, review lists and the session timer: every page with study on
+// (a page only gets a review date once it has a record).
+export const isReviewCandidate = isStudyOn

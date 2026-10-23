@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Check, ChevronRight, FolderOpen } from "lucide-react"
-import { defaultTemplateId, templateRegistry, type TemplateId } from "@/lib/templates"
+import { pageStarters } from "@/lib/templates"
 import { createPage, flattenTree, nodeExists, nodePath, useWorkspace } from "@/lib/workspace"
 
 const ROOT = "__root__"
@@ -15,7 +15,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
   const hasContext = nodeExists(workspace, contextParentId)
   const defaultLocation = hasContext ? (contextParentId as string) : ROOT
 
-  const [templateId, setTemplateId] = useState<TemplateId>(defaultTemplateId)
+  const [starterId, setStarterId] = useState(pageStarters[0].id)
   const [title, setTitle] = useState("")
   const [location, setLocation] = useState(defaultLocation)
   const [pickingLocation, setPickingLocation] = useState(!hasContext)
@@ -30,7 +30,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
       setShowError(true)
       return
     }
-    const id = createPage({ title, templateId, parentId: location === ROOT ? null : location })
+    const id = createPage({ title, starterId, parentId: location === ROOT ? null : location })
     router.push(`/record/${id}`)
   }
 
@@ -49,14 +49,14 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
       </div>
 
       <fieldset className="flex flex-col">
-        <legend className="mb-3 text-sm font-medium text-foreground">페이지 유형</legend>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {templateRegistry.map(({ id, name, tagline, cardIcon: Icon }) => {
-            const selected = templateId === id
+        <legend className="mb-3 text-sm font-medium text-foreground">템플릿</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {pageStarters.map(({ id, name, tagline, icon: Icon }) => {
+            const selected = starterId === id
             return (
               <label
                 key={id}
-                className={`relative flex h-full cursor-pointer flex-col items-start gap-3 rounded-xl border bg-card p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${
+                className={`relative flex h-full cursor-pointer flex-col items-start gap-2 rounded-xl border bg-card p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500 ${
                   selected ? "border-indigo-400 ring-1 ring-indigo-400" : "border-border hover:border-indigo-300"
                 }`}
               >
@@ -65,7 +65,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
                   name="template"
                   value={id}
                   checked={selected}
-                  onChange={() => setTemplateId(id)}
+                  onChange={() => setStarterId(id)}
                   className="sr-only"
                 />
                 <span

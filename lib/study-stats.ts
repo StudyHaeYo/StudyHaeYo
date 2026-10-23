@@ -168,7 +168,7 @@ export interface UpcomingReview {
   due: { label: string; tone: DueTone }
 }
 
-// Same page pool as R2 (locked-on templates only), not yet 완료, with a review date.
+// Same page pool as R2 (study on), not yet 완료, with a review date.
 export function upcomingReviews(workspace: WorkspaceState, today: string, limit = 5): UpcomingReview[] {
   return workspace.pages
     .filter(isReviewCandidate)

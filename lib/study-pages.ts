@@ -5,14 +5,28 @@ import type { TemplateId } from "@/lib/templates"
 // Text-like blocks share one shape (a line of text + a few optional fields), so the editor keeps one textarea
 // per block. todo = 체크 목록, ol = 번호 목록 (numbers come from consecutive ol blocks), toggle = 접기 제목
 // (+ hidden body), quote = 인용, callout = 강조 박스.
-export type BlockType = "h1" | "h2" | "h3" | "p" | "li" | "ol" | "todo" | "toggle" | "quote" | "callout" | "code"
+// concept = 핵심 개념 ("용어: 설명", 복습 모드의 카드가 된다), confusion = 헷갈린 점 (checked = 해결함).
+export type BlockType =
+  | "h1"
+  | "h2"
+  | "h3"
+  | "p"
+  | "li"
+  | "ol"
+  | "todo"
+  | "toggle"
+  | "quote"
+  | "callout"
+  | "code"
+  | "concept"
+  | "confusion"
 export type AttachmentBlockType = "image" | "file"
 
 export interface TextBlock {
   id: string
   type: BlockType
   text: string
-  // todo only.
+  // todo: done. confusion: resolved.
   checked?: boolean
   // toggle only: the folded content (plain text, may span lines) and whether it is shown.
   body?: string
@@ -123,7 +137,8 @@ export interface NoteConfusion {
   resolved: boolean
 }
 
-// Structured body of the 학습 노트 template. Free-form pages keep using `blocks`.
+// The old structured body of 학습 노트 pages (before D-23). Still read so those pages open as blocks
+// (noteToBlocks), but never written again: the column stays as it was, so an older build can still show it.
 export interface StudyNoteContent {
   learned: Block[]
   concepts: NoteConcept[]
@@ -154,9 +169,9 @@ export interface StudyPage {
   templateId: TemplateId
   createdAt: string
   studyType?: StudyType
-  // Body for block-schema templates (빈 페이지).
+  // The page body. Every page uses blocks (D-23).
   blocks: Block[]
-  // Body for structured-note templates (학습 노트).
+  // Legacy 학습 노트 body; read-only (see StudyNoteContent).
   note?: StudyNoteContent
   tags: string[]
   studyRecords: PageStudyRecord[]
@@ -239,13 +254,51 @@ export function computePageStats(page: StudyPage, today: string | null): PageSta
   }
 }
 
-// Study notes saved before the structured body existed keep their blocks as "오늘 배운 내용".
-export function noteOf(page: Pick<StudyPage, "note" | "blocks">): StudyNoteContent {
-  return page.note ?? { learned: page.blocks, concepts: [], confusions: [] }
+// A legacy 학습 노트 body as blocks: 오늘 배운 내용 / 핵심 개념 / 헷갈린 점 under headings.
+// Ids are derived from the page and item ids, so every load produces the same blocks (no write needed).
+export function noteToBlocks(pageId: string, note: StudyNoteContent): Block[] {
+  const blocks: Block[] = [{ id: `${pageId}-h-learned`, type: "h2", text: "오늘 배운 내용" }, ...note.learned]
+  if (note.learned.length === 0) blocks.push({ id: `${pageId}-learned-empty`, type: "p", text: "" })
+  if (note.concepts.length > 0) {
+    blocks.push({ id: `${pageId}-h-concepts`, type: "h2", text: "핵심 개념" })
+    for (const c of note.concepts) blocks.push({ id: c.id, type: "concept", text: c.text })
+  }
+  if (note.confusions.length > 0) {
+    blocks.push({ id: `${pageId}-h-confusions`, type: "h2", text: "헷갈린 점" })
+    for (const q of note.confusions) blocks.push({ id: q.id, type: "confusion", text: q.text, checked: q.resolved })
+  }
+  return blocks
 }
 
-export function unresolvedConfusionCount(page: Pick<StudyPage, "note">) {
-  return page.note?.confusions.filter((c) => !c.resolved).length ?? 0
+// Pages loaded with only a legacy note get their body from it. Once the page is edited, `blocks` is saved and
+// wins from then on; `note` is left untouched.
+export function withNoteBlocks<T extends Pick<StudyPage, "id" | "blocks" | "note">>(page: T): T {
+  if (!page.note || page.blocks.length > 0) return page
+  return { ...page, blocks: noteToBlocks(page.id, page.note) }
+}
+
+const isType = (type: BlockType) => (block: Block): block is TextBlock => isTextBlock(block) && block.type === type
+
+export const conceptBlocks = (blocks: Block[]) => blocks.filter(isType("concept")).filter((b) => b.text.trim())
+export const confusionBlocks = (blocks: Block[]) => blocks.filter(isType("confusion")).filter((b) => b.text.trim())
+
+export function unresolvedConfusionCount(page: Pick<StudyPage, "blocks">) {
+  return confusionBlocks(page.blocks).filter((b) => !b.checked).length
+}
+
+// Adds "헷갈려요" items as confusion blocks: after the last existing one, or under a new 헷갈린 점 heading.
+// Items already open on the page are skipped.
+export function addConfusions(blocks: Block[], texts: string[]): Block[] {
+  const existing = confusionBlocks(blocks)
+  const open = new Set(existing.filter((b) => !b.checked).map((b) => b.text.trim()))
+  const added: Block[] = texts
+    .filter((t) => t.trim() && !open.has(t.trim()))
+    .map((text) => ({ id: newBlockId(), type: "confusion", text }))
+  if (added.length === 0) return blocks
+  const last = existing.at(-1)
+  if (!last) return [...blocks, { id: newBlockId(), type: "h2", text: "헷갈린 점" }, ...added]
+  const at = blocks.indexOf(last) + 1
+  return [...blocks.slice(0, at), ...added, ...blocks.slice(at)]
 }
 
 // "용어: 설명" → front "용어", back "설명". Without a separator the whole text is the back of the card.
@@ -299,11 +352,6 @@ export function newBlockId() {
   return `b-${Date.now().toString(36)}-${blockSeq}`
 }
 
-export function newItemId(prefix: "c" | "q") {
-  blockSeq += 1
-  return `${prefix}-${Date.now().toString(36)}-${blockSeq}`
-}
-
 const b = (id: string, type: BlockType, text: string): Block => ({ id, type, text })
 
 function seedNote(prefix: string, learned: Block[], concepts: string[], confusions: [string, boolean][]): StudyNoteContent {
@@ -315,7 +363,7 @@ function seedNote(prefix: string, learned: Block[], concepts: string[], confusio
 }
 
 // Seed pages: initial data created from the 학습 노트 template, not a separate kind of page.
-export const studyPages: StudyPage[] = [
+const seedPages: StudyPage[] = [
   {
     id: "ds-1",
     title: "해시테이블 정리",
@@ -457,3 +505,5 @@ export const studyPages: StudyPage[] = [
     ],
   },
 ]
+
+export const studyPages: StudyPage[] = seedPages.map(withNoteBlocks)
