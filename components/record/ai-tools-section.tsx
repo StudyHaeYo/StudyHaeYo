@@ -2,8 +2,8 @@
 
 import { useRef, useState, type FormEvent } from "react"
 import { toast } from "sonner"
-import { ArrowUp, Copy, FilePlus2, Loader2, RotateCcw, Sparkles } from "lucide-react"
-import { askStudyAI, markdownToBlocks, pageContextText, type ChatMessage } from "@/lib/ai"
+import { ArrowUp, Check, Copy, FilePlus2, FileText, Loader2, RotateCcw, Sparkles } from "lucide-react"
+import { askStudyAI, markdownToBlocks, MAX_AI_PDFS, pageContextText, pagePdfs, type ChatMessage } from "@/lib/ai"
 import type { StudyPage, TextBlock } from "@/lib/study-pages"
 
 const blockClass: Record<TextBlock["type"], string> = {
@@ -22,14 +22,24 @@ export function AiToolsSection({ page, onInsert }: { page: StudyPage; onInsert: 
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  // PDFs (block ids) sent along with every question until turned off.
+  const [pickedIds, setPickedIds] = useState<string[]>([])
+  const pdfs = pagePdfs(page)
+  const picked = pdfs.filter((p) => p.stored && pickedIds.includes(p.block.id)).map((p) => p.block)
 
   const hasConfusions = (page.note?.confusions.filter((c) => !c.resolved).length ?? 0) > 0
-  const quickPrompts = [
-    "핵심만 5줄로 요약해줘",
-    "시험 대비 정리 노트로 만들어줘",
-    "확인 문제 5개 만들어줘",
-    ...(hasConfusions ? ["헷갈린 점을 쉽게 설명해줘"] : []),
-  ]
+  const quickPrompts =
+    picked.length > 0
+      ? ["PDF 핵심을 쪽별로 요약해줘", "PDF로 시험 대비 정리 노트 만들어줘", "PDF 내용으로 확인 문제 5개 만들어줘"]
+      : [
+          "핵심만 5줄로 요약해줘",
+          "시험 대비 정리 노트로 만들어줘",
+          "확인 문제 5개 만들어줘",
+          ...(hasConfusions ? ["헷갈린 점을 쉽게 설명해줘"] : []),
+        ]
+
+  const togglePdf = (id: string) =>
+    setPickedIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id].slice(-MAX_AI_PDFS)))
 
   const send = async (text: string) => {
     const content = text.trim()
@@ -39,7 +49,7 @@ export function AiToolsSection({ page, onInsert }: { page: StudyPage; onInsert: 
     setDraft("")
     setError(null)
     setPending(true)
-    const result = await askStudyAI(pageContextText(page), next)
+    const result = await askStudyAI(pageContextText(page), next, picked)
     setPending(false)
     if (result.ok) setMessages([...next, { role: "assistant", content: result.text }])
     else setError(result.message)
@@ -93,6 +103,33 @@ export function AiToolsSection({ page, onInsert }: { page: StudyPage; onInsert: 
           </button>
         )}
       </div>
+
+      {pdfs.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">PDF도 같이 보기</span>
+          {pdfs.map(({ block, stored }) => {
+            const on = pickedIds.includes(block.id) && stored
+            return (
+              <button
+                key={block.id}
+                type="button"
+                disabled={!stored || pending}
+                aria-pressed={on}
+                onClick={() => togglePdf(block.id)}
+                title={stored ? `질문할 때 "${block.name}"도 함께 보내요` : "저장되지 않은 PDF라 AI에 보낼 수 없어요. 다시 올려 주세요"}
+                className={`inline-flex max-w-56 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  on
+                    ? "border-indigo-300 bg-indigo-50 text-indigo-700"
+                    : "border-border bg-background text-muted-foreground hover:border-indigo-200 hover:text-foreground"
+                }`}
+              >
+                {on ? <Check className="size-3.5 shrink-0" /> : <FileText className="size-3.5 shrink-0" />}
+                <span className="truncate">{block.name}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div ref={listRef} className="flex max-h-[28rem] flex-col gap-3 overflow-y-auto p-4">
@@ -150,7 +187,7 @@ export function AiToolsSection({ page, onInsert }: { page: StudyPage; onInsert: 
           {pending && (
             <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              생각하는 중이에요…
+              {picked.length > 0 ? "PDF를 읽고 생각하는 중이에요…" : "생각하는 중이에요…"}
             </p>
           )}
           {error && (

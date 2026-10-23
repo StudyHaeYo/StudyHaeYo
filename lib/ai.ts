@@ -1,4 +1,4 @@
-import { newBlockId, type Block, type StudyPage, type TextBlock } from "@/lib/study-pages"
+import { newBlockId, type AttachmentBlock, type Block, type StudyPage, type TextBlock } from "@/lib/study-pages"
 
 // AI 학습 도우미 (client side). The browser never sees the API key: it calls our route (app/api/ai/chat/route.ts),
 // which checks the session and calls Claude. Chat history lives only in the open page (not saved).
@@ -40,12 +40,28 @@ export function pageContextText(page: StudyPage) {
   return parts.join("\n\n").slice(0, MAX_CONTEXT_CHARS)
 }
 
-export async function askStudyAI(context: string, messages: ChatMessage[]): Promise<AiResult> {
+// At most this many PDFs go along with one question (the server checks it too).
+export const MAX_AI_PDFS = 2
+
+// PDFs in the page the AI could read. Only files saved to Storage (`path`) can be sent; ones that live
+// only in this tab are listed with `stored: false` so the screen can say why they can't be picked.
+export function pagePdfs(page: StudyPage): { block: AttachmentBlock; stored: boolean }[] {
+  const blocks = page.note ? page.note.learned : page.blocks
+  return blocks
+    .filter((b): b is AttachmentBlock => (b.type === "file" || b.type === "image") && b.mime === "application/pdf")
+    .map((block) => ({ block, stored: Boolean(block.path) }))
+}
+
+export async function askStudyAI(context: string, messages: ChatMessage[], pdfs: AttachmentBlock[] = []): Promise<AiResult> {
   try {
+    const attachments = pdfs
+      .filter((b) => b.path)
+      .slice(0, MAX_AI_PDFS)
+      .map((b) => ({ path: b.path, name: b.name }))
     const res = await fetch("/api/ai/chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ context, messages }),
+      body: JSON.stringify(attachments.length > 0 ? { context, messages, attachments } : { context, messages }),
     })
     const data = (await res.json().catch(() => null)) as { text?: string; error?: string } | null
     if (!res.ok || !data?.text) return { ok: false, message: data?.error ?? "AI가 답하지 못했어요. 잠시 후 다시 시도해 주세요." }

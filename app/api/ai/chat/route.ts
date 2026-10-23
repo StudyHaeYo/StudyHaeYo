@@ -2,18 +2,28 @@ import { createClient } from "@/lib/supabase/server"
 
 // AI 학습 도우미: the only place that talks to Claude. The key (ANTHROPIC_API_KEY) is a server-only Vercel env var.
 // Signed-in users only; each request carries the page text and the chat so far (nothing is stored).
+// PDFs the user picks are read here from Storage with the user's own session (RLS: own files only)
+// and sent to Claude as document blocks. The browser only sends their Storage paths.
+
+// PDF requests can take a while (download + a long document); allow up to a minute.
+export const maxDuration = 60
 
 const MODEL = process.env.AI_MODEL || "claude-sonnet-5-5"
 const MAX_MESSAGES = 20
 const MAX_MESSAGE_CHARS = 4_000
 const MAX_CONTEXT_CHARS = 20_000
 const LIMIT_PER_MINUTE = 10
+// Claude accepts up to 100 PDF pages per request (32MB). Pages cost ~1.5–3k tokens each, so we stop lower.
+const MAX_PDFS = 2
+const MAX_PDF_PAGES = 50
+const MAX_PDF_BYTES = 10 * 1024 * 1024
 
 const SYSTEM = `너는 학습 관리 서비스 "스터디 해요"의 AI 학습 도우미다. 사용자는 대학생·자격증 준비생이다.
 - <page> 안의 학습 페이지 내용을 바탕으로 답한다. 페이지에 없는 내용을 보충하면 그 문장 끝에 "(페이지 밖 내용)"이라고 표시한다.
 - 한국어로, 짧고 정확하게 쓴다. 형식은 # 제목, - 목록, 일반 문단만 쓴다. 표와 굵은 글씨는 쓰지 않는다.
 - 문제를 만들 때는 1. 2. 처럼 번호를 붙이고, 정답과 해설은 맨 아래 "## 정답과 해설" 아래에 모은다.
-- 학습과 관계없는 요청은 정중히 학습 이야기로 돌린다.`
+- 학습과 관계없는 요청은 정중히 학습 이야기로 돌린다.
+- 첨부된 PDF가 있으면 PDF 내용도 근거로 쓴다. PDF에서 가져온 내용에는 문장 끝에 (p.3)처럼 쪽 번호를 붙인다.`
 
 // Best-effort per-instance rate limit (serverless instances don't share memory).
 const recent = new Map<string, number[]>()
@@ -26,10 +36,26 @@ function overLimit(userId: string) {
 }
 
 type Message = { role: "user" | "assistant"; content: string }
+type PdfRef = { path: string; name: string }
 
-function parseBody(body: unknown): { context: string; messages: Message[] } | null {
+function parsePdfs(value: unknown): PdfRef[] | null {
+  if (value === undefined) return []
+  if (!Array.isArray(value) || value.length > MAX_PDFS) return null
+  const refs: PdfRef[] = []
+  for (const v of value) {
+    if (!v || typeof v !== "object") return null
+    const { path, name } = v as { path?: unknown; name?: unknown }
+    if (typeof path !== "string" || !/^[0-9a-f-]{36}\/[A-Za-z0-9-]+(\.[a-z0-9]{1,8})?$/.test(path)) return null
+    refs.push({ path, name: typeof name === "string" ? name.slice(0, 200) : "PDF" })
+  }
+  return refs
+}
+
+function parseBody(body: unknown): { context: string; messages: Message[]; pdfs: PdfRef[] } | null {
   if (!body || typeof body !== "object") return null
-  const { context, messages } = body as { context?: unknown; messages?: unknown }
+  const { context, messages, attachments } = body as { context?: unknown; messages?: unknown; attachments?: unknown }
+  const pdfs = parsePdfs(attachments)
+  if (!pdfs) return null
   if (typeof context !== "string" || !Array.isArray(messages) || messages.length === 0) return null
   const parsed: Message[] = []
   for (const m of messages.slice(-MAX_MESSAGES)) {
@@ -40,7 +66,34 @@ function parseBody(body: unknown): { context: string; messages: Message[] } | nu
   }
   while (parsed.length > 0 && parsed[0].role !== "user") parsed.shift()
   if (parsed.length === 0 || parsed[parsed.length - 1].role !== "user") return null
-  return { context: context.slice(0, MAX_CONTEXT_CHARS), messages: parsed }
+  return { context: context.slice(0, MAX_CONTEXT_CHARS), messages: parsed, pdfs }
+}
+
+// Rough page count from the raw file ("/Type /Page" objects). Misses PDFs that keep pages in compressed
+// object streams (returns 0); Claude's own 100-page limit still applies to those.
+function countPdfPages(bytes: Uint8Array) {
+  const text = new TextDecoder("latin1").decode(bytes)
+  return (text.match(/\/Type\s*\/Page(?![a-zA-Z])/g) ?? []).length
+}
+
+type Supabase = Awaited<ReturnType<typeof createClient>>
+
+async function loadPdfs(supabase: Supabase, userId: string, refs: PdfRef[]) {
+  const docs: { name: string; data: string }[] = []
+  let pages = 0
+  for (const ref of refs) {
+    if (!ref.path.startsWith(`${userId}/`)) return { error: "다른 사람의 파일은 열 수 없어요." }
+    const { data, error } = await supabase.storage.from("attachments").download(ref.path)
+    if (error || !data) return { error: `"${ref.name}" 파일을 불러오지 못했어요.` }
+    if (data.size > MAX_PDF_BYTES) return { error: `"${ref.name}" 파일이 너무 커요.` }
+    const bytes = new Uint8Array(await data.arrayBuffer())
+    if (new TextDecoder("latin1").decode(bytes.subarray(0, 5)) !== "%PDF-") return { error: `"${ref.name}"은(는) PDF가 아니에요.` }
+    pages += countPdfPages(bytes)
+    if (pages > MAX_PDF_PAGES)
+      return { error: `PDF가 너무 길어요. 한 번에 ${MAX_PDF_PAGES}쪽까지 읽을 수 있어요. 필요한 쪽만 따로 PDF로 만들어 올려 주세요.` }
+    docs.push({ name: ref.name, data: Buffer.from(bytes).toString("base64") })
+  }
+  return { docs }
 }
 
 export async function POST(request: Request) {
@@ -55,6 +108,22 @@ export async function POST(request: Request) {
   const input = parseBody(await request.json().catch(() => null))
   if (!input) return Response.json({ error: "요청 형식이 올바르지 않아요." }, { status: 400 })
 
+  // PDFs ride on the first user message so the prompt prefix stays the same turn after turn;
+  // cache_control lets follow-up questions reuse it instead of paying for the whole PDF again.
+  let messages: unknown[] = input.messages
+  if (input.pdfs.length > 0) {
+    const loaded = await loadPdfs(supabase, data.user.id, input.pdfs)
+    if ("error" in loaded) return Response.json({ error: loaded.error }, { status: 400 })
+    const [first, ...rest] = input.messages
+    const documents = loaded.docs.map((doc, i) => ({
+      type: "document",
+      source: { type: "base64", media_type: "application/pdf", data: doc.data },
+      title: doc.name,
+      ...(i === loaded.docs.length - 1 ? { cache_control: { type: "ephemeral" } } : {}),
+    }))
+    messages = [{ role: "user", content: [...documents, { type: "text", text: first.content }] }, ...rest]
+  }
+
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
@@ -62,11 +131,14 @@ export async function POST(request: Request) {
       model: MODEL,
       max_tokens: 2000,
       system: `${SYSTEM}\n\n<page>\n${input.context}\n</page>`,
-      messages: input.messages,
+      messages,
     }),
   })
   if (!res.ok) {
-    console.error("AI request failed", res.status, (await res.text()).slice(0, 500))
+    const detail = (await res.text()).slice(0, 500)
+    console.error("AI request failed", res.status, detail)
+    if (res.status === 413 || (input.pdfs.length > 0 && /pdf|page|document/i.test(detail)))
+      return Response.json({ error: "PDF가 너무 크거나 읽을 수 없는 형식이에요. 쪽수를 줄이거나 다른 PDF로 시도해 주세요." }, { status: 400 })
     return Response.json({ error: "AI가 답하지 못했어요. 잠시 후 다시 시도해 주세요." }, { status: 502 })
   }
   const json = (await res.json()) as { content?: { type: string; text?: string }[] }
