@@ -18,7 +18,12 @@ export interface AttachmentBlock {
   name: string
   mime: string
   size: number
+  // Where the file can be opened right now. A `blob:` URL only lives in the tab that uploaded it,
+  // so blocks with `path` resolve a fresh signed URL from Storage instead (lib/attachments.ts).
   url: string
+  // Supabase Storage path in the "attachments" bucket: "<user id>/<file id>". Missing on files
+  // attached before Storage was connected (or while it was unavailable).
+  path?: string
 }
 
 export type DrawingTool = "pen" | "highlighter"
