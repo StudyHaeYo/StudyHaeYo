@@ -84,9 +84,42 @@ export interface DrawingBlock {
   height: number
 }
 
-export type Block = TextBlock | AttachmentBlock | DrawingBlock | DividerBlock | PageLinkBlock
+// 표: cells as plain text, rows[0] is the header row. Every row has the same number of cells.
+export interface TableBlock {
+  id: string
+  type: "table"
+  rows: string[][]
+}
 
-const NON_TEXT_TYPES = new Set(["image", "file", "drawing", "divider", "pagelink"])
+// 수식: LaTeX source, rendered with KaTeX (display mode).
+export interface MathBlock {
+  id: string
+  type: "math"
+  tex: string
+}
+
+export type Block = TextBlock | AttachmentBlock | DrawingBlock | DividerBlock | PageLinkBlock | TableBlock | MathBlock
+
+const NON_TEXT_TYPES = new Set(["image", "file", "drawing", "divider", "pagelink", "table", "math"])
+
+export function isTableBlock(block: Block): block is TableBlock {
+  return block.type === "table"
+}
+
+export function isMathBlock(block: Block): block is MathBlock {
+  return block.type === "math"
+}
+
+export function newTableBlock(): TableBlock {
+  return { id: newBlockId(), type: "table", rows: [["", ""], ["", ""], ["", ""]] }
+}
+
+// Words of the blocks that hold text outside TextBlock (search, AI context, plain text).
+export function structuredBlockLines(block: Block): string[] {
+  if (isTableBlock(block)) return block.rows.map((row) => row.join(" | ")).filter((line) => line.replace(/[\s|]/g, ""))
+  if (isMathBlock(block)) return block.tex.trim() ? [`[수식] ${block.tex.trim()}`] : []
+  return []
+}
 
 export function isTextBlock(block: Block): block is TextBlock {
   return !NON_TEXT_TYPES.has(block.type)
@@ -111,6 +144,7 @@ export function isDrawingBlock(block: Block): block is DrawingBlock {
 
 // Copies nested stroke data too, so editing a duplicated page never touches the original.
 export function cloneBlock(block: Block): Block {
+  if (isTableBlock(block)) return { ...block, rows: block.rows.map((row) => [...row]) }
   if (!isDrawingBlock(block)) return { ...block }
   return {
     ...block,
@@ -121,8 +155,7 @@ export function cloneBlock(block: Block): Block {
 // Plain text of the body for text-only consumers (AI tools, search); attachments and drawings are skipped.
 export function blocksPlainText(blocks: Block[]) {
   return blocks
-    .filter(isTextBlock)
-    .map(textBlockWords)
+    .flatMap((b) => (isTextBlock(b) ? [textBlockWords(b)] : structuredBlockLines(b)))
     .join("\n")
 }
 

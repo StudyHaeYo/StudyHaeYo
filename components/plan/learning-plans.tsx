@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Plus } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { addDays, todayISO } from "@/lib/study-pages"
-import { addPlan, decodeTarget, encodeTarget, removePlan, usePlans } from "@/lib/plans"
+import { addPlan, decodeTarget, encodeTarget, removePlan, usePlanGoalsReady, usePlans } from "@/lib/plans"
 import { groupPlans, type ActivePlan } from "@/lib/study-stats"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 import { PlanCard } from "@/components/plan/plan-card"
@@ -85,6 +85,8 @@ function PlanForm({ workspace, onClose }: { workspace: WorkspaceState; onClose: 
   const [startDate, setStartDate] = useState(() => todayISO())
   const [endDate, setEndDate] = useState(() => addDays(todayISO(), 6))
   const [goal, setGoal] = useState("")
+  const [goalHours, setGoalHours] = useState("")
+  const goalsReady = usePlanGoalsReady()
   const subjects = workspace.groups.filter((g) => g.kind === "subject")
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -96,6 +98,7 @@ function PlanForm({ workspace, onClose }: { workspace: WorkspaceState; onClose: 
       startDate,
       endDate: endDate < startDate ? startDate : endDate,
       goal: goal.trim(),
+      ...(goalsReady && Number(goalHours) > 0 ? { goalMinutes: Math.round(Number(goalHours) * 60) } : {}),
     })
     onClose()
   }
@@ -155,8 +158,27 @@ function PlanForm({ workspace, onClose }: { workspace: WorkspaceState; onClose: 
           />
         </label>
       </div>
+      {goalsReady && (
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
+          목표 시간 (선택)
+          <span className="flex items-center gap-2">
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0.5}
+              step={0.5}
+              value={goalHours}
+              onChange={(e) => setGoalHours(e.target.value)}
+              placeholder="예: 10"
+              className={fieldClass}
+            />
+            <span className="shrink-0 font-normal text-muted-foreground">시간</span>
+          </span>
+          <span className="text-xs font-normal text-muted-foreground">정하면 진행 막대가 이 시간 대비로 채워져요.</span>
+        </label>
+      )}
       <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
-        목표
+        목표 메모
         <input
           value={goal}
           onChange={(e) => setGoal(e.target.value)}

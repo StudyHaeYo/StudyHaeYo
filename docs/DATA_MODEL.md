@@ -54,6 +54,10 @@
 
 **구분선** (`type: "divider"`): `{id, type}`
 
+**표** (`type: "table"`): `{id, type, rows: string[][]}`. `rows[0]`이 머리글 행이고 모든 행의 칸 수가 같다. 칸은 글자만(서식 없음). 검색과 AI는 행을 `칸 | 칸`으로 읽는다(`structuredBlockLines`)
+
+**수식** (`type: "math"`): `{id, type, tex}`. LaTeX 원문만 저장하고 화면에서 KaTeX로 그린다(신뢰하지 않는 명령은 막힘). 검색과 AI는 `[수식] 원문`으로 읽는다
+
 **페이지 링크** (`type: "pagelink"`): `{id, type, pageId}`. 제목은 저장하지 않고 열 때마다 그 페이지에서 읽는다(이름을 바꾸면 따라 바뀜). 대상 페이지를 지우면 "삭제된 페이지"로 보인다
 
 **첨부 블록** (`type: "image"｜"file"`): `{id, type, name, mime, size, url, path?, annotations?}`. `annotations`는 PDF 위 필기로, 쪽 번호(1부터, 문자열 키)마다 그림 블록과 같은 획 배열을 둔다. 좌표도 그림 블록처럼 쪽 너비 기준 비율이라 화면 크기가 달라도 같은 자리에 그려진다. 필기가 없는 쪽은 키를 두지 않는다. `path`는 Supabase Storage `attachments` 버킷 안의 위치(`<사용자 id>/<파일 id>`)이고, 있으면 화면은 `url` 대신 `path`로 1시간짜리 임시 주소(signed URL)를 받아 연다. `url`은 올린 탭에서만 쓰는 `blob:` 주소라 다른 탭이나 새로고침 뒤에는 쓰지 않는다
@@ -94,8 +98,10 @@
 - 형제 순서는 `WorkspaceState.order`(그룹과 페이지 전체를 평면으로 편 id 배열)에 있다. 목록에 없는 id는 뒤로 간다.
 
 ### LearningPlan
-`{id, title, target, startDate, endDate, goal}`
+`{id, title, target, startDate, endDate, goal, goalMinutes?}`
 - `target`은 `{scope:"all"}` \| `{scope:"subject", subjectId}` \| `{scope:"page", pageId}`
+- `goalMinutes`(선택): 목표 학습 시간(분). 있으면 진행 막대가 기간 대비가 아니라 목표 시간 대비로 채워진다. DB `learning_plans.goal_minutes`(`supabase/migrations/20261025_plan_goal_minutes.sql`). 컬럼이 없으면 읽지 않고, 입력 칸을 숨기고, 저장할 때도 보내지 않는다(`usePlanGoalsReady`)
+- `goal`은 자유 메모("목표 메모")다
 
 ### Todo (오늘의 체크리스트, `lib/todos.ts`, 테이블 `todos`)
 `{id, title, dueOn, doneAt, position}`
@@ -199,7 +205,7 @@ User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유�
 - 한 카드에 세 묶음: 복습할 노트(R2 후보 중 위에서 3개, 첫 번째는 바로 "복습하기"), 진행 중인 계획, 체크리스트(R10)
 - 진행 중인 계획(`activePlans`): 시작일 ≤ 오늘 ≤ 종료일인 계획, 종료일이 가까운 순. 진도는 저장하지 않고, 계획 대상(전체/과목 하위 전체/페이지와 그 하위)의 기록 중 시작일~오늘 날짜의 `durationMinutes` 합으로 보여준다. 남은 일수는 오늘부터 종료일까지
 - 학습 계획 화면과 과목 화면은 같은 계산(`planProgress`, `groupPlans`)으로 계획을 진행 중 / 예정 / 끝난 계획으로 나눈다. 끝난 계획의 학습 시간은 시작일~종료일까지만 센다. 기간 막대는 지난 날수/전체 날수(학습 시간 목표는 자유 문장이라 계산하지 않는다)
-- 계획의 목표(`goal`)는 글이라 진도 비율은 계산하지 않는다
+- 계획의 목표 메모(`goal`)는 글이라 진도를 계산하지 않는다. 진도는 목표 시간(`goalMinutes`)이 있을 때만 그 대비로 보여준다
 - 제목 아래 한 줄 요약(`TodaySummary`): 오늘 또는 지난 복습일의 노트 수, 오늘 마감되는 계획 수, 오늘 안 끝낸 할 일 수
 - 이번 주 학습: 월요일~오늘 기록 시간 합과 주간 목표(`WEEKLY_GOAL_MINUTES`), 요일별 막대, 목표까지 남은 시간을 오늘 포함 남은 날수로 나눈 하루 분량(`perDayToGoal`)
 

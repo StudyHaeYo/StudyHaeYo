@@ -1,6 +1,7 @@
 import {
   isTextBlock,
   newBlockId,
+  structuredBlockLines,
   textBlockWords,
   type AttachmentBlock,
   type Block,
@@ -29,9 +30,7 @@ function lineOf(block: TextBlock) {
 
 const textOf = (blocks: Block[]) =>
   blocks
-    .filter(isTextBlock)
-    .filter((b) => textBlockWords(b).trim())
-    .map(lineOf)
+    .flatMap((b) => (isTextBlock(b) ? (textBlockWords(b).trim() ? [lineOf(b)] : []) : structuredBlockLines(b)))
     .join("\n")
 
 // What the AI reads: title, body (핵심 개념 / 헷갈린 점 blocks are labeled), and the latest study records.

@@ -25,7 +25,11 @@ export function PlanCard({
         : item.daysLeft === 0
           ? { text: "오늘 마감", className: "bg-amber-50 text-amber-700" }
           : { text: `${item.daysLeft}일 남음`, className: item.daysLeft <= 1 ? "bg-amber-50 text-amber-700" : "bg-indigo-50 text-indigo-700" }
-  const percent = Math.round((item.elapsedDays / item.totalDays) * 100)
+  // With a goal time the bar shows study time against it; otherwise how far through the period we are.
+  const goal = plan.goalMinutes
+  const percent = goal
+    ? Math.min(100, Math.round((item.studiedMinutes / goal) * 100))
+    : Math.round((item.elapsedDays / item.totalDays) * 100)
 
   return (
     <li className={`group relative flex flex-col gap-3 rounded-xl border border-border bg-card p-4 ${ended ? "opacity-75" : ""}`}>
@@ -71,13 +75,14 @@ export function PlanCard({
             <span className="text-xs text-muted-foreground">{ended ? "기간 중 학습" : "지금까지 학습"}</span>
             <span className={`text-sm font-semibold tabular-nums ${ended ? "text-foreground" : "text-indigo-600"}`}>
               {formatDuration(item.studiedMinutes)}
+              {goal ? <span className="font-normal text-muted-foreground">{` / ${formatDuration(goal)}`}</span> : null}
             </span>
           </div>
         )}
         <div
           className="h-1.5 overflow-hidden rounded-full bg-muted"
           role="progressbar"
-          aria-label="기간 진행"
+          aria-label={goal ? "목표 시간 대비 학습" : "기간 진행"}
           aria-valuenow={percent}
           aria-valuemin={0}
           aria-valuemax={100}

@@ -34,11 +34,12 @@ const { data, error } = await supabase.auth.getClaims();
 const claims = error ? null : data?.claims ?? null;
   const pathname = request.nextUrl.pathname;
 
-  // 로그인, 회원가입, 인증 콜백은 공개
+  // 로그인, 회원가입, 인증 콜백, 앱 설치 정보(manifest — 브라우저가 쿠키 없이 받는다)는 공개
   const isPublicPath =
     pathname === "/login" ||
     pathname === "/signup" ||
-    pathname === "/auth/callback";
+    pathname === "/auth/callback" ||
+    pathname === "/manifest.webmanifest";
 
   // 로그인하지 않은 사용자의 보호 페이지 접근 차단
   if (!claims && !isPublicPath) {

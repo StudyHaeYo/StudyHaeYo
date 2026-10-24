@@ -179,3 +179,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* 인쇄 · PDF로 저장: only the note (title + body). Screen-only parts carry `print:hidden`. */
+@media print {
+  @page {
+    margin: 16mm;
+  }
+  html,
+  body {
+    background: white;
+  }
+  textarea,
+  input {
+    border: none !important;
+  }
+  [data-block-menu] {
+    display: none !important;
+  }
+}

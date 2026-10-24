@@ -34,14 +34,19 @@ import {
   PenLine,
   Pilcrow,
   Quote,
+  Sigma,
+  Table,
   Trash2,
 } from "lucide-react"
 import {
   isDividerBlock,
   isDrawingBlock,
+  isMathBlock,
   isPageLinkBlock,
+  isTableBlock,
   isTextBlock,
   newBlockId,
+  newTableBlock,
   type Block,
   type BlockType,
   type TextBlock,
@@ -52,6 +57,8 @@ import { createAttachmentBlocks } from "@/lib/attachments"
 import { newDrawingBlock } from "@/lib/drawing"
 import { AttachmentBlockView } from "@/components/study-page/attachment-block"
 import { DrawingBlockView } from "@/components/study-page/drawing-block"
+import { TableBlockView } from "@/components/study-page/table-block"
+import { MathBlockView } from "@/components/study-page/math-block"
 
 // Typed at the start of an empty-ish paragraph (Notion's markdown shortcuts). "---" makes a divider (handled apart).
 const shortcuts: { prefix: string; type: BlockType; checked?: boolean }[] = [
@@ -153,7 +160,7 @@ const markdownPrefix: Record<BlockType, string> = {
 // "/" menu: typed at the start of a line, filtered by what follows the slash.
 type SlashItem = { label: string; keywords: string; icon: typeof Pilcrow } & (
   | { type: BlockType }
-  | { action: "file" | "drawing" | "divider" | "pagelink" }
+  | { action: "file" | "drawing" | "divider" | "pagelink" | "table" | "math" }
 )
 
 const slashItems: SlashItem[] = [
@@ -169,6 +176,8 @@ const slashItems: SlashItem[] = [
   { label: "콜아웃", keywords: "콜아웃 강조 박스 중요 callout", icon: Lightbulb, type: "callout" },
   { label: "핵심 개념", keywords: "핵심개념 개념 용어 복습 카드 concept", icon: KeyRound, type: "concept" },
   { label: "헷갈린 점", keywords: "헷갈린점 헷갈림 질문 모름 confusion question", icon: CircleHelp, type: "confusion" },
+  { label: "표", keywords: "표 테이블 table 비교", icon: Table, action: "table" },
+  { label: "수식", keywords: "수식 수학 공식 latex math katex", icon: Sigma, action: "math" },
   { label: "구분선", keywords: "구분선 선 divider hr", icon: Minus, action: "divider" },
   { label: "페이지 링크", keywords: "페이지링크 링크 연결 link page", icon: FileSymlink, action: "pagelink" },
   { label: "코드", keywords: "코드 code", icon: Code, type: "code" },
@@ -180,7 +189,7 @@ function matchSlash(query: string, allowAttachments: boolean) {
   const q = query.trim().toLowerCase().replace(/\s+/g, "")
   return slashItems.filter(
     (item) =>
-      (allowAttachments || !("action" in item) || item.action === "divider" || item.action === "pagelink") &&
+      (allowAttachments || !("action" in item) || !["file", "drawing"].includes(item.action)) &&
       (q === "" || item.label.replace(/\s+/g, "").includes(q) || item.keywords.toLowerCase().includes(q)),
   )
 }
@@ -208,6 +217,9 @@ function blockText(block: Block) {
   }
   if (isDividerBlock(block)) return "---"
   if (isPageLinkBlock(block)) return "[페이지 링크]"
+  if (isTableBlock(block))
+    return block.rows.map((row, i) => `| ${row.join(" | ")} |` + (i === 0 ? `\n|${row.map(() => " --- |").join("")}` : "")).join("\n")
+  if (isMathBlock(block)) return `$$\n${block.tex}\n$$`
   return isDrawingBlock(block) ? "[그림]" : `[첨부] ${block.name}`
 }
 
@@ -454,6 +466,12 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
       setPendingFocus({ id: block.id, caret: 0 })
     } else if (item.action === "divider") {
       onChange(insertBlocks(cleared, [{ id: newBlockId(), type: "divider" }], block.id))
+    } else if (item.action === "table") {
+      const table = newTableBlock()
+      onChange(insertBlocks(cleared, [table], block.id))
+      requestAnimationFrame(() => containerRef.current?.querySelector<HTMLTextAreaElement>(`[data-block-id="${table.id}"] [data-cell="0-0"]`)?.focus())
+    } else if (item.action === "math") {
+      onChange(insertBlocks(cleared, [{ id: newBlockId(), type: "math", tex: "" }], block.id))
     } else if (item.action === "pagelink") {
       onChange(cleared)
       setLinkPicker(block.id)
@@ -716,6 +734,21 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
           }
           if (isPageLinkBlock(block)) {
             return wrap(<PageLinkCard pageId={block.pageId} pages={pages} />)
+          }
+          if (isTableBlock(block) || isMathBlock(block)) {
+            const update = (next: Block) => {
+              const current = latest.current
+              current.onChange(current.blocks.map((b) => (b.id === next.id ? next : b)))
+            }
+            return wrap(
+              <div data-block-id={block.id}>
+                {isTableBlock(block) ? (
+                  <TableBlockView block={block} onChange={update} />
+                ) : (
+                  <MathBlockView block={block} onChange={update} />
+                )}
+              </div>,
+            )
           }
           if (!isTextBlock(block)) {
             return wrap(

@@ -153,7 +153,10 @@ function PlanRow({ item }: { item: ActivePlan }) {
         </span>
       </span>
       <span className="flex shrink-0 flex-col items-end">
-        <span className="text-sm font-medium tabular-nums text-foreground">{formatDuration(item.studiedMinutes)}</span>
+        <span className="text-sm font-medium tabular-nums text-foreground">
+          {formatDuration(item.studiedMinutes)}
+          {plan.goalMinutes ? <span className="font-normal text-muted-foreground">{` / ${formatDuration(plan.goalMinutes)}`}</span> : null}
+        </span>
         <span className="text-xs text-muted-foreground">{left}</span>
       </span>
     </>
