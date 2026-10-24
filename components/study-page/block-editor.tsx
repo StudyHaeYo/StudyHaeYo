@@ -281,6 +281,8 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
   // Attachment URLs resolve asynchronously; insert into the latest blocks, not the ones from the event.
   const latest = useRef({ blocks, onChange })
   const [pendingFocus, setPendingFocus] = useState<{ id: string; caret: number } | null>(null)
+  // A table just added from the "/" menu: its first cell takes focus once the table is on screen.
+  const [focusTableId, setFocusTableId] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   // A drawing added from the menu opens straight into edit mode.
   const [autoEditId, setAutoEditId] = useState<string | null>(null)
@@ -407,6 +409,14 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
   }, [handleMenu])
 
   useEffect(() => {
+    if (!focusTableId) return
+    const cell = containerRef.current?.querySelector<HTMLTextAreaElement>(`[data-block-id="${focusTableId}"] [data-cell="0-0"]`)
+    if (!cell) return // not rendered yet: try again after the next render
+    cell.focus()
+    setFocusTableId(null)
+  }, [focusTableId, blocks])
+
+  useEffect(() => {
     if (!pendingFocus) return
     const el = refs.current.get(pendingFocus.id)
     if (el) {
@@ -469,7 +479,7 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
     } else if (item.action === "table") {
       const table = newTableBlock()
       onChange(insertBlocks(cleared, [table], block.id))
-      requestAnimationFrame(() => containerRef.current?.querySelector<HTMLTextAreaElement>(`[data-block-id="${table.id}"] [data-cell="0-0"]`)?.focus())
+      setFocusTableId(table.id)
     } else if (item.action === "math") {
       onChange(insertBlocks(cleared, [{ id: newBlockId(), type: "math", tex: "" }], block.id))
     } else if (item.action === "pagelink") {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, type KeyboardEvent } from "react"
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react"
 import { Minus, Plus } from "lucide-react"
 import type { TableBlock } from "@/lib/study-pages"
 
@@ -12,12 +12,21 @@ export function TableBlockView({ block, onChange }: { block: TableBlock; onChang
   const { rows } = block
   const cols = rows[0]?.length ?? 0
 
-  // Existing cells take focus right away (so fast typing lands in the right cell); a just-added row next frame.
+  // A cell in a row that doesn't exist yet (Tab/Enter past the last row) takes focus right after that row renders.
+  const [focusAfterRender, setFocusAfterRender] = useState<[number, number] | null>(null)
+  useLayoutEffect(() => {
+    if (!focusAfterRender) return
+    const [r, c] = focusAfterRender
+    const cell = gridRef.current?.querySelector<HTMLTextAreaElement>(`[data-cell="${r}-${c}"]`)
+    if (!cell) return
+    cell.focus()
+    setFocusAfterRender(null)
+  }, [focusAfterRender, rows])
+
   const focusCell = (r: number, c: number) => {
-    const find = () => gridRef.current?.querySelector<HTMLTextAreaElement>(`[data-cell="${r}-${c}"]`)
-    const cell = find()
+    const cell = gridRef.current?.querySelector<HTMLTextAreaElement>(`[data-cell="${r}-${c}"]`)
     if (cell) cell.focus()
-    else requestAnimationFrame(() => find()?.focus())
+    else setFocusAfterRender([r, c])
   }
 
   const setCell = (r: number, c: number, value: string) =>

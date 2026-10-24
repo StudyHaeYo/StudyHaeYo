@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { signUp } from "@/lib/auth"
 import { AuthField, EMAIL_PATTERN, MIN_PASSWORD_LENGTH, submitButtonClass } from "./auth-field"
 
@@ -22,7 +21,6 @@ function validate({ name, email, password, confirm }: Values) {
 }
 
 export function SignupForm() {
-  const router = useRouter()
   const [values, setValues] = useState<Values>({ name: "", email: "", password: "", confirm: "" })
   const [submitted, setSubmitted] = useState(false)
   const [pending, setPending] = useState(false)
@@ -48,8 +46,9 @@ export function SignupForm() {
         setPending(false)
         return
       }
-      router.replace("/")
-      router.refresh()
+      // A full page load, not a client navigation: the router may still hold the redirect to /login it got before
+      // signing in, which left people on the login page until they pressed F5.
+      window.location.replace("/")
       return
     }
     setFormError(result.message)
