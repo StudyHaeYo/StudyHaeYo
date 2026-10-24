@@ -6,12 +6,13 @@ import { toast } from "sonner"
 import { AlertCircle, Loader2 } from "lucide-react"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { loadUserData, useDataStatus, type DataStatus } from "@/lib/db/sync"
-import { importExampleData, useWorkspace } from "@/lib/workspace"
+import { importExampleData, useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
 
 // Home banner for the data load: loading, a failed load with retry, or a first-step guide for an empty workspace.
 export function DataStatusNotice() {
   const status = useDataStatus()
   const { groups, pages, subjectRecords } = useWorkspace()
+  const canQuickRecord = useSubjectRecordsReady()
   const [importing, setImporting] = useState(false)
 
   const handleImport = async () => {
@@ -62,18 +63,32 @@ export function DataStatusNotice() {
         시작하기
       </h2>
       <ol className="mt-3 flex flex-col gap-3 text-sm text-foreground">
-        <Step n={1}>
-          공부를 마치면 과목 · 시간 · 이해도를 기록해요.{" "}
-          <button type="button" onClick={() => openQuickRecord()} className={stepLink}>
-            + 기록 남기기
-          </button>
-        </Step>
-        <Step n={2}>
-          정리할 노트가 필요하면 템플릿으로 페이지를 만들어요.{" "}
-          <Link href="/new" className={stepLink}>
-            새 페이지
-          </Link>
-        </Step>
+        {canQuickRecord ? (
+          <>
+            <Step n={1}>
+              공부를 마치면 과목 · 시간 · 이해도를 기록해요.{" "}
+              <button type="button" onClick={() => openQuickRecord()} className={stepLink}>
+                + 기록 남기기
+              </button>
+            </Step>
+            <Step n={2}>
+              정리할 노트가 필요하면 템플릿으로 노트를 만들어요.{" "}
+              <Link href="/new" className={stepLink}>
+                새 페이지
+              </Link>
+            </Step>
+          </>
+        ) : (
+          <>
+            <Step n={1}>
+              공부할 내용으로 노트를 만들어요. 템플릿에서 과목도 바로 만들 수 있어요.{" "}
+              <Link href="/new" className={stepLink}>
+                새 페이지
+              </Link>
+            </Step>
+            <Step n={2}>공부를 마치면 노트 아래에 시간과 이해도를 기록해요.</Step>
+          </>
+        )}
         <Step n={3}>기록이 쌓이면 복습할 날과 주간 통계가 홈에 보여요.</Step>
       </ol>
       {/* Only for a fully empty workspace; importExampleData re-checks the DB before writing. */}
