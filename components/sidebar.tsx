@@ -86,8 +86,8 @@ export function Sidebar(_props: SidebarProps = {}) {
       toast.error("로그아웃하지 못했어요", { description: result.message })
       return
     }
-    router.replace("/login")
-    router.refresh()
+    // Full page load so nothing of this account stays in memory or in the router cache.
+    window.location.replace("/login")
   }
 
   const ctx: TreeContext = {
