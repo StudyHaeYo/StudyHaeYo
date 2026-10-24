@@ -32,6 +32,7 @@ import {
   useWorkspace,
   type GroupKind,
   type WorkspaceGroup,
+  useSubjectRecordsReady,
 } from "@/lib/workspace"
 import { RecordItem } from "@/components/sidebar/record-item"
 import { GroupActionsMenu } from "@/components/sidebar/group-actions-menu"
@@ -99,7 +100,9 @@ export function Sidebar(_props: SidebarProps = {}) {
     },
   }
 
-  // [+ 기록] starts from what's on screen: this page, or this subject.
+  // [+ 기록] starts from what's on screen: this page, or this subject. Shown only once records can go on a subject
+  // (before the DB migration a record needs a note, so it is made from the note itself).
+  const canQuickRecord = useSubjectRecordsReady()
   const recordFromHere = () => {
     const [, section, id] = pathname.split("/")
     openQuickRecord(section === "record" && id ? { pageId: id } : section === "subject" && id ? { subjectId: id } : {})
@@ -124,6 +127,7 @@ export function Sidebar(_props: SidebarProps = {}) {
           </span>
           <span className="text-sm font-semibold tracking-tight text-foreground">스터디 해요</span>
         </Link>
+        {canQuickRecord && (
         <button
           type="button"
           onClick={recordFromHere}
@@ -132,11 +136,12 @@ export function Sidebar(_props: SidebarProps = {}) {
           <Plus className="size-4" />
           기록
         </button>
+        )}
         <button
           type="button"
           onClick={openSearch}
           aria-label="노트 검색"
-          className="flex size-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent"
+          className={`${canQuickRecord ? "" : "ml-auto "}flex size-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent`}
         >
           <Search className="size-5" />
         </button>
@@ -175,6 +180,7 @@ export function Sidebar(_props: SidebarProps = {}) {
       </div>
 
       <SearchTrigger />
+      {canQuickRecord && (
       <button
         type="button"
         onClick={() => {
@@ -186,6 +192,7 @@ export function Sidebar(_props: SidebarProps = {}) {
         <Plus className="size-4 shrink-0" aria-hidden="true" />
         학습 기록 남기기
       </button>
+      )}
 
       {/* Top: main navigation */}
       <nav className="flex flex-col gap-0.5 px-2 pb-2" aria-label="메인 메뉴">

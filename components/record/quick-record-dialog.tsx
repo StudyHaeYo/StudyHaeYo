@@ -4,7 +4,7 @@ import { useEffect, useState, useSyncExternalStore, type FormEvent } from "react
 import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { NotebookPen, Trash2, X } from "lucide-react"
+import { ChevronDown, FileText, NotebookPen, Trash2, X } from "lucide-react"
 import { UnderstandingRating } from "@/components/record/understanding-rating"
 import { SubjectPicker, pickerFieldClass } from "@/components/record/subject-picker"
 import { newRecordId, todayISO, type StudyRecordFields, type SubjectStudyRecord } from "@/lib/study-pages"
@@ -20,8 +20,9 @@ import {
   useWorkspace,
 } from "@/lib/workspace"
 
-// 빠른 기록 (D-24): record a study session from anywhere, without opening (or having) a page.
-// Opened from the sidebar, the phone top bar, a subject page, the timer summary, and to edit a subject record.
+// 학습 기록 창 (D-24): a study session belongs to a subject; linking it to a note is optional and is what gives
+// that note a review date. Opened from the sidebar, the phone top bar, a subject page and the timer summary
+// (subject first, note folded away), and from a note (AI grading) with that note fixed.
 export interface QuickRecordRequest {
   subjectId?: string | null
   pageId?: string | null
@@ -66,12 +67,14 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
   const router = useRouter()
   const subjectRecordsReady = useSubjectRecordsReady()
   const edit = request.edit
-  const startPage = request.pageId ? workspace.pages.find((p) => p.id === request.pageId) : undefined
+  // Opened from a note: the record goes there, nothing to pick.
+  const fixedPage = !edit && request.pageId ? workspace.pages.find((p) => p.id === request.pageId) : undefined
 
-  const [subjectId, setSubjectId] = useState<string | null>(
-    edit?.subjectId ?? request.subjectId ?? (startPage ? (nearestSubject(workspace, startPage.parentId)?.id ?? null) : null),
-  )
-  const [pageId, setPageId] = useState<string>(request.pageId ?? NO_PAGE)
+  const [subjectId, setSubjectId] = useState<string | null>(edit?.subjectId ?? request.subjectId ?? null)
+  const [pageId, setPageId] = useState<string>(NO_PAGE)
+  // Before the DB migration a record can only go on a note, so the note field starts open (and is required).
+  const needsPage = !subjectRecordsReady
+  const [linkOpen, setLinkOpen] = useState(needsPage)
   const [date, setDate] = useState(() => edit?.date ?? todayISO())
   const [duration, setDuration] = useState(
     edit ? String(edit.durationMinutes) : request.minutes ? String(request.minutes) : "",
@@ -90,14 +93,23 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
     return () => document.removeEventListener("keydown", onKey)
   }, [])
 
-  // Pages to attach to: the subject's pages, or every page when no subject is picked.
-  const pages = subjectId ? descendantPages(workspace, subjectId) : workspace.pages
-  const page = pageId ? workspace.pages.find((p) => p.id === pageId) : undefined
+  // Notes to link: the subject's notes (before the migration with no subject picked, every note).
+  const pages = subjectId ? descendantPages(workspace, subjectId) : needsPage ? workspace.pages : []
+  const linked = fixedPage ?? (pageId ? workspace.pages.find((p) => p.id === pageId) : undefined)
+  const subjectName = (id: string | null) => workspace.groups.find((g) => g.id === id)?.name
+  const linkedSubject = linked ? nearestSubject(workspace, linked.parentId) : null
   const minutes = Number.parseInt(duration, 10)
-  // Before the DB migration a record can only go on a page.
-  const needsPage = !subjectRecordsReady
-  const hasTarget = page !== undefined || (subjectId !== null && !needsPage)
+  const hasTarget = linked !== undefined || (subjectId !== null && !needsPage)
   const canSubmit = hasTarget && Number.isFinite(minutes) && minutes > 0 && understanding !== null && date <= todayISO()
+
+  // Where this record will show up, in words.
+  const destination = linked
+    ? `${linkedSubject ? `${linkedSubject.name} · ` : ""}“${linked.title || "제목 없음"}” 노트에 기록돼요. 이 노트의 복습일이 잡혀요.`
+    : subjectId
+      ? needsPage
+        ? "지금은 노트를 골라야 저장돼요."
+        : `${subjectName(subjectId)} 과목의 학습 기록으로 남아요. 노트가 없어서 복습일은 생기지 않아요.`
+      : null
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -114,10 +126,10 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
       tags: edit?.tags ?? [],
     }
     let href: string
-    if (page) {
-      if (edit) attachRecordToPage({ ...fields, subjectId: edit.subjectId }, page.id)
-      else addPageRecord(page.id, { ...fields, pageId: page.id })
-      href = `/record/${page.id}`
+    if (linked) {
+      if (edit) attachRecordToPage({ ...fields, subjectId: edit.subjectId }, linked.id)
+      else addPageRecord(linked.id, { ...fields, pageId: linked.id })
+      href = `/record/${linked.id}`
     } else {
       const record = { ...fields, subjectId: subjectId! }
       if (edit) updateSubjectRecord(record)
@@ -125,7 +137,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
       href = `/subject/${subjectId}`
     }
     closeQuickRecord()
-    toast.success(edit ? (page ? "기록을 페이지에 연결했어요" : "기록을 고쳤어요") : "기록했어요", {
+    toast.success(edit ? (linked ? "기록을 노트에 연결했어요" : "기록을 고쳤어요") : "기록했어요", {
       action: { label: "보기", onClick: () => router.push(href) },
     })
   }
@@ -160,34 +172,25 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
         </div>
 
         <div className="flex flex-col gap-4 px-5 py-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+          {fixedPage ? (
+            <p className="flex items-center gap-2 rounded-lg bg-muted/60 px-3 py-2 text-sm text-foreground">
+              <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span className="truncate font-medium">{fixedPage.title || "제목 없음"}</span>
+              {linkedSubject && <span className="shrink-0 text-xs text-muted-foreground">{linkedSubject.name}</span>}
+            </p>
+          ) : (
             <Field label="과목" htmlFor="qr-subject">
               <SubjectPicker
                 id="qr-subject"
                 value={subjectId}
                 onChange={(next) => {
                   setSubjectId(next)
-                  // Keep the page only if it belongs to the new subject.
-                  if (next && page && !descendantPages(workspace, next).some((p) => p.id === page.id)) setPageId(NO_PAGE)
+                  setPageId(NO_PAGE)
                 }}
-                noneLabel={subjectId === null ? "과목 선택" : undefined}
+                noneLabel={subjectId === null ? "어떤 과목을 공부했나요?" : undefined}
+                autoFocus={subjectId === null}
               />
             </Field>
-            <Field label={needsPage ? "페이지" : "페이지 (선택)"} htmlFor="qr-page">
-              <select id="qr-page" value={pageId} onChange={(e) => setPageId(e.target.value)} className={pickerFieldClass}>
-                <option value={NO_PAGE}>{needsPage ? "페이지 선택" : "페이지 없이 과목에 기록"}</option>
-                {pages.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.title || "제목 없음"}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          {needsPage && (
-            <p className="-mt-1 text-xs leading-relaxed text-muted-foreground">
-              페이지 없이 과목에만 기록하는 기능은 DB 업데이트 후에 열려요. 지금은 페이지를 골라 주세요.
-            </p>
           )}
 
           <div className="grid grid-cols-2 gap-3">
@@ -259,6 +262,57 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
             </button>
           )}
         </div>
+
+        {!fixedPage && (
+          <div className="mx-5 mb-4 rounded-lg border border-border">
+            <button
+              type="button"
+              onClick={() => setLinkOpen((v) => !v)}
+              aria-expanded={linkOpen}
+              className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm"
+            >
+              <span className="font-medium text-foreground">
+                노트에 연결 <span className="font-normal text-muted-foreground">{needsPage ? "(필수)" : "(선택)"}</span>
+              </span>
+              <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                <span className="truncate">{linked ? linked.title || "제목 없음" : "연결 안 함"}</span>
+                <ChevronDown className={`size-4 shrink-0 transition-transform ${linkOpen ? "rotate-180" : ""}`} />
+              </span>
+            </button>
+            {linkOpen && (
+              <div className="flex flex-col gap-1.5 border-t border-border px-3 py-3">
+                <select
+                  id="qr-page"
+                  aria-label="연결할 노트"
+                  value={pageId}
+                  onChange={(e) => setPageId(e.target.value)}
+                  disabled={pages.length === 0}
+                  className={pickerFieldClass}
+                >
+                  <option value={NO_PAGE}>{needsPage ? "노트 선택" : "연결 안 함"}</option>
+                  {pages.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title || "제목 없음"}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {pages.length === 0
+                    ? subjectId
+                      ? "이 과목에는 아직 노트가 없어요."
+                      : "과목을 먼저 골라 주세요."
+                    : "다시 볼 정리가 있는 노트에 연결하면 그 노트의 복습일이 잡혀요."}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {destination && (
+          <p role="status" className="mx-5 mb-4 text-xs leading-relaxed text-muted-foreground">
+            {destination}
+          </p>
+        )}
 
         <div className="flex items-center justify-between gap-2 border-t border-border px-5 py-3.5">
           {edit ? (
