@@ -6,6 +6,8 @@ import {
   type Block,
   type PageStudyRecord,
   type StudyNoteContent,
+  type StudyRecordFields,
+  type SubjectStudyRecord,
   type StudyPage,
 } from "@/lib/study-pages"
 import { templateRegistry, type TemplateId } from "@/lib/templates"
@@ -38,7 +40,9 @@ export interface NodeRow {
 export interface RecordRow {
   id: string
   user_id: string
-  page_id: string
+  // One of the two is set (check constraint): a page record, or a subject record without a page (D-24).
+  page_id: string | null
+  subject_id?: string | null
   study_date: string
   created_at: string | null
   duration_minutes: number
@@ -63,8 +67,11 @@ export interface PlanRow {
 
 export const NODE_COLUMNS =
   "id, user_id, parent_id, kind, title, position, template_id, created_on, study_type, blocks, note, tags, status, understanding, study_enabled, created_at"
-export const RECORD_COLUMNS =
+const RECORD_BASE_COLUMNS =
   "id, user_id, page_id, study_date, created_at, duration_minutes, understanding, study_content, difficulties, next_steps, tags"
+export const RECORD_COLUMNS = `${RECORD_BASE_COLUMNS}, subject_id`
+// Before supabase/migrations/20261024_subject_records.sql is applied the table has no subject_id column.
+export const LEGACY_RECORD_COLUMNS = RECORD_BASE_COLUMNS
 export const PLAN_COLUMNS = "id, user_id, title, start_date, end_date, goal, target_scope, target_node_id, created_at"
 
 export const PAGE_KIND = "page"
@@ -97,10 +104,9 @@ function noteOrUndefined(value: unknown): StudyNoteContent | undefined {
 
 // ---- DB → app
 
-export function toRecord(row: RecordRow): PageStudyRecord {
+function recordFields(row: RecordRow): StudyRecordFields {
   return {
     id: row.id,
-    pageId: row.page_id,
     date: row.study_date,
     createdAt: row.created_at ? new Date(row.created_at).getTime() : undefined,
     durationMinutes: Math.max(0, row.duration_minutes ?? 0),
@@ -134,10 +140,15 @@ function toPage(row: NodeRow, records: PageStudyRecord[]): StudyPage {
 // Rows arrive sorted by (position, created_at); position only orders siblings, so one global list works as `order`.
 export function toWorkspaceState(nodes: NodeRow[], records: RecordRow[]): WorkspaceState {
   const byPage = new Map<string, PageStudyRecord[]>()
+  const subjectRecords: SubjectStudyRecord[] = []
   for (const row of records) {
-    const list = byPage.get(row.page_id) ?? []
-    list.push(toRecord(row))
-    byPage.set(row.page_id, list)
+    if (row.page_id) {
+      const list = byPage.get(row.page_id) ?? []
+      list.push({ ...recordFields(row), pageId: row.page_id })
+      byPage.set(row.page_id, list)
+    } else if (row.subject_id) {
+      subjectRecords.push({ ...recordFields(row), subjectId: row.subject_id })
+    }
   }
   const groups: WorkspaceGroup[] = []
   const pages: StudyPage[] = []
@@ -146,7 +157,7 @@ export function toWorkspaceState(nodes: NodeRow[], records: RecordRow[]): Worksp
     if (kind) groups.push({ id: row.id, name: row.title, parentId: row.parent_id, kind })
     else if (row.kind === PAGE_KIND) pages.push(toPage(row, byPage.get(row.id) ?? []))
   }
-  return { groups, pages, order: nodes.map((n) => n.id) }
+  return { groups, pages, subjectRecords, order: nodes.map((n) => n.id) }
 }
 
 export function toPlan(row: PlanRow): LearningPlan {
@@ -215,7 +226,7 @@ export function changedPageColumns(prev: StudyPage, next: StudyPage): Partial<Pa
 // Typing in the title and body calls updatePage on every keystroke; those columns are sent debounced.
 export const DEBOUNCED_PAGE_COLUMNS: (keyof PageColumns)[] = ["title", "blocks", "note"]
 
-function recordColumns(record: PageStudyRecord) {
+function recordColumns(record: StudyRecordFields) {
   return {
     study_date: ISO_DATE.test(record.date) ? record.date : toISODate(new Date()),
     duration_minutes: Math.max(0, Math.round(Number(record.durationMinutes) || 0)),
@@ -232,6 +243,17 @@ export function recordInsertRow(record: PageStudyRecord, userId: string) {
     id: record.id,
     user_id: userId,
     page_id: record.pageId,
+    created_at: new Date(record.createdAt ?? Date.now()).toISOString(),
+    ...recordColumns(record),
+  }
+}
+
+export function subjectRecordInsertRow(record: SubjectStudyRecord, userId: string) {
+  return {
+    id: record.id,
+    user_id: userId,
+    page_id: null,
+    subject_id: record.subjectId,
     created_at: new Date(record.createdAt ?? Date.now()).toISOString(),
     ...recordColumns(record),
   }

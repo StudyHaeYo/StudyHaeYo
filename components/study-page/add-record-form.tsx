@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { UnderstandingRating } from "@/components/record/understanding-rating"
-import { formatDate, newRecordId, todayISO, type PageStudyRecord } from "@/lib/study-pages"
+import { newRecordId, todayISO, type PageStudyRecord } from "@/lib/study-pages"
 
 interface AddRecordFormProps {
   pageId: string
@@ -19,7 +19,7 @@ const fieldClass =
 
 export function AddRecordForm({ pageId, initial, initialMinutes, onSubmit, onCancel }: AddRecordFormProps) {
   const isEdit = initial !== undefined
-  const [date] = useState(() => initial?.date ?? todayISO())
+  const [date, setDate] = useState(() => initial?.date ?? todayISO())
   const [duration, setDuration] = useState(
     initial ? String(initial.durationMinutes) : initialMinutes ? String(initialMinutes) : "",
   )
@@ -30,7 +30,7 @@ export function AddRecordForm({ pageId, initial, initialMinutes, onSubmit, onCan
   const [tags, setTags] = useState(initial ? initial.tags.join(", ") : "")
 
   const minutes = Number.parseInt(duration, 10)
-  const canSubmit = Number.isFinite(minutes) && minutes > 0 && understanding !== null
+  const canSubmit = Number.isFinite(minutes) && minutes > 0 && understanding !== null && date <= todayISO()
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -60,11 +60,21 @@ export function AddRecordForm({ pageId, initial, initialMinutes, onSubmit, onCan
     >
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-card-foreground">{isEdit ? "학습 기록 수정" : "새 학습 기록"}</p>
-        <p className="text-xs text-muted-foreground">{formatDate(date)}</p>
       </div>
 
+      <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
       <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
-        학습 시간 (분)
+        날짜
+        <input
+          type="date"
+          value={date}
+          max={todayISO()}
+          onChange={(e) => setDate(e.target.value)}
+          className={fieldClass}
+        />
+      </label>
+      <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
+        공부한 시간 (분)
         <input
           type="number"
           inputMode="numeric"
@@ -72,17 +82,18 @@ export function AddRecordForm({ pageId, initial, initialMinutes, onSubmit, onCan
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
           placeholder="예: 60"
-          className={`${fieldClass} sm:max-w-40`}
+          className={fieldClass}
           autoFocus
         />
       </label>
+      </div>
 
       <UnderstandingRating value={understanding} onChange={setUnderstanding} />
 
       <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
-        오늘 공부한 내용
+        무엇을 했나요
         <span className="text-xs font-normal text-muted-foreground">
-          이번 학습에서 실제로 한 활동을 남겨요. 페이지 본문과는 별도로 저장돼요.
+          이번 학습에서 실제로 한 활동을 남겨요. 노트 본문과는 따로 저장돼요.
         </span>
         <textarea
           value={studyContent}

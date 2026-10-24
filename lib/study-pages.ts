@@ -145,9 +145,10 @@ export interface StudyNoteContent {
   confusions: NoteConfusion[]
 }
 
-export interface PageStudyRecord {
+// One study session's record. Most records belong to a page; a record of studying without a page
+// (수업, 문제집 …) belongs to a subject instead (SubjectStudyRecord, D-24).
+export interface StudyRecordFields {
   id: string
-  pageId: string
   date: string
   // Creation time (ms); lets analytics tell which timer session a record belongs to. Kept on edit.
   createdAt?: number
@@ -158,6 +159,15 @@ export interface PageStudyRecord {
   difficulties: string
   nextSteps: string
   tags: string[]
+}
+
+export interface PageStudyRecord extends StudyRecordFields {
+  pageId: string
+}
+
+// Lives in WorkspaceState.subjectRecords; study_records row with page_id null and subject_id set.
+export interface SubjectStudyRecord extends StudyRecordFields {
+  subjectId: string
 }
 
 // Every page (seeded or user-created) uses this one shape.

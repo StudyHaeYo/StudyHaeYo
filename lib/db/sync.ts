@@ -1,10 +1,11 @@
 import { toast } from "sonner"
 import { createStore } from "@/lib/create-store"
 import { replacePlans } from "@/lib/plans"
-import { replaceWorkspace } from "@/lib/workspace"
+import { replaceWorkspace, setSubjectRecordsReady } from "@/lib/workspace"
 import { replaceTodos } from "@/lib/todos"
 import { db, resetWrites, setCurrentUserId, setWriteFailureHandler } from "@/lib/db/queue"
 import {
+  LEGACY_RECORD_COLUMNS,
   NODE_COLUMNS,
   PLAN_COLUMNS,
   RECORD_COLUMNS,
@@ -45,6 +46,19 @@ function messageOf(error: unknown) {
 
 let loadSeq = 0
 
+// study_records without the subject_id column (migration not applied yet): load page records only and turn off
+// subject records, instead of failing the whole load.
+async function selectRecords(userId: string) {
+  try {
+    const rows = await selectAll<RecordRow>("study_records", RECORD_COLUMNS, userId, ["study_date", "created_at", "id"])
+    return { rows, subjectRecords: true }
+  } catch (error) {
+    if ((error as { code?: string } | null)?.code !== "42703") throw error
+    const rows = await selectAll<RecordRow>("study_records", LEGACY_RECORD_COLUMNS, userId, ["study_date", "created_at", "id"])
+    return { rows, subjectRecords: false }
+  }
+}
+
 // Loads the signed-in user's workspace and plans. The user id comes from getUser(), which the auth server verifies.
 export async function loadUserData() {
   const seq = ++loadSeq
@@ -58,12 +72,13 @@ export async function loadUserData() {
 
     const [nodes, records, plans] = await Promise.all([
       selectAll<NodeRow>("workspace_nodes", NODE_COLUMNS, userId, ["position", "created_at", "id"]),
-      selectAll<RecordRow>("study_records", RECORD_COLUMNS, userId, ["study_date", "created_at", "id"]),
+      selectRecords(userId),
       selectAll<PlanRow>("learning_plans", PLAN_COLUMNS, userId, ["created_at", "id"]),
     ])
     if (seq !== loadSeq) return
+    setSubjectRecordsReady(records.subjectRecords)
     replaceWorkspace(
-      toWorkspaceState(nodes, records),
+      toWorkspaceState(nodes, records.rows),
       new Map(nodes.map((n) => [n.id, { parentId: n.parent_id, position: n.position }])),
     )
     replacePlans(plans.map(toPlan))

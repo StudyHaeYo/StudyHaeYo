@@ -5,6 +5,7 @@ import { SearchX } from "lucide-react"
 import { SubjectHeader } from "@/components/subject/subject-header"
 import { SubjectSummaryPanel } from "@/components/subject/subject-summary"
 import { SubjectRecords } from "@/components/subject/subject-records"
+import { SubjectStudyLog } from "@/components/subject/subject-study-log"
 import { SubjectPlans } from "@/components/subject/subject-plans"
 import { nodePath, useWorkspace } from "@/lib/workspace"
 import { useDataStatus } from "@/lib/db/sync"
@@ -26,6 +27,7 @@ export function SubjectView({ subjectId }: { subjectId: string }) {
       <SubjectHeader ancestors={ancestors} subjectName={subject.name} />
       <SubjectSummaryPanel subjectId={subject.id} />
       <SubjectRecords subjectId={subject.id} />
+      <SubjectStudyLog subjectId={subject.id} />
       <SubjectPlans subjectId={subject.id} />
     </div>
   )

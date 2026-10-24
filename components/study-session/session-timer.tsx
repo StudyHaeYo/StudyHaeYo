@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { Coffee, Play, SkipForward, Square, Timer, X } from "lucide-react"
-import { endSession, formatElapsed, startSession, useStudySession } from "@/lib/study-session"
+import { endSession, formatElapsed, setSessionSubject, startSession, useStudySession } from "@/lib/study-session"
+import { SubjectPicker, useSubjectOptions } from "@/components/record/subject-picker"
 import { useNowEverySecond } from "@/hooks/use-session-clock"
 import { useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
 import { todayMinutes } from "@/lib/study-stats"
-import { useWorkspace } from "@/lib/workspace"
+import { useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
 import {
   FOCUS_MINUTES,
   LONG_BREAK_EVERY,
@@ -44,6 +45,8 @@ export function SessionTimerCard() {
   const { running, elapsed, now } = useElapsed()
   const pomodoro = usePomodoroClock(now)
   const onBreak = pomodoro?.phase === "break"
+  // The subject is for turning time spent off notes into a record, which needs subject records (DB migration).
+  const canPickSubject = useSubjectRecordsReady()
 
   return (
     <section aria-label="학습 타이머" className="mb-6 overflow-hidden rounded-xl border border-border bg-card">
@@ -68,6 +71,7 @@ export function SessionTimerCard() {
                     ? `휴식 중 · 쉬는 시간은 기록하지 않아요`
                     : `뽀모도로 집중 ${pomodoro.round}/${LONG_BREAK_EVERY}`}
                   {pomodoro.completed > 0 ? ` · 이번 세션 ${pomodoro.completed}번 완료` : ""}
+                  <SubjectChip className="ml-2" />
                 </p>
                 <p className="font-mono text-xl font-semibold tabular-nums text-foreground" aria-live="off">
                   {formatElapsed(pomodoro.left)}
@@ -78,7 +82,10 @@ export function SessionTimerCard() {
               </>
             ) : running ? (
               <>
-                <p className="text-xs text-muted-foreground">학습 세션 진행 중</p>
+                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                  학습 세션 진행 중
+                  <SubjectChip />
+                </p>
                 <p className="font-mono text-xl font-semibold tabular-nums text-foreground" aria-live="off">
                   {formatElapsed(elapsed)}
                 </p>
@@ -87,7 +94,7 @@ export function SessionTimerCard() {
               <>
                 <p className="text-sm font-medium text-foreground">학습 세션</p>
                 <p className="text-xs leading-relaxed text-muted-foreground text-pretty">
-                  <TodayStudied />학습 노트에 머문 시간이 페이지별로 자동 기록돼요
+                  <TodayStudied />{canPickSubject ? "노트에 머문 시간은 노트별로 모이고, 노트 밖 시간은 끝날 때 과목에 기록할 수 있어요" : "노트에 머문 시간이 노트별로 자동으로 모여요"}
                 </p>
               </>
             )}
@@ -138,6 +145,16 @@ export function SessionTimerCard() {
           )}
         </div>
       </div>
+      {!running && canPickSubject && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border px-5 py-3">
+          <label htmlFor="session-subject" className="text-xs font-medium text-muted-foreground">
+            공부할 과목
+          </label>
+          <div className="min-w-0 flex-1 sm:max-w-64">
+            <SessionSubjectPicker />
+          </div>
+        </div>
+      )}
       {pomodoro && (
         <div className="h-1 bg-muted" aria-hidden="true">
           <div
@@ -147,6 +164,27 @@ export function SessionTimerCard() {
         </div>
       )}
     </section>
+  )
+}
+
+function SessionSubjectPicker() {
+  const { subjectId } = useStudySession()
+  const options = useSubjectOptions()
+  // A subject deleted since it was picked reads as none.
+  const value = options.some((o) => o.id === subjectId) ? subjectId : null
+  return <SubjectPicker id="session-subject" value={value} onChange={setSessionSubject} noneLabel="과목 없이" />
+}
+
+// "● 자료구조" next to the running timer.
+function SubjectChip({ className = "" }: { className?: string }) {
+  const { subjectId } = useStudySession()
+  const subject = useSubjectOptions().find((o) => o.id === subjectId)
+  if (!subject) return null
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-medium text-foreground ${className}`}>
+      <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
+      {subject.name}
+    </span>
   )
 }
 

@@ -13,6 +13,8 @@ export interface FinishedSession {
   startedAt: number
   endedAt: number
   segments: SessionSegment[]
+  // The subject picked on the timer (optional); time outside pages is offered as a record for it.
+  subjectId?: string | null
   // Ended on load because the tab had been inactive too long; endedAt is the last activity time.
   autoEnded?: boolean
 }
@@ -27,6 +29,8 @@ export interface RecordPrefill {
 
 export interface SessionState {
   startedAt: number | null
+  // Subject picked on the timer card, if any (shown as a chip, prefilled in the summary's record button).
+  subjectId: string | null
   segments: SessionSegment[]
   // Open segment on a page with study on; closed when leaving the page, hiding the tab, or ending the session.
   openSegment: { pageId: string; start: number } | null
@@ -50,6 +54,7 @@ const STALE_SESSION_MS = 30 * 60_000
 
 const idle: SessionState = {
   startedAt: null,
+  subjectId: null,
   segments: [],
   openSegment: null,
   lastActiveAt: null,
@@ -138,6 +143,7 @@ function finish(s: SessionState, at: number, autoEnded = false): SessionState {
     startedAt: s.startedAt,
     endedAt,
     segments: closed.segments,
+    ...(s.subjectId ? { subjectId: s.subjectId } : {}),
     ...(autoEnded ? { autoEnded } : {}),
   }
   return {
@@ -175,6 +181,11 @@ export function startSession() {
     const now = Date.now()
     return { ...s, startedAt: now, segments: [], openSegment: null, lastActiveAt: now }
   })
+}
+
+// Picked before or during a session; kept for the next session until changed.
+export function setSessionSubject(subjectId: string | null) {
+  set((s) => (s.subjectId === subjectId ? s : { ...s, subjectId }))
 }
 
 function track(s: SessionState, pageId: string | null, now: number): SessionState {
@@ -234,7 +245,7 @@ export function clearRecordPrefill() {
 }
 
 // Records made before createdAt existed carry their creation time in the id (`<pageId>-r-<ms>`).
-export function recordCreatedAt(record: TimedRecord): number | null {
+export function recordCreatedAt(record: Pick<TimedRecord, "id" | "createdAt">): number | null {
   if (typeof record.createdAt === "number") return record.createdAt
   const match = record.id.match(/-r-(\d{12,})$/)
   return match ? Number(match[1]) : null

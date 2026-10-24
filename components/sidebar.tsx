@@ -32,10 +32,12 @@ import {
   useWorkspace,
   type GroupKind,
   type WorkspaceGroup,
+  useSubjectRecordsReady,
 } from "@/lib/workspace"
 import { RecordItem } from "@/components/sidebar/record-item"
 import { GroupActionsMenu } from "@/components/sidebar/group-actions-menu"
 import { SearchDialog, SearchTrigger, openSearch } from "@/components/search-dialog"
+import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { signOut, useCurrentUser } from "@/lib/auth"
 import { resolveTreeAppearance } from "@/lib/templates"
 import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
@@ -98,6 +100,14 @@ export function Sidebar(_props: SidebarProps = {}) {
     },
   }
 
+  // [+ 기록] starts from what's on screen: this page, or this subject. Shown only once records can go on a subject
+  // (before the DB migration a record needs a note, so it is made from the note itself).
+  const canQuickRecord = useSubjectRecordsReady()
+  const recordFromHere = () => {
+    const [, section, id] = pathname.split("/")
+    openQuickRecord(section === "record" && id ? { pageId: id } : section === "subject" && id ? { subjectId: id } : {})
+  }
+
   return (
     <>
       <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background/95 px-2 backdrop-blur md:hidden">
@@ -117,11 +127,21 @@ export function Sidebar(_props: SidebarProps = {}) {
           </span>
           <span className="text-sm font-semibold tracking-tight text-foreground">스터디 해요</span>
         </Link>
+        {canQuickRecord && (
+        <button
+          type="button"
+          onClick={recordFromHere}
+          className="ml-auto inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+        >
+          <Plus className="size-4" />
+          기록
+        </button>
+        )}
         <button
           type="button"
           onClick={openSearch}
           aria-label="노트 검색"
-          className="ml-auto flex size-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent"
+          className={`${canQuickRecord ? "" : "ml-auto "}flex size-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent`}
         >
           <Search className="size-5" />
         </button>
@@ -160,6 +180,19 @@ export function Sidebar(_props: SidebarProps = {}) {
       </div>
 
       <SearchTrigger />
+      {canQuickRecord && (
+      <button
+        type="button"
+        onClick={() => {
+          setMobileOpen(false)
+          recordFromHere()
+        }}
+        className="mx-2 mb-2 hidden items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:flex"
+      >
+        <Plus className="size-4 shrink-0" aria-hidden="true" />
+        학습 기록 남기기
+      </button>
+      )}
 
       {/* Top: main navigation */}
       <nav className="flex flex-col gap-0.5 px-2 pb-2" aria-label="메인 메뉴">
