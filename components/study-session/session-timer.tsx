@@ -8,7 +8,7 @@ import { useNowEverySecond } from "@/hooks/use-session-clock"
 import { useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
 import { todayMinutes } from "@/lib/study-stats"
-import { useWorkspace } from "@/lib/workspace"
+import { useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
 import {
   FOCUS_MINUTES,
   LONG_BREAK_EVERY,
@@ -45,6 +45,8 @@ export function SessionTimerCard() {
   const { running, elapsed, now } = useElapsed()
   const pomodoro = usePomodoroClock(now)
   const onBreak = pomodoro?.phase === "break"
+  // The subject is for turning time spent off notes into a record, which needs subject records (DB migration).
+  const canPickSubject = useSubjectRecordsReady()
 
   return (
     <section aria-label="학습 타이머" className="mb-6 overflow-hidden rounded-xl border border-border bg-card">
@@ -92,7 +94,7 @@ export function SessionTimerCard() {
               <>
                 <p className="text-sm font-medium text-foreground">학습 세션</p>
                 <p className="text-xs leading-relaxed text-muted-foreground text-pretty">
-                  <TodayStudied />페이지에 머문 시간은 페이지별로 모이고, 끝나면 과목에도 기록할 수 있어요
+                  <TodayStudied />{canPickSubject ? "노트에 머문 시간은 노트별로 모이고, 노트 밖 시간은 끝날 때 과목에 기록할 수 있어요" : "노트에 머문 시간이 노트별로 자동으로 모여요"}
                 </p>
               </>
             )}
@@ -143,7 +145,7 @@ export function SessionTimerCard() {
           )}
         </div>
       </div>
-      {!running && (
+      {!running && canPickSubject && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border px-5 py-3">
           <label htmlFor="session-subject" className="text-xs font-medium text-muted-foreground">
             공부할 과목

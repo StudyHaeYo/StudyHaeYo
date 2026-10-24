@@ -5,7 +5,7 @@ import { createPortal } from "react-dom"
 import { usePathname, useRouter } from "next/navigation"
 import { BookMarked, Check, GraduationCap, Plus, Timer } from "lucide-react"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
-import { useWorkspace } from "@/lib/workspace"
+import { useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
 import {
   closeSummary,
   formatDuration,
@@ -21,6 +21,7 @@ import { SessionIndicator } from "@/components/study-session/session-timer"
 export function SessionSummaryModal() {
   const router = useRouter()
   const { pages, groups } = useWorkspace()
+  const canQuickRecord = useSubjectRecordsReady()
   const { log, summarySessionId } = useStudySession()
   const closeRef = useRef<HTMLButtonElement>(null)
   const session = summarySessionId ? log.find((s) => s.id === summarySessionId) : undefined
@@ -115,7 +116,7 @@ export function SessionSummaryModal() {
           </ul>
         )}
 
-        {offPageMinutes >= 1 && (
+        {canQuickRecord && offPageMinutes >= 1 && (
           <div className="mt-4 flex items-center gap-3 rounded-lg border border-border px-3 py-2.5">
             <BookMarked className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             <div className="min-w-0 flex-1">
