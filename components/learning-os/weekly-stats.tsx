@@ -20,7 +20,7 @@ export function WeeklyStats() {
   const maxSubject = Math.max(...(stats?.subjects.map((s) => s.minutes) ?? []), 1)
 
   return (
-    <section aria-labelledby="weekly-stats-title" className="rounded-xl border border-border bg-card p-5">
+    <section aria-labelledby="weekly-stats-title">
       <h2 id="weekly-stats-title" className="text-[15px] font-semibold text-foreground">
         이번 주 학습
       </h2>

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { CalendarRange, ChevronRight, Flame, ListTodo, RotateCcw } from "lucide-react"
+import { CalendarRange, ChevronRight, ListTodo, RotateCcw } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { reviewCandidates, reviewHref, type StudyCandidate } from "@/lib/study-candidates"
 import { dueToneClass, formatDate, formatDuration } from "@/lib/study-pages"
@@ -23,13 +23,10 @@ export function TodayAgenda() {
   const checklistCount = useChecklistCount()
 
   return (
-    <section aria-labelledby="today-agenda-title" className="mb-6 overflow-hidden rounded-2xl border border-indigo-200 bg-card shadow-[0_1px_2px_rgb(0_0_0/0.04),0_12px_32px_-16px_rgb(79_70_229/0.35)]">
-      <div className="border-b border-indigo-100 bg-indigo-50/70 px-5 py-4">
-        <h2 id="today-agenda-title" className="text-base font-semibold text-foreground">
-          오늘 할 일
-        </h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">복습할 노트, 진행 중인 계획, 체크리스트를 한곳에 모았어요.</p>
-      </div>
+    <section aria-labelledby="today-agenda-title" className="mb-10">
+      <h2 id="today-agenda-title" className="border-b border-border pb-2 text-base font-semibold text-foreground">
+        오늘 할 일
+      </h2>
 
       <div className="divide-y divide-border">
         <AgendaSection
@@ -100,7 +97,7 @@ function AgendaSection({
   children: React.ReactNode
 }) {
   return (
-    <div className="px-3 py-3 sm:px-4">
+    <div className="py-3">
       <div className="mb-1.5 flex items-center justify-between px-2">
         <h3 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
           <Icon className="size-3.5" aria-hidden="true" />
@@ -118,11 +115,11 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
     <li>
       <Link
         href={reviewHref(item.pageId)}
-        className={`group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent ${first ? "bg-indigo-50/60" : ""}`}
+        className={`group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent ${first ? "bg-indigo-50" : ""}`}
       >
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
-            <span className={`truncate font-medium text-foreground ${first ? "text-base" : "text-sm"}`}>{item.topic}</span>
+            <span className="truncate text-sm font-medium text-foreground">{item.topic}</span>
             <UnresolvedBadge count={item.unresolvedConfusions} />
           </span>
           <span className="block truncate text-xs text-muted-foreground">
@@ -132,8 +129,7 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
         </span>
         <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>{item.due}</span>
         {first ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors group-hover:bg-indigo-700">
-            <Flame className="size-3.5" aria-hidden="true" />
+          <span className="inline-flex shrink-0 items-center rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white transition-colors group-hover:bg-indigo-700">
             복습하기
           </span>
         ) : (
@@ -157,8 +153,8 @@ function PlanRow({ item }: { item: ActivePlan }) {
         </span>
       </span>
       <span className="flex shrink-0 flex-col items-end">
-        <span className="text-sm font-semibold text-indigo-600">{formatDuration(item.studiedMinutes)}</span>
-        <span className={`text-xs ${item.daysLeft <= 1 ? "text-amber-600" : "text-muted-foreground"}`}>{left}</span>
+        <span className="text-sm font-medium tabular-nums text-foreground">{formatDuration(item.studiedMinutes)}</span>
+        <span className="text-xs text-muted-foreground">{left}</span>
       </span>
     </>
   )

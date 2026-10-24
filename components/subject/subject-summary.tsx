@@ -26,11 +26,11 @@ export function SubjectSummaryPanel({ subjectId }: { subjectId: string }) {
 
   return (
     <section aria-label="과목 요약">
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-y border-border py-4 sm:grid-cols-4">
         {items.map((item) => (
-          <div key={item.label} className="flex flex-col gap-1 rounded-xl border border-border bg-card px-4 py-3">
+          <div key={item.label} className="flex flex-col gap-0.5">
             <dt className="text-xs text-muted-foreground">{item.label}</dt>
-            <dd className="text-lg font-semibold text-foreground">{item.value}</dd>
+            <dd className="text-base font-semibold tabular-nums text-foreground">{item.value}</dd>
           </div>
         ))}
       </dl>
