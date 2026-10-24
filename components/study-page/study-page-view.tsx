@@ -3,7 +3,7 @@
 import { Fragment, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronRight, FileQuestion, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff, Sparkles } from "lucide-react"
+import { ChevronRight, FileQuestion, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff, Printer, Sparkles } from "lucide-react"
 import {
   addConfusions,
   computePageStats,
@@ -164,7 +164,7 @@ export function StudyPageView({ pageId, mode, openAi = false }: { pageId: string
     <PagesContext.Provider value={pages}>
     {/* With the AI panel open on a wide screen, the page moves aside instead of going under it. */}
     <div className={`flex flex-col transition-[padding] ${aiOpen ? "md:pr-[420px]" : ""}`}>
-      <header className="sticky top-12 z-10 border-b md:top-0 border-border bg-background/95 backdrop-blur">
+      <header className="sticky top-12 z-10 border-b print:hidden md:top-0 border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-3 lg:px-10">
           <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
             <span className="shrink-0 text-muted-foreground">내 페이지</span>
@@ -233,6 +233,20 @@ export function StudyPageView({ pageId, mode, openAi = false }: { pageId: string
                         <PenLine className="size-4 text-muted-foreground" />
                         그림 추가
                       </button>
+                      <button
+                        role="menuitem"
+                        type="button"
+                        title="본문만 인쇄해요. 인쇄 창에서 'PDF로 저장'을 고르면 PDF 파일이 돼요"
+                        className={`${menuItemClass} text-foreground`}
+                        onClick={() => {
+                          close()
+                          setAiOpen(false)
+                          requestAnimationFrame(() => window.print())
+                        }}
+                      >
+                        <Printer className="size-4 text-muted-foreground" />
+                        인쇄 · PDF로 저장
+                      </button>
                     </>
                   )
             }
@@ -260,13 +274,13 @@ export function StudyPageView({ pageId, mode, openAi = false }: { pageId: string
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {studyOn && <div className="mt-4">{properties}</div>}
-        <hr className="my-6 border-border" />
+        {studyOn && <div className="mt-4 print:hidden">{properties}</div>}
+        <hr className="my-6 border-border print:hidden" />
         {body}
-        {studyOn && renderStudyArea()}
+        {studyOn && <div className="print:hidden">{renderStudyArea()}</div>}
 
         {!studyOn && (
-          <>
+          <div className="print:hidden">
             <hr className="mb-8 mt-16 border-border" />
             <section
               aria-labelledby="study-features-heading"
@@ -294,7 +308,7 @@ export function StudyPageView({ pageId, mode, openAi = false }: { pageId: string
                 학습 기능 추가
               </button>
             </section>
-          </>
+          </div>
         )}
 
       </article>

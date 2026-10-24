@@ -15,6 +15,8 @@ export interface LearningPlan {
   startDate: string
   endDate: string
   goal: string
+  // 목표 학습 시간(분). Progress is measured against it; without it, against the days of the period.
+  goalMinutes?: number
 }
 
 // Example plans for "예시 데이터 가져오기" (importExampleData in lib/workspace.ts). Targets are seed ids from
@@ -51,6 +53,13 @@ export const examplePlans: LearningPlan[] = [
 const store = createStore<LearningPlan[]>([])
 
 export const usePlans = store.useStore
+
+// False while learning_plans has no goal_minutes column (migration not applied): the form hides the field.
+const goalsReadyStore = createStore<boolean>(true)
+export const usePlanGoalsReady = goalsReadyStore.useStore
+export function setPlanGoalsReady(ready: boolean) {
+  goalsReadyStore.set(() => ready)
+}
 export const getPlans = store.get
 
 export function replacePlans(plans: LearningPlan[]) {

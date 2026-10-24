@@ -120,7 +120,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions }: AiPa
   return (
     <aside
       aria-label="AI 학습 도우미"
-      className={`fixed inset-0 z-40 flex-col ${open ? "flex" : "hidden"} bg-card md:inset-y-0 md:left-auto md:w-[420px] md:border-l md:border-border md:shadow-xl`}
+      className={`fixed inset-0 z-40 flex-col print:hidden ${open ? "flex" : "hidden"} bg-card md:inset-y-0 md:left-auto md:w-[420px] md:border-l md:border-border md:shadow-xl`}
     >
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
         <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-foreground">

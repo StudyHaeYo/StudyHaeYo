@@ -1,4 +1,4 @@
-import { isTextBlock, textBlockWords, type Block, type StudyPage } from "@/lib/study-pages"
+import { isTextBlock, structuredBlockLines, textBlockWords, type Block, type StudyPage } from "@/lib/study-pages"
 import { nodePath, type WorkspaceState } from "@/lib/workspace"
 
 // 노트 검색 (⌘K): pages by title, body, 핵심 개념, 헷갈린 점 and study-record notes. Runs on the data already on
@@ -55,7 +55,7 @@ function blockLines(blocks: Block[], types?: string[]) {
 
 function pageSources(page: StudyPage): { field: SearchField; lines: string[] }[] {
   const sources: { field: SearchField; lines: string[] }[] = [
-    { field: "본문", lines: blockLines(page.blocks) },
+    { field: "본문", lines: [...blockLines(page.blocks), ...page.blocks.flatMap(structuredBlockLines)] },
     { field: "핵심 개념", lines: blockLines(page.blocks, ["concept"]) },
     { field: "헷갈린 점", lines: blockLines(page.blocks, ["confusion"]) },
   ]

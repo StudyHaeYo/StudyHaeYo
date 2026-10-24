@@ -221,7 +221,7 @@ export function SessionIndicator({ floating = false }: { floating?: boolean }) {
           : `학습 세션 진행 중, ${formatElapsed(elapsed)} 경과. 홈에서 종료하기`
       }
       className={`inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent ${
-        floating ? "fixed right-4 top-4 z-40" : ""
+        floating ? "fixed right-4 top-4 z-40 print:hidden" : ""
       }`}
     >
       <span className="relative flex size-2" aria-hidden="true">

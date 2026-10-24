@@ -110,7 +110,7 @@ export function Sidebar(_props: SidebarProps = {}) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background/95 px-2 backdrop-blur md:hidden">
+      <header className="sticky top-0 z-30 flex h-12 shrink-0 print:hidden items-center gap-2 border-b border-border bg-background/95 px-2 backdrop-blur md:hidden">
         <button
           type="button"
           onClick={openDrawer}
@@ -157,7 +157,7 @@ export function Sidebar(_props: SidebarProps = {}) {
       onKeyDown={(e) => {
         if (e.key === "Escape") setMobileOpen(false)
       }}
-      className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-border bg-sidebar shadow-xl transition-transform duration-200 md:visible md:sticky md:inset-auto md:top-0 md:z-auto md:h-screen md:w-60 md:max-w-none md:translate-x-0 md:shadow-none ${
+      className={`fixed inset-y-0 left-0 z-50 flex w-72 print:hidden max-w-[85vw] flex-col border-r border-border bg-sidebar shadow-xl transition-transform duration-200 md:visible md:sticky md:inset-auto md:top-0 md:z-auto md:h-screen md:w-60 md:max-w-none md:translate-x-0 md:shadow-none ${
         mobileOpen ? "visible translate-x-0" : "invisible -translate-x-full"
       }`}
     >

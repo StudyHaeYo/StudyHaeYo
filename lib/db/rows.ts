@@ -60,6 +60,8 @@ export interface PlanRow {
   start_date: string
   end_date: string
   goal: string | null
+  // Added by supabase/migrations/20261025_plan_goal_minutes.sql; missing before it runs.
+  goal_minutes?: number | null
   target_scope: string
   target_node_id: string | null
   created_at: string
@@ -72,7 +74,8 @@ const RECORD_BASE_COLUMNS =
 export const RECORD_COLUMNS = `${RECORD_BASE_COLUMNS}, subject_id`
 // Before supabase/migrations/20261024_subject_records.sql is applied the table has no subject_id column.
 export const LEGACY_RECORD_COLUMNS = RECORD_BASE_COLUMNS
-export const PLAN_COLUMNS = "id, user_id, title, start_date, end_date, goal, target_scope, target_node_id, created_at"
+export const LEGACY_PLAN_COLUMNS = "id, user_id, title, start_date, end_date, goal, target_scope, target_node_id, created_at"
+export const PLAN_COLUMNS = `${LEGACY_PLAN_COLUMNS}, goal_minutes`
 
 export const PAGE_KIND = "page"
 const groupKinds: GroupKind[] = ["folder", "subject"]
@@ -171,6 +174,7 @@ export function toPlan(row: PlanRow): LearningPlan {
     startDate: row.start_date,
     endDate: row.end_date,
     goal: row.goal ?? "",
+    ...(row.goal_minutes && row.goal_minutes > 0 ? { goalMinutes: row.goal_minutes } : {}),
   }
 }
 
@@ -271,6 +275,8 @@ export function planInsertRow(plan: LearningPlan, userId: string) {
     start_date: plan.startDate,
     end_date: plan.endDate,
     goal: plan.goal,
+    // Only sent when set, so plans can still be saved before the goal_minutes column exists.
+    ...(plan.goalMinutes ? { goal_minutes: Math.round(plan.goalMinutes) } : {}),
     target_scope: plan.target.scope,
     target_node_id: targetId,
   }

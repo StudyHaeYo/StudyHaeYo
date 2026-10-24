@@ -1,10 +1,11 @@
 import { toast } from "sonner"
 import { createStore } from "@/lib/create-store"
-import { replacePlans } from "@/lib/plans"
+import { replacePlans, setPlanGoalsReady } from "@/lib/plans"
 import { replaceWorkspace, setSubjectRecordsReady } from "@/lib/workspace"
 import { replaceTodos } from "@/lib/todos"
 import { db, resetWrites, setCurrentUserId, setWriteFailureHandler } from "@/lib/db/queue"
 import {
+  LEGACY_PLAN_COLUMNS,
   LEGACY_RECORD_COLUMNS,
   NODE_COLUMNS,
   PLAN_COLUMNS,
@@ -46,6 +47,18 @@ function messageOf(error: unknown) {
 
 let loadSeq = 0
 
+// Same for learning_plans.goal_minutes.
+async function selectPlans(userId: string) {
+  try {
+    const rows = await selectAll<PlanRow>("learning_plans", PLAN_COLUMNS, userId, ["created_at", "id"])
+    return { rows, goals: true }
+  } catch (error) {
+    if ((error as { code?: string } | null)?.code !== "42703") throw error
+    const rows = await selectAll<PlanRow>("learning_plans", LEGACY_PLAN_COLUMNS, userId, ["created_at", "id"])
+    return { rows, goals: false }
+  }
+}
+
 // study_records without the subject_id column (migration not applied yet): load page records only and turn off
 // subject records, instead of failing the whole load.
 async function selectRecords(userId: string) {
@@ -73,7 +86,7 @@ export async function loadUserData() {
     const [nodes, records, plans] = await Promise.all([
       selectAll<NodeRow>("workspace_nodes", NODE_COLUMNS, userId, ["position", "created_at", "id"]),
       selectRecords(userId),
-      selectAll<PlanRow>("learning_plans", PLAN_COLUMNS, userId, ["created_at", "id"]),
+      selectPlans(userId),
     ])
     if (seq !== loadSeq) return
     setSubjectRecordsReady(records.subjectRecords)
@@ -81,7 +94,8 @@ export async function loadUserData() {
       toWorkspaceState(nodes, records.rows),
       new Map(nodes.map((n) => [n.id, { parentId: n.parent_id, position: n.position }])),
     )
-    replacePlans(plans.map(toPlan))
+    setPlanGoalsReady(plans.goals)
+    replacePlans(plans.rows.map(toPlan))
     statusStore.set(() => ({ phase: "ready" }))
     void loadTodos(userId, seq)
   } catch (error) {

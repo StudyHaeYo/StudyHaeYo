@@ -31,6 +31,8 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
+  // iPhone "홈 화면에 추가" opens it like an app (Android/desktop read app/manifest.ts).
+  appleWebApp: { capable: true, title: '스터디 해요', statusBarStyle: 'default' },
 }
 
 export const viewport: Viewport = {
