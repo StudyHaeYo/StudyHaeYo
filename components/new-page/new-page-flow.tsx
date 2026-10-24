@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Check, ChevronRight, FolderOpen } from "lucide-react"
-import { pageStarters } from "@/lib/templates"
+import { getStarter, pageStarters } from "@/lib/templates"
 import { createPage, flattenTree, nodeExists, nodePath, useWorkspace } from "@/lib/workspace"
 
 const ROOT = "__root__"
@@ -31,7 +31,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
       return
     }
     const id = createPage({ title, starterId, parentId: location === ROOT ? null : location })
-    router.push(`/record/${id}`)
+    router.push(getStarter(starterId).openAi ? `/record/${id}?ai=1` : `/record/${id}`)
   }
 
   const fieldClass =

@@ -100,6 +100,12 @@ export function markdownToBlocks(markdown: string): TextBlock[] {
     }
     const line = raw.trim()
     if (!line || /^-{3,}$/.test(line)) continue
+    // Multiple-choice options ("① … ② …") stay with their numbered question, so the numbering keeps running.
+    const prev = blocks.at(-1)
+    if (/^[①-⑩]/.test(line) && prev?.type === "ol") {
+      prev.text += "\n" + clean(line)
+      continue
+    }
     const heading = line.match(/^(#{1,6})\s+(.*)$/)
     if (heading) {
       const level = Math.min(heading[1].length, 3)
@@ -121,4 +127,37 @@ export function markdownToBlocks(markdown: string): TextBlock[] {
   }
   if (code) blocks.push({ id: newBlockId(), type: "code", text: code.join("\n") })
   return blocks
+}
+
+// "점수: 4/5" on the last lines of a grading answer (the prompt asks for exactly this line).
+export function parseScore(text: string): { correct: number; total: number } | null {
+  const matches = [...text.matchAll(/점수\s*[:：]\s*(\d+)\s*\/\s*(\d+)/g)]
+  const last = matches.at(-1)
+  if (!last) return null
+  const correct = Number(last[1])
+  const total = Number(last[2])
+  return total > 0 && correct <= total ? { correct, total } : null
+}
+
+// 0% → 1, 100% → 5: a starting value for the record's 이해도, which the user can change.
+export function scoreToUnderstanding({ correct, total }: { correct: number; total: number }) {
+  return Math.min(5, Math.max(1, Math.round((correct / total) * 4) + 1))
+}
+
+export const ANSWER_HEADING = /^정답\s*(과|및)?\s*해설/
+
+// Lines the AI says to the user rather than about the topic: "…만들어 드릴까요?", "답을 보내 주면 채점해 드릴게요."
+const CHAT_LINE =
+  /(\?|？|까요[.!]?|드릴게요[.!]?|드리겠습니다[.!]?|드려요[.!]?|보내\s*주(세요|면)[^.]*[.!]?|말씀해\s*주세요[.!]?|알려\s*주세요[.!]?|원하시면[^.]*[.!]?)\s*$/
+const isChatLine = (b: TextBlock) => b.type === "p" && CHAT_LINE.test(b.text.trim())
+
+// What goes into the page from an answer: the content without the chat around it (opening and closing
+// lines addressed to the user, the "점수: 4/5" line). The "자료 없이 만든 내용" warning (a quote) stays.
+export function answerToPageBlocks(markdown: string): TextBlock[] {
+  const blocks = markdownToBlocks(markdown).filter((b) => !(b.type === "p" && /^점수\s*[:：]/.test(b.text)))
+  let start = 0
+  let end = blocks.length
+  while (start < end && isChatLine(blocks[start])) start++
+  while (end > start && isChatLine(blocks[end - 1])) end--
+  return blocks.slice(start, end)
 }
