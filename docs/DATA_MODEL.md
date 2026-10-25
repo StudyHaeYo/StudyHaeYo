@@ -71,6 +71,8 @@
 **공통**: 첨부와 그림은 텍스트가 아니므로 AI 도구용 본문 텍스트(`blocksPlainText`)에서 빠진다. 페이지를 복제하면 그림은 획 데이터까지 깊은 복사하고(`cloneBlock`), 첨부는 블록만 복사해서 **복제본이 원본과 같은 파일을 가리킨다.**
 
 ### 학습 기록 (PageStudyRecord / SubjectStudyRecord)
+> **바뀔 예정(D-24, 2026-10-25 결정, 발표 뒤 구현)**: 과목도 선택이 된다. 기록은 노트 · 과목 · 둘 다 없음(외부 학습) 중 하나이고, 기록 창에서 과목이나 노트를 새로 만들지 않는다. 모든 기록은 "학습 기록" 화면에 모인다. 아래는 **지금 코드** 기준이다(과목 필수).
+
 기록은 **페이지** 또는 **과목** 중 하나에 붙는다(D-24). 페이지 기록은 `page.studyRecords`, 페이지 없이 과목에 바로 남긴 기록은 `WorkspaceState.subjectRecords`에 있다. DB에서는 같은 `study_records` 테이블이고 `page_id`와 `subject_id` 중 하나만 채운다(`supabase/migrations/20261024_subject_records.sql`).
 - 페이지 기록의 과목은 저장하지 않고 페이지 위치에서 계산한다(`nearestSubject`). 그래서 페이지 기록의 `subject_id`는 비워 둔다
 - 과목 기록을 고칠 때 페이지를 고르면 같은 행이 그 페이지 기록이 된다(`attachRecordToPage`: `page_id` 채우고 `subject_id` 비움)
