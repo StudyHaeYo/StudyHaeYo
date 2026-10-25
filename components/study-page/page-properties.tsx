@@ -18,8 +18,8 @@ import {
 import { formatDate, formatDuration, pageStatuses, type PageStats, type PageStatus } from "@/lib/study-pages"
 import { NO_SUBJECT } from "@/lib/workspace"
 
-// Whether the inline properties are folded. One choice for every page, remembered per browser. The server and the
-// hydration pass always see "open", so markup matches; a saved "folded" applies right after hydration.
+// Whether the inline properties are folded. Folded by default; one choice for every page, remembered per browser.
+// The server and the hydration pass always see "folded", so markup matches; a saved "open" applies right after hydration.
 const COLLAPSE_KEY = "studyhaeyo:page-properties-collapsed"
 const COLLAPSE_EVENT = "studyhaeyo:page-properties-collapsed"
 // Fallback when localStorage throws (private mode, blocked site data).
@@ -36,9 +36,9 @@ function subscribeCollapsed(onChange: () => void) {
 
 function readCollapsed() {
   try {
-    return window.localStorage.getItem(COLLAPSE_KEY) === "1"
+    return window.localStorage.getItem(COLLAPSE_KEY) !== "0"
   } catch {
-    return false
+    return true
   }
 }
 
@@ -91,7 +91,7 @@ export function PageProperties({
   sessionTime,
 }: PagePropertiesProps) {
   const [draft, setDraft] = useState("")
-  const collapsedSaved = useSyncExternalStore(subscribeCollapsed, getCollapsed, () => false)
+  const collapsedSaved = useSyncExternalStore(subscribeCollapsed, getCollapsed, () => true)
   // The narrow side panel has its own layout and always shows every row.
   const collapsed = variant === "inline" && collapsedSaved
   const Row = variant === "panel" ? PanelRow : InlineRow
