@@ -1,10 +1,12 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useState, useSyncExternalStore, type ReactNode } from "react"
 import {
   BookOpen,
   CalendarCheck,
   CalendarClock,
+  ChevronDown,
+  ChevronRight,
   CircleDot,
   Clock,
   Gauge,
@@ -15,6 +17,45 @@ import {
 } from "lucide-react"
 import { formatDate, formatDuration, pageStatuses, type PageStats, type PageStatus } from "@/lib/study-pages"
 import { NO_SUBJECT } from "@/lib/workspace"
+
+// Whether the inline properties are folded. One choice for every page, remembered per browser. The server and the
+// hydration pass always see "open", so markup matches; a saved "folded" applies right after hydration.
+const COLLAPSE_KEY = "studyhaeyo:page-properties-collapsed"
+const COLLAPSE_EVENT = "studyhaeyo:page-properties-collapsed"
+// Fallback when localStorage throws (private mode, blocked site data).
+let memoryCollapsed: boolean | null = null
+
+function subscribeCollapsed(onChange: () => void) {
+  window.addEventListener(COLLAPSE_EVENT, onChange)
+  window.addEventListener("storage", onChange)
+  return () => {
+    window.removeEventListener(COLLAPSE_EVENT, onChange)
+    window.removeEventListener("storage", onChange)
+  }
+}
+
+function readCollapsed() {
+  try {
+    return window.localStorage.getItem(COLLAPSE_KEY) === "1"
+  } catch {
+    return false
+  }
+}
+
+function setCollapsed(next: boolean) {
+  try {
+    window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0")
+  } catch {
+    // Storage blocked: the toggle still works until the next reload.
+    memoryCollapsed = next
+  }
+  window.dispatchEvent(new Event(COLLAPSE_EVENT))
+}
+
+
+function getCollapsed() {
+  return memoryCollapsed ?? readCollapsed()
+}
 
 const statusStyles: Record<PageStatus, string> = {
   "시작 전": "bg-muted text-muted-foreground",
@@ -50,6 +91,9 @@ export function PageProperties({
   sessionTime,
 }: PagePropertiesProps) {
   const [draft, setDraft] = useState("")
+  const collapsedSaved = useSyncExternalStore(subscribeCollapsed, getCollapsed, () => false)
+  // The narrow side panel has its own layout and always shows every row.
+  const collapsed = variant === "inline" && collapsedSaved
   const Row = variant === "panel" ? PanelRow : InlineRow
   const empty = <span className="text-muted-foreground/70">비어 있음</span>
 
@@ -59,8 +103,46 @@ export function PageProperties({
     setDraft("")
   }
 
+  if (collapsed) {
+    return (
+      <section aria-label="페이지 속성" className="flex flex-col">
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          aria-expanded={false}
+          className="flex min-h-8 items-center gap-2 rounded-md px-2 py-1 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/60"
+        >
+          <ChevronRight className="size-4 shrink-0" aria-hidden="true" />
+          <span className="shrink-0">속성</span>
+          <span className="min-w-0 truncate text-xs text-muted-foreground/80">
+            {[
+              subjectName ?? NO_SUBJECT,
+              stats.status,
+              stats.understanding !== null ? `이해도 ${stats.understanding}/5` : null,
+              stats.nextReviewAt ? `다음 복습 ${formatDate(stats.nextReviewAt)}` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
+        </button>
+      </section>
+    )
+  }
+
   return (
     <section aria-label="페이지 속성" className="flex flex-col gap-0.5">
+      {variant === "inline" && (
+        <button
+          type="button"
+          onClick={() => setCollapsed(true)}
+          aria-expanded={true}
+          className="flex min-h-8 items-center gap-2 rounded-md px-2 py-1 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/60"
+        >
+          <ChevronDown className="size-4 shrink-0" aria-hidden="true" />
+          속성
+          <span className="text-xs text-muted-foreground/70">접기</span>
+        </button>
+      )}
       <dl className="flex flex-col">
         <Row icon={BookOpen} label="과목">
           {subjectName ?? (
