@@ -49,7 +49,7 @@ export function SessionTimerCard() {
   const canPickSubject = useSubjectRecordsReady()
 
   return (
-    <section aria-label="학습 타이머" className="mb-6 overflow-hidden rounded-xl border border-border bg-card">
+    <section aria-label="학습 타이머" className="overflow-hidden rounded-xl border border-border bg-card">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4">
         <div className="flex min-w-0 items-center gap-3">
           <span

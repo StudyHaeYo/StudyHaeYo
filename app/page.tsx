@@ -10,33 +10,33 @@ import { StudyHeatmap } from "@/components/learning-os/study-heatmap"
 import { useTodayLabel } from "@/hooks/use-today"
 import { DataStatusNotice } from "@/components/data-status-notice"
 
+// Home: the timer and what to do today on the left, how the weeks are going on the right. One page width (no far-off side panel),
+// so wide screens don't end up with empty margins between the two. Under lg the right column stacks below.
 export default function DashboardPage() {
   const todayLabel = useTodayLabel()
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <Sidebar />
 
-      {/* Main column + right panel (the panel moves below the main column under xl) */}
-      <div className="flex min-w-0 flex-1 flex-col xl:flex-row">
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10">
-          <div className="mx-auto max-w-2xl">
-            <TopBar date={todayLabel} />
-            <DataStatusNotice />
-            <TodayAgenda />
-            <SessionTimerCard />
+      <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+        <div className="mx-auto max-w-6xl">
+          <TopBar date={todayLabel} />
+          <DataStatusNotice />
 
-            <TodayRecords />
-          </div>
-        </main>
+          <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+            <div className="flex min-w-0 flex-col gap-8">
+              <SessionTimerCard />
+              <TodayAgenda />
+              <TodayRecords />
+            </div>
 
-        {/* Right panel */}
-        <aside className="shrink-0 border-t border-border px-4 py-6 xl:w-72 xl:border-l xl:border-t-0 xl:px-6">
-          <div className="mx-auto grid max-w-2xl gap-8 sm:grid-cols-2 xl:flex xl:max-w-none xl:flex-col xl:gap-0 xl:divide-y xl:divide-border xl:[&>*]:py-6 xl:[&>*:first-child]:pt-0">
-            <StudyHeatmap />
-            <WeeklyStats />
+            <div className="flex min-w-0 flex-col gap-8">
+              <StudyHeatmap />
+              <WeeklyStats />
+            </div>
           </div>
-        </aside>
-      </div>
+        </div>
+      </main>
     </div>
   )
 }

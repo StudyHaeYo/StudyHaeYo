@@ -10,6 +10,7 @@ import { usePlans } from "@/lib/plans"
 import { useWorkspace } from "@/lib/workspace"
 import { UnresolvedBadge } from "@/components/study-page/unresolved-badge"
 import { ChecklistBody, useChecklistCount } from "@/components/checklist-widget"
+import { useTodosStatus } from "@/lib/todos"
 
 const REVIEW_LIMIT = 3
 
@@ -21,9 +22,11 @@ export function TodayAgenda() {
   const reviews = today ? reviewCandidates(workspace, today) : null
   const running = today ? activePlans(workspace, plans, today) : null
   const checklistCount = useChecklistCount()
+  // Before the todos table exists the checklist can't save anything, so it stays out of sight.
+  const checklistAvailable = useTodosStatus() !== "unavailable"
 
   return (
-    <section aria-labelledby="today-agenda-title" className="mb-10">
+    <section aria-labelledby="today-agenda-title">
       <h2 id="today-agenda-title" className="border-b border-border pb-2 text-base font-semibold text-foreground">
         오늘 할 일
       </h2>
@@ -77,9 +80,11 @@ export function TodayAgenda() {
           )}
         </AgendaSection>
 
-        <AgendaSection icon={ListTodo} title="체크리스트" aside={checklistCount}>
-          <ChecklistBody />
-        </AgendaSection>
+        {checklistAvailable && (
+          <AgendaSection icon={ListTodo} title="체크리스트" aside={checklistCount}>
+            <ChecklistBody />
+          </AgendaSection>
+        )}
       </div>
     </section>
   )
