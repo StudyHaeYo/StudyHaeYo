@@ -189,6 +189,14 @@ export function updatePage(id: string, update: (page: StudyPage) => StudyPage) {
   savePageChanges(prev, next)
 }
 
+// A retried attachment upload finished: point the block at its Storage file. False if the page or block is gone.
+export function setAttachmentPath(pageId: string, blockId: string, path: string) {
+  const page = store.get().pages.find((p) => p.id === pageId)
+  if (!page?.blocks.some((b) => b.id === blockId)) return false
+  updatePage(pageId, (p) => ({ ...p, blocks: p.blocks.map((b) => (b.id === blockId ? { ...b, path } : b)) }))
+  return true
+}
+
 function savePageChanges(prev: StudyPage, next: StudyPage) {
   const columns = changedPageColumns(prev, next)
   const debounced = Object.fromEntries(Object.entries(columns).filter(([k]) => DEBOUNCED_PAGE_COLUMNS.includes(k as never)))

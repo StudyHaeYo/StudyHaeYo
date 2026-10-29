@@ -31,24 +31,95 @@ function extensionOf(name: string) {
   return match ? match[0].toLowerCase() : ""
 }
 
-// The only place an attachment is stored. Uploads to Supabase Storage when signed in; if that isn't
-// possible (no session, bucket not set up yet) the file stays in this tab only and the user is told.
-// Call only from client event handlers (never during render) so SSR output stays stable.
-async function storeAttachmentFile(file: File): Promise<{ url: string; path?: string; failed?: true }> {
-  const url = URL.createObjectURL(file)
-  sessionBlobUrls.add(url)
-  const userId = currentUserId()
-  if (!userId) return { url }
-  const path = `${userId}/${crypto.randomUUID()}${extensionOf(file.name)}`
-  const { error } = await db()
-    .storage.from(BUCKET)
-    .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false })
-  if (error) return { url, failed: true }
-  localUrls.set(path, url)
-  return { url, path }
+type UploadFailure = "signed-out" | "no-bucket" | "denied" | "too-large" | "network" | "unknown"
+
+const FAILURE_HINTS: Record<UploadFailure, string> = {
+  "signed-out": "로그인 정보를 확인하지 못했어요. 다시 로그인한 뒤 올려 주세요.",
+  "no-bucket": "파일 저장소가 아직 설정되지 않았어요. 관리자에게 알려 주세요.",
+  denied: "파일을 올릴 권한이 없어요. 다시 로그인한 뒤 올려 주세요.",
+  "too-large": "저장소가 받을 수 있는 크기를 넘었어요.",
+  network: "인터넷 연결을 확인하고 다시 올려 주세요.",
+  unknown: "잠시 뒤 다시 올려 주세요.",
 }
 
-export async function createAttachmentBlocks(files: File[]): Promise<AttachmentBlock[]> {
+// Storage errors carry the API's own status in `statusCode` (the HTTP status can differ, e.g. a missing
+// bucket comes back as HTTP 400 with statusCode "404") and a service code such as "NoSuchBucket".
+function failureOf(error: unknown): UploadFailure {
+  const { name, statusCode, code, message } = (error ?? {}) as Record<string, unknown>
+  if (name === "StorageUnknownError") return "network"
+  if (code === "NoSuchBucket" || (statusCode === "404" && /bucket/i.test(String(message)))) return "no-bucket"
+  if (statusCode === "401" || statusCode === "403") return "denied"
+  if (statusCode === "413" || code === "EntityTooLarge") return "too-large"
+  return "unknown"
+}
+
+async function uploadToStorage(file: File): Promise<{ path: string } | { failure: UploadFailure }> {
+  const userId = currentUserId()
+  if (!userId) return { failure: "signed-out" }
+  const path = `${userId}/${crypto.randomUUID()}${extensionOf(file.name)}`
+  try {
+    const { error } = await db()
+      .storage.from(BUCKET)
+      .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false })
+    return error ? { failure: failureOf(error) } : { path }
+  } catch (error) {
+    return { failure: failureOf(error) }
+  }
+}
+
+// The only place an attachment is stored. Uploads to Supabase Storage; if that fails the file stays in
+// this tab only (blob: URL, no `path`) and the caller tells the user why and offers a retry.
+// Call only from client event handlers (never during render) so SSR output stays stable.
+async function storeAttachmentFile(file: File): Promise<{ url: string; path?: string; failure?: UploadFailure }> {
+  const url = URL.createObjectURL(file)
+  sessionBlobUrls.add(url)
+  const result = await uploadToStorage(file)
+  if ("failure" in result) return { url, failure: result.failure }
+  localUrls.set(result.path, url)
+  return { url, path: result.path }
+}
+
+// A block that was added while its upload failed. `onStored` gives it its Storage path after a retry
+// and returns false if the block is gone by then, in which case the just-uploaded file is removed again.
+type PendingUpload = { file: File; block: AttachmentBlock }
+export type AttachmentStored = (blockId: string, path: string) => boolean
+
+function reportFailedUploads(pending: PendingUpload[], failures: UploadFailure[], onStored: AttachmentStored) {
+  // Show the most specific reason: one that applies to every file, else the first one.
+  const reason = failures.every((f) => f === failures[0]) ? failures[0] : "unknown"
+  toast.error(pending.length === 1 ? "파일을 저장하지 못했어요" : `파일 ${pending.length}개를 저장하지 못했어요`, {
+    description: `${FAILURE_HINTS[reason]} 지금 화면에서는 보이지만 새로고침하면 사라져요.`,
+    duration: Infinity,
+    action: { label: "다시 올리기", onClick: () => void retryUploads(pending, onStored) },
+  })
+}
+
+async function retryUploads(pending: PendingUpload[], onStored: AttachmentStored) {
+  const loading = toast.loading(
+    pending.length === 1 ? `"${pending[0].file.name}" 다시 올리는 중…` : `파일 ${pending.length}개 다시 올리는 중…`,
+  )
+  const results = await Promise.all(pending.map(({ file }) => uploadToStorage(file)))
+  toast.dismiss(loading)
+
+  const stillFailed: PendingUpload[] = []
+  const failures: UploadFailure[] = []
+  let saved = 0
+  results.forEach((result, i) => {
+    const item = pending[i]
+    if ("failure" in result) {
+      stillFailed.push(item)
+      failures.push(result.failure)
+      return
+    }
+    localUrls.set(result.path, item.block.url)
+    if (onStored(item.block.id, result.path)) saved += 1
+    else void db().storage.from(BUCKET).remove([result.path])
+  })
+  if (saved > 0) toast.success(saved === 1 ? "파일을 저장했어요" : `파일 ${saved}개를 저장했어요`)
+  if (stillFailed.length > 0) reportFailedUploads(stillFailed, failures, onStored)
+}
+
+export async function createAttachmentBlocks(files: File[], onStored: AttachmentStored): Promise<AttachmentBlock[]> {
   const tooLarge = files.filter((f) => f.size > MAX_ATTACHMENT_BYTES)
   if (tooLarge.length > 0) {
     toast.error(
@@ -68,7 +139,8 @@ export async function createAttachmentBlocks(files: File[]): Promise<AttachmentB
   if (loading !== null) toast.dismiss(loading)
 
   const blocks: AttachmentBlock[] = []
-  let failed = 0
+  const pending: PendingUpload[] = []
+  const failures: UploadFailure[] = []
   stored.forEach((result, i) => {
     const file = accepted[i]
     const base = {
@@ -78,15 +150,15 @@ export async function createAttachmentBlocks(files: File[]): Promise<AttachmentB
       mime: file.type || "application/octet-stream",
       size: file.size,
     }
+    const block: AttachmentBlock = result.path ? { ...base, url: result.url, path: result.path } : { ...base, url: result.url }
+    blocks.push(block)
     // A failed upload stays for this tab rather than losing what the user just dropped in.
-    if (result.failed) failed += 1
-    blocks.push(result.path ? { ...base, url: result.url, path: result.path } : { ...base, url: result.url })
+    if (result.failure) {
+      pending.push({ file, block })
+      failures.push(result.failure)
+    }
   })
-  if (failed > 0) {
-    toast.error(failed === 1 ? "파일을 저장하지 못했어요" : `파일 ${failed}개를 저장하지 못했어요`, {
-      description: "지금 화면에서는 보이지만 새로고침하면 사라져요. 잠시 뒤 다시 올려 주세요.",
-    })
-  }
+  if (pending.length > 0) reportFailedUploads(pending, failures, onStored)
   return blocks
 }
 
