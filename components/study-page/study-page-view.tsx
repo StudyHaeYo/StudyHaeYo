@@ -16,7 +16,7 @@ import { useDataStatus } from "@/lib/db/sync"
 import { DataStatusView } from "@/components/data-status-notice"
 import { StudyNoteReview, type ReviewResult } from "@/components/study-page/study-note-review"
 import { isStudyOn } from "@/lib/templates"
-import { nearestSubject, nodePath, setPageStudyEnabled, updatePage, useWorkspace } from "@/lib/workspace"
+import { nearestSubject, nodePath, setAttachmentPath, setPageStudyEnabled, updatePage, useWorkspace } from "@/lib/workspace"
 import { PagesContext } from "@/components/study-page/pages-context"
 import { PageActionsMenu, menuItemClass } from "@/components/page-actions-menu"
 import { BlockEditor, type AttachmentHandle } from "@/components/study-page/block-editor"
@@ -124,6 +124,7 @@ export function StudyPageView({ pageId, mode, openAi = false }: { pageId: string
         onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
         allowAttachments
         attachRef={attachRef}
+        onAttachmentStored={(blockId, path) => setAttachmentPath(page.id, blockId, path)}
       />
     </div>
   )

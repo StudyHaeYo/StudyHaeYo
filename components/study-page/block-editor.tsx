@@ -53,7 +53,7 @@ import {
 } from "@/lib/study-pages"
 import { usePagesForLinks } from "@/components/study-page/pages-context"
 import { PageLinkCard, PageLinkPicker } from "@/components/study-page/page-link"
-import { createAttachmentBlocks } from "@/lib/attachments"
+import { createAttachmentBlocks, type AttachmentStored } from "@/lib/attachments"
 import { newDrawingBlock } from "@/lib/drawing"
 import { AttachmentBlockView } from "@/components/study-page/attachment-block"
 import { DrawingBlockView } from "@/components/study-page/drawing-block"
@@ -259,6 +259,9 @@ interface BlockEditorProps {
   sectionHints?: Record<string, string>
   allowAttachments?: boolean
   attachRef?: Ref<AttachmentHandle>
+  // A retried upload finished: give the block its Storage path. Returns false if the block is gone.
+  // Retries can finish after this editor is gone, so this reads the saved page rather than `blocks`.
+  onAttachmentStored?: AttachmentStored
 }
 
 export interface AttachmentHandle {
@@ -266,7 +269,14 @@ export interface AttachmentHandle {
   insertDrawing: () => void
 }
 
-export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments = false, attachRef }: BlockEditorProps) {
+export function BlockEditor({
+  blocks,
+  onChange,
+  sectionHints,
+  allowAttachments = false,
+  attachRef,
+  onAttachmentStored,
+}: BlockEditorProps) {
   const hintFor = (index: number) => {
     const block = blocks[index]
     const prev = blocks[index - 1]
@@ -428,7 +438,7 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
 
   const attachFiles = async (files: File[], afterId: string | null) => {
     if (files.length === 0) return
-    const created = await createAttachmentBlocks(files)
+    const created = await createAttachmentBlocks(files, (blockId, path) => onAttachmentStored?.(blockId, path) ?? false)
     if (created.length === 0) return
     const current = latest.current
     current.onChange(insertBlocks(current.blocks, created, afterId))
