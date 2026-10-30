@@ -108,14 +108,14 @@ export const pageStarters: PageStarter[] = [
     tagline: "범위를 체크하며 정리하고, 자주 틀리는 것 모아 두기",
     icon: ClipboardCheck,
     templateId: "study-note",
+    // 시험일 · 범위는 속성에 둔다(D-27). 본문은 시험 직전에 볼 것만.
     createBlocks: () => [
-      t("callout", "시험일 · 범위"),
-      t("h2", "범위 체크"),
-      { id: newBlockId(), type: "todo", text: "", checked: false },
-      t("h2", "핵심 개념"),
+      t("h2", "꼭 나오는 개념"),
       t("concept"),
       t("h2", "자주 틀리는 것"),
       t("confusion"),
+      t("h2", "시험 직전 체크"),
+      { id: newBlockId(), type: "todo", text: "", checked: false },
     ],
   },
 ]

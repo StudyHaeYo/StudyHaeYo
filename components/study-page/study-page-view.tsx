@@ -28,6 +28,7 @@ import {
   useWorkspace,
 } from "@/lib/workspace"
 import { StudySummary } from "@/components/study-page/study-summary"
+import { ExamScope } from "@/components/study-page/exam-scope"
 import { PageStarters } from "@/components/study-page/page-starters"
 import { isTextBlock, pageKind, problemBlocks, wrongProblems, type AttachmentBlock } from "@/lib/study-pages"
 import { PagesContext } from "@/components/study-page/pages-context"
@@ -213,6 +214,13 @@ export function StudyPageView({
         <StudyFeaturesMenu onDisable={() => setStudyEnabled(false)} />
       </div>
       <div className="flex flex-col gap-12">
+        {propsReady && kind === "exam" && (
+          <ExamScope
+            examDate={page.props?.examDate}
+            scope={(page.props?.scope ?? []).map((id) => pages.find((p) => p.id === id)).filter((p) => p !== undefined)}
+            today={today}
+          />
+        )}
         {summary}
         <StudyHistory
           pageId={page.id}
