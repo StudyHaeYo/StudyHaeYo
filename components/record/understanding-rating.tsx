@@ -1,6 +1,12 @@
 import { CalendarClock, Gauge } from "lucide-react"
 import { reviewDateLabel } from "@/lib/learning-os"
 
+// "2026-10-19" → local midnight of that day (new Date("2026-10-19") would be UTC).
+function localDate(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number)
+  return new Date(y, m - 1, d)
+}
+
 const levels = [1, 2, 3, 4, 5]
 const levelHints: Record<number, string> = {
   1: "거의 모르겠어요",
@@ -13,9 +19,11 @@ const levelHints: Record<number, string> = {
 interface UnderstandingRatingProps {
   value: number | null
   onChange: (value: number) => void
+  // The record's study date (YYYY-MM-DD). The next review is counted from it, not from today.
+  date?: string
 }
 
-export function UnderstandingRating({ value, onChange }: UnderstandingRatingProps) {
+export function UnderstandingRating({ value, onChange, date }: UnderstandingRatingProps) {
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -56,7 +64,7 @@ export function UnderstandingRating({ value, onChange }: UnderstandingRatingProp
           <span className="text-muted-foreground">{levelHints[value]}</span>
           <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 font-medium text-indigo-700 sm:ml-auto">
             <CalendarClock className="size-3" />
-            복습 예정 {reviewDateLabel(value)}
+            복습 예정 {reviewDateLabel(value, date ? localDate(date) : undefined)}
           </span>
         </div>
       )}

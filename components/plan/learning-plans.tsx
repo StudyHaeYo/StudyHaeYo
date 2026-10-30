@@ -8,6 +8,7 @@ import { addPlan, decodeTarget, encodeTarget, removePlan, usePlanGoalsReady, use
 import { groupPlans, type ActivePlan } from "@/lib/study-stats"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 import { PlanCard } from "@/components/plan/plan-card"
+import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
 
 export function LearningPlans() {
   const plans = usePlans()
@@ -70,12 +71,27 @@ function PlanGroup({ title, items }: { title: string; items: ActivePlan[] }) {
 }
 
 function PlanGrid({ items }: { items: ActivePlan[] }) {
+  // Removing a plan can't be undone, so it asks first (same dialog as pages and records).
+  const [removing, setRemoving] = useState<ActivePlan["plan"] | null>(null)
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {items.map((item) => (
-        <PlanCard key={item.plan.id} item={item} onRemove={() => removePlan(item.plan.id)} />
-      ))}
-    </ul>
+    <>
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item) => (
+          <PlanCard key={item.plan.id} item={item} onRemove={() => setRemoving(item.plan)} />
+        ))}
+      </ul>
+      <ConfirmDeleteModal
+        open={removing !== null}
+        title={removing?.title ?? ""}
+        targetLabel="계획"
+        note="계획만 지워지고, 그동안 남긴 학습 기록은 그대로 남아요."
+        onCancel={() => setRemoving(null)}
+        onConfirm={() => {
+          if (removing) removePlan(removing.id)
+          setRemoving(null)
+        }}
+      />
+    </>
   )
 }
 

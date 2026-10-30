@@ -88,7 +88,7 @@ export function AddRecordForm({ pageId, initial, initialMinutes, onSubmit, onCan
       </label>
       </div>
 
-      <UnderstandingRating value={understanding} onChange={setUnderstanding} />
+      <UnderstandingRating value={understanding} onChange={setUnderstanding} date={date} />
 
       <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
         무엇을 했나요
