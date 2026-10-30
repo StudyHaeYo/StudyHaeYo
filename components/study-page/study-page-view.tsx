@@ -16,7 +16,9 @@ import { useDataStatus } from "@/lib/db/sync"
 import { DataStatusView } from "@/components/data-status-notice"
 import { StudyNoteReview, type ReviewResult } from "@/components/study-page/study-note-review"
 import { isStudyOn } from "@/lib/templates"
-import { nearestSubject, nodePath, setPageStudyEnabled, updatePage, useWorkspace } from "@/lib/workspace"
+import { applyStarter, nearestSubject, nodePath, setPageStudyEnabled, updatePage, useWorkspace } from "@/lib/workspace"
+import { PageStarters } from "@/components/study-page/page-starters"
+import { isTextBlock } from "@/lib/study-pages"
 import { PagesContext } from "@/components/study-page/pages-context"
 import { PageActionsMenu, menuItemClass } from "@/components/page-actions-menu"
 import { BlockEditor, type AttachmentHandle } from "@/components/study-page/block-editor"
@@ -50,16 +52,23 @@ export function StudyPageView({
   const dataStatus = useDataStatus()
   const [aiOpen, setAiOpen] = useState(openAi)
 
+  // Caret into the first empty body block (after a template fills the page, or Enter in the title).
+  const focusBody = () =>
+    requestAnimationFrame(() => {
+      Array.from(document.querySelectorAll<HTMLTextAreaElement>("main article textarea"))
+        .find((t) => t.value === "")
+        ?.focus()
+    })
+
+  // Just made (?new=1). An untitled page keeps the caret in the title (autoFocus); a titled one starts in the body.
   useEffect(() => {
     if (!startTyping) return
     const frame = requestAnimationFrame(() => {
-      const empty = Array.from(document.querySelectorAll<HTMLTextAreaElement>("main article textarea")).find(
-        (t) => t.value === "",
-      )
-      empty?.focus()
+      if (titleRef.current?.value) focusBody()
       router.replace(`/record/${pageId}`, { scroll: false })
     })
     return () => cancelAnimationFrame(frame)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startTyping, pageId, router])
 
   if (!page) return dataStatus.phase === "ready" ? <MissingPage /> : <DataStatusView status={dataStatus} />
@@ -67,6 +76,8 @@ export function StudyPageView({
   // Study on:  [속성] → [복습 모드 (?mode=review)] → [본문] → [학습 기록] → [AI 학습 도구]
   // Study off: [본문] → [학습 기능 추가]
   const studyOn = isStudyOn(page)
+  // Nothing written yet: offer templates. Typing anything (or adding any block) hides the row.
+  const bodyEmpty = page.blocks.length === 0 || (page.blocks.length === 1 && isTextBlock(page.blocks[0]) && page.blocks[0].type === "p" && page.blocks[0].text === "")
   const pagePrefill = prefill?.pageId === page.id ? prefill : null
   const setStudyEnabled = (studyEnabled: boolean) => setPageStudyEnabled(page.id, studyEnabled)
   const path = nodePath({ groups, pages }, page.parentId)
@@ -294,9 +305,28 @@ export function StudyPageView({
           onChange={(e) => updatePage(page.id, (p) => ({ ...p, title: e.target.value }))}
           placeholder="제목 없음"
           autoFocus={!page.title}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+              e.preventDefault()
+              focusBody()
+            }
+          }}
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
+        {bodyEmpty && mode !== "review" && (
+          <PageStarters
+            onPick={(starterId) => {
+              applyStarter(page.id, starterId)
+              focusBody()
+            }}
+            onAi={() => {
+              applyStarter(page.id, "ai")
+              setAiOpen(true)
+              if (!page.title) titleRef.current?.focus()
+            }}
+          />
+        )}
         {studyOn && <div className="mt-4 print:hidden">{properties}</div>}
         <hr className="my-6 border-border print:hidden" />
         {body}
