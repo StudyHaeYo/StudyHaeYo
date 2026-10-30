@@ -123,11 +123,28 @@ export function StudyPageView({
   const reviewing = mode === "review" && studyOn
   // Review cards come from 핵심 개념 blocks. Without any, the review panel only asks for 이해도 and the
   // note stays readable below it.
-  const concepts = conceptBlocks(page.blocks)
+  // 오답 노트 reviews the problems still wrong instead (D-27).
+  const problemReview = propsReady && pageKind(page) === "wrong-answers"
+  const concepts = problemReview ? wrongProblems(page.blocks) : conceptBlocks(page.blocks)
 
   const handleReviewComplete = (result: ReviewResult) => {
     if (result.confusedTexts.length > 0)
       updatePage(page.id, (p) => ({ ...p, blocks: addConfusions(p.blocks, result.confusedTexts) }))
+    if (result.rightIds.length + result.wrongIds.length > 0) {
+      const triedOn = today ?? todayISO()
+      updatePage(page.id, (p) => ({
+        ...p,
+        blocks: p.blocks.map((b) =>
+          !isTextBlock(b) || b.type !== "toggle"
+            ? b
+            : result.rightIds.includes(b.id)
+              ? { ...b, result: "right" as const, triedOn }
+              : result.wrongIds.includes(b.id)
+                ? { ...b, result: "wrong" as const, triedOn }
+                : b,
+        ),
+      }))
+    }
     const now = Date.now()
     handleAddRecord({
       id: newRecordId(),
@@ -136,9 +153,12 @@ export function StudyPageView({
       createdAt: now,
       durationMinutes: result.durationMinutes,
       understanding: result.understanding,
-      studyContent:
-        concepts.length > 0 ? `복습 모드: 핵심 개념 ${result.remembered.length + result.confused.length}개 확인` : "복습 모드: 노트 다시 읽기",
-      difficulties: result.confused.length > 0 ? `헷갈린 개념: ${result.confused.join(", ")}` : "",
+      studyContent: problemReview
+        ? `오답 다시 풀기: ${result.remembered.length + result.confused.length}문제 중 ${result.remembered.length}개 맞힘`
+        : concepts.length > 0 ? `복습 모드: 핵심 개념 ${result.remembered.length + result.confused.length}개 확인` : "복습 모드: 노트 다시 읽기",
+      difficulties: problemReview
+        ? ""
+        : result.confused.length > 0 ? `헷갈린 개념: ${result.confused.join(", ")}` : "",
       nextSteps: "",
       tags: [],
     })
@@ -183,7 +203,12 @@ export function StudyPageView({
   )
 
   const review = reviewing && (
-    <StudyNoteReview concepts={concepts} exitHref={pageHref} onComplete={handleReviewComplete} />
+    <StudyNoteReview
+      concepts={concepts}
+      exitHref={pageHref}
+      onComplete={handleReviewComplete}
+      mode={problemReview ? "problems" : "concepts"}
+    />
   )
   const editor = (
     <div className="min-h-64">
@@ -192,6 +217,7 @@ export function StudyPageView({
         onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
         allowAttachments
         attachRef={attachRef}
+        problemMode={problemReview ? { today } : undefined}
       />
     </div>
   )
