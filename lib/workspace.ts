@@ -233,6 +233,17 @@ export function renamePage(id: string, title: string) {
   updatePage(id, (p) => ({ ...p, title }))
 }
 
+// Fills an empty page from a template (the starter row on a new page). Study templates turn study features on.
+export function applyStarter(id: string, starterId: string) {
+  const starter = getStarter(starterId)
+  updatePage(id, (p) => ({
+    ...p,
+    templateId: starter.templateId,
+    blocks: starter.createBlocks(),
+    studyEnabled: starter.templateId === "study-note" ? true : p.studyEnabled,
+  }))
+}
+
 export function setPageStudyEnabled(id: string, studyEnabled: boolean) {
   updatePage(id, (p) => ({ ...p, studyEnabled }))
 }
