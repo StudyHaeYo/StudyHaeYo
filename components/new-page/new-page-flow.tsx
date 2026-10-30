@@ -45,7 +45,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
       return
     }
     const id = createPage({ title, starterId, parentId: location === ROOT ? null : location })
-    router.push(getStarter(starterId).openAi ? `/record/${id}?ai=1` : `/record/${id}`)
+    router.push(getStarter(starterId).openAi ? `/record/${id}?ai=1` : `/record/${id}?new=1`)
   }
 
   const fieldClass =
