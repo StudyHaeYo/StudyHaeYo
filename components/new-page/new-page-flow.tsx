@@ -18,8 +18,12 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
 
   const [starterId, setStarterId] = useState(pageStarters[0].id)
   const [title, setTitle] = useState("")
-  const [location, setLocation] = useState(defaultLocation)
-  const [pickingLocation, setPickingLocation] = useState(!hasContext)
+  // Derived, not initial state: on a direct load (/new?parent=…) the workspace arrives after the first
+  // render, and a frozen useState default would put the page at the top level instead of in that subject.
+  const [pickedLocation, setLocation] = useState<string | null>(null)
+  const location = pickedLocation ?? defaultLocation
+  const [choosingLocation, setPickingLocation] = useState(false)
+  const pickingLocation = choosingLocation || !hasContext
   const [showError, setShowError] = useState(false)
   // "+ 새 과목": name typed here becomes a subject at the top of 내 페이지, then the page goes in it.
   const [newSubject, setNewSubject] = useState<string | null>(null)
@@ -41,7 +45,7 @@ export function NewPageFlow({ contextParentId }: { contextParentId?: string }) {
       return
     }
     const id = createPage({ title, starterId, parentId: location === ROOT ? null : location })
-    router.push(getStarter(starterId).openAi ? `/record/${id}?ai=1` : `/record/${id}`)
+    router.push(getStarter(starterId).openAi ? `/record/${id}?ai=1` : `/record/${id}?new=1`)
   }
 
   const fieldClass =

@@ -218,7 +218,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
             </Field>
           </div>
 
-          <UnderstandingRating value={understanding} onChange={setUnderstanding} />
+          <UnderstandingRating value={understanding} onChange={setUnderstanding} date={date} />
 
           <Field label="무엇을 했나요" htmlFor="qr-content">
             <textarea

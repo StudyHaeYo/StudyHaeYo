@@ -55,7 +55,8 @@ const store = createStore<LearningPlan[]>([])
 export const usePlans = store.useStore
 
 // False while learning_plans has no goal_minutes column (migration not applied): the form hides the field.
-const goalsReadyStore = createStore<boolean>(true)
+// false until the first load confirms the column exists, so hidden UI never flashes in and out.
+const goalsReadyStore = createStore<boolean>(false)
 export const usePlanGoalsReady = goalsReadyStore.useStore
 export function setPlanGoalsReady(ready: boolean) {
   goalsReadyStore.set(() => ready)

@@ -119,7 +119,7 @@ export function SignupForm() {
         </p>
       )}
       <button type="submit" disabled={pending} className={`mt-2 ${submitButtonClass}`}>
-        {pending ? "가입 중..." : "회원가입"}
+        {pending ? "가입 중…" : "회원가입"}
       </button>
     </form>
   )

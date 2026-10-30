@@ -72,7 +72,8 @@ export const useWorkspace = store.useStore
 
 // False while study_records has no subject_id column (supabase/migrations/20261024_subject_records.sql not
 // applied): then a record must go on a page. Server snapshot is true so the first render matches.
-const subjectRecordsReadyStore = createStore<boolean>(true)
+// false until the first load confirms the columns exist, so hidden UI never flashes in and out.
+const subjectRecordsReadyStore = createStore<boolean>(false)
 export const useSubjectRecordsReady = subjectRecordsReadyStore.useStore
 export function setSubjectRecordsReady(ready: boolean) {
   subjectRecordsReadyStore.set(() => ready)

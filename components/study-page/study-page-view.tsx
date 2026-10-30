@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useRef, useState } from "react"
+import { Fragment, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ChevronRight, FileQuestion, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff, Printer, Sparkles } from "lucide-react"
@@ -28,7 +28,18 @@ import { AiPanel } from "@/components/record/ai-panel"
 
 // The single page UI: seeded pages and user-created pages both render here.
 // Every page has the same block body (D-23); study features (속성 · 학습 기록 · AI 도구) are on or off per page.
-export function StudyPageView({ pageId, mode, openAi = false }: { pageId: string; mode?: "review"; openAi?: boolean }) {
+export function StudyPageView({
+  pageId,
+  mode,
+  openAi = false,
+  startTyping = false,
+}: {
+  pageId: string
+  mode?: "review"
+  openAi?: boolean
+  // Just made in the new-page flow (?new=1): put the caret in the first empty block so typing starts right away.
+  startTyping?: boolean
+}) {
   const { groups, pages } = useWorkspace()
   const today = useTodayISO()
   const router = useRouter()
@@ -38,6 +49,18 @@ export function StudyPageView({ pageId, mode, openAi = false }: { pageId: string
   const page = pages.find((p) => p.id === pageId)
   const dataStatus = useDataStatus()
   const [aiOpen, setAiOpen] = useState(openAi)
+
+  useEffect(() => {
+    if (!startTyping) return
+    const frame = requestAnimationFrame(() => {
+      const empty = Array.from(document.querySelectorAll<HTMLTextAreaElement>("main article textarea")).find(
+        (t) => t.value === "",
+      )
+      empty?.focus()
+      router.replace(`/record/${pageId}`, { scroll: false })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [startTyping, pageId, router])
 
   if (!page) return dataStatus.phase === "ready" ? <MissingPage /> : <DataStatusView status={dataStatus} />
 
