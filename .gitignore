@@ -6,6 +6,8 @@ node_modules/
 .next/
 out/
 next-env.d.ts
+# pdf.js assets copied by scripts/copy-pdf-assets.mjs
+/public/pdfjs/
 *.tsbuildinfo
 
 # environment variables (API 키, Supabase 키는 절대 올리지 않는다)

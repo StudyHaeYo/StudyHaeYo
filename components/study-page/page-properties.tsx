@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState, useSyncExternalStore, type ReactNode } from "react"
 import { BookMarked, CalendarDays, ChevronDown, ChevronRight, FileText, Hash, ListChecks, X, type LucideIcon } from "lucide-react"
 import { daysBetween, formatDate, type AttachmentBlock, type PageKind, type PageProps } from "@/lib/study-pages"
@@ -74,6 +75,8 @@ interface PagePropertiesProps {
   scopeOptions: { id: string; title: string }[]
   // 오답 노트: problems in the body and how many are still wrong.
   problems: { total: number; wrong: number }
+  // 오답 노트: where [다시 풀기] goes (review mode of this page).
+  retryHref?: string
   today: string | null
 }
 
@@ -87,6 +90,7 @@ export function PageProperties({
   pdfs,
   scopeOptions,
   problems,
+  retryHref,
   today,
 }: PagePropertiesProps) {
   const [draft, setDraft] = useState("")
@@ -184,8 +188,18 @@ export function PageProperties({
             </Row>
             <Row icon={ListChecks} label="틀린 문제">
               {problems.total > 0 ? (
-                <span className="tabular-nums">
-                  {problems.wrong} / {problems.total}
+                <span className="inline-flex items-center gap-2">
+                  <span className="tabular-nums">
+                    {problems.wrong} / {problems.total}
+                  </span>
+                  {problems.wrong > 0 && retryHref && (
+                    <Link
+                      href={retryHref}
+                      className="rounded px-1.5 py-0.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-50"
+                    >
+                      다시 풀기
+                    </Link>
+                  )}
                 </span>
               ) : (
                 <span className="text-xs text-muted-foreground/80">토글 하나가 문제 하나예요</span>

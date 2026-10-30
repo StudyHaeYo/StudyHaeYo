@@ -197,6 +197,7 @@ export function StudyPageView({
       pdfs={pdfs}
       scopeOptions={scopeOptions}
       problems={problems}
+      retryHref={studyOn ? `${pageHref}?mode=review` : undefined}
       today={today}
     />
   )
