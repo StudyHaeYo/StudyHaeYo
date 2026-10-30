@@ -9,6 +9,7 @@ import {
   type StudyRecordFields,
   type SubjectStudyRecord,
   type StudyPage,
+  type PageProps,
 } from "@/lib/study-pages"
 import { templateRegistry, type TemplateId } from "@/lib/templates"
 import type { StudyType } from "@/lib/types"
@@ -34,6 +35,8 @@ export interface NodeRow {
   status: string | null
   understanding: number | null
   study_enabled: boolean | null
+  // Added by supabase/migrations/20261031_page_props.sql; missing before it runs.
+  props?: unknown
   created_at: string
 }
 
@@ -67,8 +70,9 @@ export interface PlanRow {
   created_at: string
 }
 
-export const NODE_COLUMNS =
+export const LEGACY_NODE_COLUMNS =
   "id, user_id, parent_id, kind, title, position, template_id, created_on, study_type, blocks, note, tags, status, understanding, study_enabled, created_at"
+export const NODE_COLUMNS = `${LEGACY_NODE_COLUMNS}, props`
 const RECORD_BASE_COLUMNS =
   "id, user_id, page_id, study_date, created_at, duration_minutes, understanding, study_content, difficulties, next_steps, tags"
 export const RECORD_COLUMNS = `${RECORD_BASE_COLUMNS}, subject_id`
@@ -137,6 +141,7 @@ function toPage(row: NodeRow, records: PageStudyRecord[]): StudyPage {
     status: oneOf(pageStatuses, row.status),
     understanding: understandingOf(row.understanding),
     studyEnabled: row.study_enabled ?? undefined,
+    ...(isPlainObject(row.props) && Object.keys(row.props).length > 0 ? { props: row.props as PageProps } : {}),
   })
 }
 
@@ -182,11 +187,18 @@ export function toPlan(row: PlanRow): LearningPlan {
 
 type PageColumns = Pick<
   NodeRow,
-  "title" | "study_type" | "blocks" | "note" | "tags" | "status" | "understanding" | "study_enabled"
+  "title" | "template_id" | "study_type" | "blocks" | "note" | "tags" | "status" | "understanding" | "study_enabled" | "props"
 >
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
 
 function pageColumns(page: StudyPage): PageColumns {
   return {
+    template_id: page.templateId,
+    // Only sent once the page has props, so pages still save before the props column exists (D-27).
+    ...(page.props ? { props: page.props } : {}),
     title: page.title,
     study_type: page.studyType ?? null,
     blocks: page.blocks,
@@ -205,7 +217,6 @@ export function pageInsertRow(page: StudyPage, userId: string, position: number)
     parent_id: page.parentId,
     kind: PAGE_KIND,
     position,
-    template_id: page.templateId,
     created_on: ISO_DATE.test(page.createdAt) ? page.createdAt : toISODate(new Date()),
     ...pageColumns(page),
   }

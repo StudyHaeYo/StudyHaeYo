@@ -1,5 +1,5 @@
 import { ClipboardCheck, FilePlus, FileText, GraduationCap, NotebookPen, Presentation, Sparkles, XCircle, type LucideIcon } from "lucide-react"
-import { newBlockId, type Block, type BlockType } from "@/lib/study-pages"
+import { newBlockId, type Block, type BlockType, type PageKind } from "@/lib/study-pages"
 
 // Every page is one block body (D-23). A template only decides what a new page starts with:
 // its first blocks and whether study features (속성 · 학습 기록 · AI 도구) start on.
@@ -30,6 +30,8 @@ export interface PageStarter {
   createBlocks: () => Block[]
   // Opens the AI panel on the new page (/record/<id>?ai=1).
   openAi?: boolean
+  // What the page is for (D-27), saved in props.kind once the props column exists.
+  kind?: PageKind
 }
 
 export const pageStarters: PageStarter[] = [
@@ -52,6 +54,7 @@ export const pageStarters: PageStarter[] = [
   },
   {
     id: "study-note",
+    kind: "note",
     name: "학습 노트",
     tagline: "배운 내용 · 핵심 개념 · 헷갈린 점. 핵심 개념은 복습 카드가 돼요",
     icon: NotebookPen,
@@ -67,6 +70,7 @@ export const pageStarters: PageStarter[] = [
   },
   {
     id: "lecture",
+    kind: "lecture",
     name: "강의 노트",
     tagline: "수업 들으면서 필기하고, 끝나고 핵심만 추리기",
     icon: Presentation,
@@ -83,6 +87,7 @@ export const pageStarters: PageStarter[] = [
   },
   {
     id: "wrong-answers",
+    kind: "wrong-answers",
     name: "오답 노트",
     tagline: "틀린 문제와 풀이를 접어 두고 다시 풀어보기",
     icon: XCircle,
@@ -98,6 +103,7 @@ export const pageStarters: PageStarter[] = [
   },
   {
     id: "exam",
+    kind: "exam",
     name: "시험 정리",
     tagline: "범위를 체크하며 정리하고, 자주 틀리는 것 모아 두기",
     icon: ClipboardCheck,

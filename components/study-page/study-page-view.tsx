@@ -16,9 +16,20 @@ import { useDataStatus } from "@/lib/db/sync"
 import { DataStatusView } from "@/components/data-status-notice"
 import { StudyNoteReview, type ReviewResult } from "@/components/study-page/study-note-review"
 import { isStudyOn } from "@/lib/templates"
-import { applyStarter, nearestSubject, nodePath, setPageStudyEnabled, updatePage, useWorkspace } from "@/lib/workspace"
+import {
+  applyStarter,
+  descendantPages,
+  nearestSubject,
+  nodePath,
+  setPageStudyEnabled,
+  updatePage,
+  updatePageProps,
+  usePagePropsReady,
+  useWorkspace,
+} from "@/lib/workspace"
+import { StudySummary } from "@/components/study-page/study-summary"
 import { PageStarters } from "@/components/study-page/page-starters"
-import { isTextBlock } from "@/lib/study-pages"
+import { isTextBlock, pageKind, problemBlocks, wrongProblems, type AttachmentBlock } from "@/lib/study-pages"
 import { PagesContext } from "@/components/study-page/pages-context"
 import { PageActionsMenu, menuItemClass } from "@/components/page-actions-menu"
 import { BlockEditor, type AttachmentHandle } from "@/components/study-page/block-editor"
@@ -51,6 +62,7 @@ export function StudyPageView({
   const page = pages.find((p) => p.id === pageId)
   const dataStatus = useDataStatus()
   const [aiOpen, setAiOpen] = useState(openAi)
+  const propsReady = usePagePropsReady()
 
   // Caret into the first empty body block (after a template fills the page, or Enter in the title).
   const focusBody = () =>
@@ -132,13 +144,34 @@ export function StudyPageView({
     router.replace(pageHref)
   }
 
+  const kind = pageKind(page)
+  const pdfs = page.blocks.filter(
+    (b): b is AttachmentBlock => (b.type === "file" || b.type === "image") && "mime" in b && b.mime === "application/pdf",
+  )
+  // 시험 범위 후보: the subject's other study pages, or every study page when the page has no subject.
+  const scopeOptions = (subject ? descendantPages({ groups, pages }, subject.id) : pages)
+    .filter((p) => p.id !== page.id && isStudyOn(p))
+    .map((p) => ({ id: p.id, title: p.title }))
+  const problems = { total: problemBlocks(page.blocks).length, wrong: wrongProblems(page.blocks).length }
+
   const properties = (
     <PageProperties
-      subjectName={subject?.name ?? null}
-      stats={stats}
-      recordCount={page.studyRecords.length}
+      kind={kind}
+      props={page.props ?? {}}
+      propsReady={propsReady}
       tags={page.tags}
       onChangeTags={(tags) => updatePage(page.id, (p) => ({ ...p, tags }))}
+      onChangeProps={(patch) => updatePageProps(page.id, patch)}
+      pdfs={pdfs}
+      scopeOptions={scopeOptions}
+      problems={problems}
+      today={today}
+    />
+  )
+  const summary = (
+    <StudySummary
+      stats={stats}
+      recordCount={page.studyRecords.length}
       onChangeStatus={(status) =>
         updatePage(page.id, ({ status: _prev, ...rest }) => (status ? { ...rest, status } : rest))
       }
@@ -180,6 +213,7 @@ export function StudyPageView({
         <StudyFeaturesMenu onDisable={() => setStudyEnabled(false)} />
       </div>
       <div className="flex flex-col gap-12">
+        {summary}
         <StudyHistory
           pageId={page.id}
           pageTitle={page.title}

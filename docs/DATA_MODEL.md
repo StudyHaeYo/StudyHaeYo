@@ -37,6 +37,7 @@
 | status | `시작 전｜학습 중｜복습 필요｜완료` (선택) | **사용자가 직접 고른 값.** 없으면 파생 |
 | understanding | number 1~5 (선택) | **사용자가 직접 고른 값.** 없으면 최신 기록에서 파생 |
 | studyEnabled | boolean (선택) | 학습 기능이 "선택"인 템플릿에서 사용자가 켰는지 |
+| props | PageProps (선택) | 템플릿별 값(D-27). `kind`(note｜lecture｜wrong-answers｜exam), 강의 노트 `week` · `materialBlockId`, 오답 노트 `source`, 시험 정리 `examDate` · `scope`(페이지 id 목록). DB `workspace_nodes.props` jsonb. 모르는 키는 지우지 않고 그대로 저장한다 |
 
 ### StudyNoteContent (옛 학습 노트 본문, 읽기 전용)
 - `{learned: Block[], concepts: {id, text}[], confusions: {id, text, resolved}[]}`. D-23 이전 학습 노트의 본문이다
@@ -49,6 +50,7 @@
 - `ol`(번호 목록): 번호는 저장하지 않고 바로 위로 이어진 `ol` 블록 수로 매긴다
 - `todo`(체크 목록): `checked`. 홈의 "오늘의 체크리스트"(`todos` 테이블)와는 따로다
 - `toggle`(토글): `text`가 제목, `body`가 접히는 내용(여러 줄 글), `open`이 펼침 상태. 검색과 AI는 `body`도 읽는다(`textBlockWords`)
+  - 오답 노트에서는 토글 하나가 문제 하나다. `result`(right｜wrong)와 `triedOn`(마지막으로 푼 날)을 둔다. `result`가 없으면 틀린 문제로 본다
 - `quote`(인용), `callout`(💡 강조 박스)은 모양만 다르다
 - 다른 종류로 바꾸면 그 종류가 안 쓰는 칸은 지운다(`withType`). 토글을 본문으로 되돌리면 `body`는 바로 아래 본문 블록이 된다
 
