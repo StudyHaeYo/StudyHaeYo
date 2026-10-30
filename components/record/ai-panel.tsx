@@ -55,13 +55,15 @@ export interface AiPanelProps {
   onInsert: (blocks: TextBlock[]) => void
   // Adds 헷갈린 점 blocks (from a grading answer), skipping ones already open on the page.
   onAddConfusions: (texts: string[]) => void
+  // Ask this right away (e.g. 강의 노트's [AI로 핵심 개념 뽑기]), with the PDF block picked. A new `id` asks again.
+  request?: { id: number; prompt: string; pdfId?: string }
 }
 
 // AI 학습 도우미, as a panel on the right of any page (full screen on phones). One chat per open page:
 // it stays while the panel is closed and is gone when the page is left (nothing is saved).
 // Ask in your own words, or tap a suggestion. No material → general knowledge (the answer says so);
 // a problem-set PDF → send your answers and it grades them, ending with "점수: 4/5" → [기록으로 남기기].
-export function AiPanel({ page, open, onClose, onInsert, onAddConfusions }: AiPanelProps) {
+export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, request }: AiPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState("")
   const [pending, setPending] = useState(false)
@@ -96,9 +98,10 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions }: AiPa
   const togglePdf = (id: string) =>
     setPickedIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id].slice(-MAX_AI_PDFS)))
 
-  const send = async (text: string) => {
+  const send = async (text: string, pdfIds: string[] = pickedIds) => {
     const content = text.trim()
     if (!content || pending) return
+    const picked = pdfs.filter((p) => p.stored && pdfIds.includes(p.block.id)).map((p) => p.block)
     const next: ChatMessage[] = [...messages, { role: "user", content }]
     setMessages(next)
     setDraft("")
@@ -111,6 +114,16 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions }: AiPa
     else setError(result.message)
     requestAnimationFrame(() => listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" }))
   }
+
+  const handled = useRef<number | null>(null)
+  useEffect(() => {
+    if (!request || !open || handled.current === request.id) return
+    handled.current = request.id
+    const ids = request.pdfId ? [request.pdfId] : pickedIds
+    if (request.pdfId) setPickedIds(ids)
+    void send(request.prompt, ids)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per request id
+  }, [request, open])
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()

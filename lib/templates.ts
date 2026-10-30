@@ -76,7 +76,7 @@ export const pageStarters: PageStarter[] = [
     icon: Presentation,
     templateId: "study-note",
     createBlocks: () => [
-      t("callout", "강의: 몇 주차 · 범위"),
+      t("callout", "강의 PDF를 이 페이지에 끌어다 놓으면, 속성의 ‘강의 자료’로 골라 옆에 펴 두고 필기할 수 있어요."),
       t("h2", "필기"),
       t("li"),
       t("h2", "핵심 개념"),

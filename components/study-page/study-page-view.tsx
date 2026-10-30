@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronRight, FileQuestion, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff, Printer, Sparkles } from "lucide-react"
+import { BookOpen, ChevronRight, FileQuestion, MoreHorizontal, Paperclip, PenLine, Plus, PowerOff, Printer, Sparkles } from "lucide-react"
 import {
   addConfusions,
   computePageStats,
@@ -39,6 +39,7 @@ import { useTodayISO } from "@/hooks/use-today"
 import { PageProperties } from "@/components/study-page/page-properties"
 import { StudyHistory } from "@/components/study-page/study-history"
 import { AiPanel } from "@/components/record/ai-panel"
+import { LectureMaterialPane } from "@/components/study-page/lecture-material-pane"
 
 // The single page UI: seeded pages and user-created pages both render here.
 // Every page has the same block body (D-23); study features (속성 · 학습 기록 · AI 도구) are on or off per page.
@@ -62,7 +63,16 @@ export function StudyPageView({
   const attachRef = useRef<AttachmentHandle>(null)
   const page = pages.find((p) => p.id === pageId)
   const dataStatus = useDataStatus()
-  const [aiOpen, setAiOpen] = useState(openAi)
+  const [aiOpen, setAiOpenState] = useState(openAi)
+  // 강의 노트: the lecture PDF beside the note. It shares the right-hand slot with the AI panel.
+  const [materialOpen, setMaterialOpen] = useState(false)
+  const [aiRequest, setAiRequest] = useState<{ id: number; prompt: string; pdfId?: string } | undefined>()
+  const setAiOpen = (next: boolean | ((v: boolean) => boolean)) =>
+    setAiOpenState((v) => {
+      const value = typeof next === "function" ? next(v) : next
+      if (value) setMaterialOpen(false)
+      return value
+    })
   const propsReady = usePagePropsReady()
 
   // Caret into the first empty body block (after a template fills the page, or Enter in the title).
@@ -173,6 +183,7 @@ export function StudyPageView({
   const scopeOptions = (subject ? descendantPages({ groups, pages }, subject.id) : pages)
     .filter((p) => p.id !== page.id && isStudyOn(p))
     .map((p) => ({ id: p.id, title: p.title }))
+  const material = kind === "lecture" && propsReady ? pdfs.find((p) => p.id === page.props?.materialBlockId) : undefined
   const problems = { total: problemBlocks(page.blocks).length, wrong: wrongProblems(page.blocks).length }
 
   const properties = (
@@ -265,7 +276,9 @@ export function StudyPageView({
   return (
     <PagesContext.Provider value={pages}>
     {/* With the AI panel open on a wide screen, the page moves aside instead of going under it. */}
-    <div className={`flex flex-col transition-[padding] ${aiOpen ? "md:pr-[420px]" : ""}`}>
+    <div
+      className={`flex flex-col transition-[padding] ${aiOpen ? "md:pr-[420px]" : material && materialOpen ? "md:pr-[min(48vw,720px)]" : ""}`}
+    >
       <header className="sticky top-12 z-10 border-b print:hidden md:top-0 border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-6 py-3 lg:px-10">
           <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
@@ -289,6 +302,22 @@ export function StudyPageView({
             <span className="truncate font-medium text-foreground">{page.title.trim() || "제목 없음"}</span>
           </nav>
           <div className="flex shrink-0 items-center gap-1">
+          {material && (
+            <button
+              type="button"
+              onClick={() => {
+                setAiOpenState(false)
+                setMaterialOpen((v) => !v)
+              }}
+              aria-pressed={materialOpen}
+              className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
+                materialOpen ? "bg-indigo-50 text-indigo-700" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              }`}
+            >
+              <BookOpen className="size-4" />
+              강의 자료
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setAiOpen((v) => !v)}
@@ -434,8 +463,25 @@ export function StudyPageView({
 
       </article>
     </div>
+    {material && (
+      <LectureMaterialPane
+        block={material}
+        open={materialOpen && !aiOpen}
+        onClose={() => setMaterialOpen(false)}
+        onChange={(next) => updatePage(page.id, (p) => ({ ...p, blocks: p.blocks.map((b) => (b.id === next.id ? next : b)) }))}
+        onExtractConcepts={() => {
+          setAiRequest({
+            id: Date.now(),
+            prompt: "이 강의 자료에서 시험에 나올 핵심 개념을 뽑아줘. \"## 핵심 개념\" 아래에 \"- 용어: 한 줄 설명\"으로 정리해줘.",
+            pdfId: material.id,
+          })
+          setAiOpen(true)
+        }}
+      />
+    )}
     <AiPanel
       page={page}
+      request={aiRequest}
       open={aiOpen}
       onClose={() => setAiOpen(false)}
       onInsert={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks: [...p.blocks, ...blocks] }))}
