@@ -124,8 +124,8 @@ const handleTop: Record<BlockType, string> = {
   quote: "top-0.5",
   callout: "top-3",
   code: "top-2.5",
-  concept: "top-0.5",
-  confusion: "top-0.5",
+  concept: "top-3",
+  confusion: "top-3",
 }
 
 const emptyParagraph = (): TextBlock => ({ id: newBlockId(), type: "p", text: "" })
@@ -785,7 +785,13 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
                     ? "border-l-[3px] border-foreground/70 pl-3"
                     : block.type === "callout"
                       ? "rounded-lg bg-muted/70 px-3 py-2.5"
-                      : ""
+                      : block.type === "concept"
+                        ? "my-1 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-2"
+                        : block.type === "confusion"
+                          ? block.checked
+                            ? "my-1 rounded-xl border border-border px-3 py-2"
+                            : "my-1 rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2"
+                          : ""
                 }`}
               >
                 {block.type === "li" && (
@@ -807,7 +813,7 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
                   <span
                     aria-hidden="true"
                     title="핵심 개념 · 복습 카드가 돼요"
-                    className="mt-[3px] shrink-0 select-none rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-medium text-indigo-700"
+                    className="mt-[3px] shrink-0 select-none rounded-md bg-white/80 px-1.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100"
                   >
                     개념
                   </span>
@@ -823,8 +829,8 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
                     onClick={() => onChange(blocks.map((b) => (b.id === block.id ? { ...block, checked: !block.checked } : b)))}
                     className={`mt-1 flex size-[18px] shrink-0 items-center justify-center rounded-full border transition-colors ${
                       block.checked
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-amber-400 text-amber-600 hover:border-amber-600"
+                        ? "border-muted-foreground/40 bg-muted-foreground/40 text-white"
+                        : "border-amber-600 bg-amber-600 text-white hover:bg-amber-700"
                     }`}
                   >
                     {block.checked ? <Check className="size-3" /> : <span className="text-[11px] font-bold leading-none">?</span>}
@@ -896,7 +902,7 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
                         : placeholders[block.type])
                   }
                   className={`w-full resize-none bg-transparent text-foreground outline-none [field-sizing:content] ${
-                    hint || isSoleEmptyBlock
+                    hint || isSoleEmptyBlock || block.type === "concept" || block.type === "confusion"
                       ? "placeholder:text-muted-foreground/60"
                       : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
                   } ${blockStyles[block.type]} ${(block.type === "todo" || block.type === "confusion") && block.checked ? "text-muted-foreground line-through" : ""}`}

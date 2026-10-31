@@ -49,7 +49,7 @@ export function allRecordEntries(workspace: WorkspaceState): RecordEntry[] {
     record,
     pageId: null,
     pageTitle: null,
-    subject: names.get(record.subjectId) ?? NO_SUBJECT,
+    subject: (record.subjectId && names.get(record.subjectId)) || NO_SUBJECT,
     subjectId: record.subjectId,
   }))
   return [...onPages, ...onSubjects]
@@ -69,7 +69,7 @@ export const allRecords = (workspace: WorkspaceState) => allRecordEntries(worksp
 // Records left directly on this subject or on a subject group under it.
 function subjectRecordsUnder(workspace: WorkspaceState, subjectId: string) {
   const ids = new Set([subjectId, ...descendantGroups(workspace, subjectId).map((g) => g.id)])
-  return workspace.subjectRecords.filter((r) => ids.has(r.subjectId))
+  return workspace.subjectRecords.filter((r) => r.subjectId !== null && ids.has(r.subjectId))
 }
 
 // Newest first by creation time; records without one (seeds) fall back to the start of their `date`.
@@ -442,4 +442,69 @@ export function studyInsights(workspace: WorkspaceState, today: string): Insight
     insights.push({ tone: "info", text: `${weakest.subject}의 이해도가 ${weakest.progress}%로 가장 낮아요. 이 과목 복습을 먼저 해 보세요.` })
   }
   return insights
+}
+
+// ---- 학습 기록 한 줄 (D-28): every list of records (홈 · 학습 기록 · 과목 · 노트) shows them the same way.
+
+// Records the app writes itself start with a fixed phrase; the row shows it as a badge instead.
+const AUTO_PREFIXES: { prefix: RegExp; badge: string }[] = [
+  { prefix: /^복습 모드:\s*/, badge: "복습" },
+  { prefix: /^오답 다시 풀기:\s*/, badge: "오답 풀기" },
+  { prefix: /^AI 문제 풀이\s*/, badge: "AI 채점" },
+]
+
+export function recordBadge(content: string): string | null {
+  return AUTO_PREFIXES.find((p) => p.prefix.test(content))?.badge ?? null
+}
+
+// What the row says the study was: the written content (minus an auto prefix), else where it happened.
+export function recordText(entry: RecordEntry) {
+  const content = entry.record.studyContent.trim()
+  const auto = AUTO_PREFIXES.find((p) => p.prefix.test(content))
+  const text = auto ? content.replace(auto.prefix, "") || content : content
+  if (text) return auto?.badge === "AI 채점" ? `문제 풀이 ${text}` : text
+  if (entry.pageTitle) return `${entry.pageTitle} 공부`
+  return entry.subjectId ? `${entry.subject} 공부` : "내용 없이 남긴 기록"
+}
+
+// A record without a note that looks worth reviewing (low understanding or a written difficulty).
+export function wantsReviewNote(entry: RecordEntry) {
+  return entry.pageId === null && (entry.record.understanding <= 3 || entry.record.difficulties.trim() !== "")
+}
+
+export function sortEntriesNewestFirst(entries: RecordEntry[]) {
+  return [...entries].sort(newestFirst)
+}
+
+export interface RecordShortcut {
+  studyContent: string
+  durationMinutes: number
+  pageId: string | null
+  subjectId: string | null
+  count: number
+}
+
+// 기록 창의 "자주 남긴 기록": the same thing written for the same place more than once (수업, 인강, 문제집 …),
+// most often first. Falls back to the latest distinct ones. Records the app wrote itself are left out.
+export function recordShortcuts(workspace: WorkspaceState, limit = 3): { repeated: boolean; items: RecordShortcut[] } {
+  const entries = allRecordEntries(workspace)
+    .filter((e) => e.record.studyContent.trim() !== "" && recordBadge(e.record.studyContent) === null)
+    .sort(newestFirst)
+  const byKey = new Map<string, RecordShortcut>()
+  for (const e of entries) {
+    const key = `${e.pageId ?? ""}|${e.pageId ? "" : (e.subjectId ?? "")}|${e.record.studyContent.trim()}`
+    const found = byKey.get(key)
+    if (found) found.count += 1
+    else
+      byKey.set(key, {
+        studyContent: e.record.studyContent.trim(),
+        durationMinutes: e.record.durationMinutes,
+        pageId: e.pageId,
+        subjectId: e.pageId ? null : e.subjectId,
+        count: 1,
+      })
+  }
+  const all = [...byKey.values()]
+  const repeated = all.filter((s) => s.count > 1).sort((a, b) => b.count - a.count)
+  return repeated.length > 0 ? { repeated: true, items: repeated.slice(0, limit) } : { repeated: false, items: all.slice(0, limit) }
 }

@@ -397,11 +397,11 @@ function removeSubtree(rootId: string) {
   }
   const name = findNode(s, rootId)?.node.name || "제목 없음"
 
-  // Subject records go with their subject (study_records.subject_id cascades in the DB).
+  // Records left on a deleted subject stay as 외부 학습 (study_records.subject_id is ON DELETE SET NULL, D-24).
   store.set((state) => ({
     pages: state.pages.filter((p) => !removed.has(p.id)),
     groups: state.groups.filter((g) => !removed.has(g.id)),
-    subjectRecords: state.subjectRecords.filter((r) => !removed.has(r.subjectId)),
+    subjectRecords: state.subjectRecords.map((r) => (r.subjectId && removed.has(r.subjectId) ? { ...r, subjectId: null } : r)),
     order: state.order.filter((nodeId) => !removed.has(nodeId)),
   }))
   for (const nodeId of removed) savedPositions.delete(nodeId)
@@ -454,10 +454,13 @@ function undoDelete(
     const groups = merge(snapshot.groups, state.groups)
     const present = new Set([...pages.map((p) => p.id), ...groups.map((g) => g.id)])
     const order = [...snapshot.order.filter((id) => present.has(id)), ...state.order.filter((id) => !snapshot.order.includes(id))]
-    const restoredRecords = snapshot.subjectRecords.filter(
-      (r) => snapshot.removed.has(r.subjectId) && !state.subjectRecords.some((x) => x.id === r.id),
-    )
-    return { pages, groups, order, subjectRecords: [...state.subjectRecords, ...restoredRecords] }
+    // Records the delete moved to 외부 학습 go back onto their subject.
+    const before = new Map(snapshot.subjectRecords.map((r) => [r.id, r.subjectId]))
+    const subjectRecords = state.subjectRecords.map((r) => {
+      const was = before.get(r.id)
+      return r.subjectId === null && was && snapshot.removed.has(was) ? { ...r, subjectId: was } : r
+    })
+    return { pages, groups, order, subjectRecords }
   })
   reattachPlans(snapshot.plans)
   syncPositions()
