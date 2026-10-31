@@ -31,6 +31,9 @@ export interface TextBlock {
   // toggle only: the folded content (plain text, may span lines) and whether it is shown.
   body?: string
   open?: boolean
+  // toggle in a 오답 노트: the last try at this problem (D-27). Unset counts as wrong (it was added because it was missed).
+  result?: "right" | "wrong"
+  triedOn?: string
 }
 
 // 구분선.
@@ -223,6 +226,40 @@ export interface StudyPage {
   understanding?: number
   // Set when the user turns on study features for a page whose template doesn't include them (e.g. 빈 페이지).
   studyEnabled?: boolean
+  // Template-specific values (D-27), stored in workspace_nodes.props (jsonb). Unknown keys are kept as they are.
+  props?: PageProps
+}
+
+// What the page is for (D-27). Missing on pages made before props existed: a study page is a 학습 노트.
+export type PageKind = "note" | "lecture" | "wrong-answers" | "exam"
+export const pageKinds: readonly PageKind[] = ["note", "lecture", "wrong-answers", "exam"]
+
+export interface PageProps {
+  kind?: PageKind
+  // 강의 노트
+  week?: string
+  materialBlockId?: string
+  // 오답 노트
+  source?: string
+  // 시험 정리
+  examDate?: string
+  scope?: string[]
+  [key: string]: unknown
+}
+
+export function pageKind(page: Pick<StudyPage, "props" | "templateId">): PageKind | null {
+  const kind = page.props?.kind
+  if (kind && pageKinds.includes(kind)) return kind
+  return page.templateId === "study-note" ? "note" : null
+}
+
+// 오답 노트: a toggle is one problem. Problems still wrong are the ones that come back in review.
+export function problemBlocks(blocks: Block[]) {
+  return blocks.filter((b): b is TextBlock => isTextBlock(b) && b.type === "toggle" && b.text.trim() !== "")
+}
+
+export function wrongProblems(blocks: Block[]) {
+  return problemBlocks(blocks).filter((b) => b.result !== "right")
 }
 
 export const pageStatuses = ["시작 전", "학습 중", "복습 필요", "완료"] as const

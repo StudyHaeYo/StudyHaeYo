@@ -259,6 +259,8 @@ interface BlockEditorProps {
   sectionHints?: Record<string, string>
   allowAttachments?: boolean
   attachRef?: Ref<AttachmentHandle>
+  // 오답 노트 (D-27): each toggle is a problem; show 맞힘/틀림 marks and save the result on the block.
+  problemMode?: { today: string | null }
 }
 
 export interface AttachmentHandle {
@@ -266,7 +268,7 @@ export interface AttachmentHandle {
   insertDrawing: () => void
 }
 
-export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments = false, attachRef }: BlockEditorProps) {
+export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments = false, attachRef, problemMode }: BlockEditorProps) {
   const hintFor = (index: number) => {
     const block = blocks[index]
     const prev = blocks[index - 1]
@@ -899,6 +901,41 @@ export function BlockEditor({ blocks, onChange, sectionHints, allowAttachments =
                       : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
                   } ${blockStyles[block.type]} ${(block.type === "todo" || block.type === "confusion") && block.checked ? "text-muted-foreground line-through" : ""}`}
                 />
+                {problemMode && block.type === "toggle" && block.text.trim() !== "" && (
+                  <span role="group" aria-label="이 문제 결과" className="mt-0.5 flex shrink-0 gap-0.5">
+                    {(["right", "wrong"] as const).map((r) => {
+                      const on = block.result === r || (r === "wrong" && block.result === undefined)
+                      return (
+                        <button
+                          key={r}
+                          type="button"
+                          aria-pressed={block.result === r}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={() =>
+                            onChange(
+                              blocks.map((b) =>
+                                b.id === block.id
+                                  ? { ...block, result: r, ...(problemMode.today ? { triedOn: problemMode.today } : {}) }
+                                  : b,
+                              ),
+                            )
+                          }
+                          className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+                            block.result === r
+                              ? r === "right"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-rose-50 text-rose-700"
+                              : on
+                                ? "text-muted-foreground/80 hover:bg-muted"
+                                : "text-muted-foreground/50 hover:bg-muted hover:text-foreground"
+                          }`}
+                        >
+                          {r === "right" ? "맞힘" : "틀림"}
+                        </button>
+                      )
+                    })}
+                  </span>
+                )}
               </div>
               {block.type === "toggle" && block.open !== false && (
                 <textarea

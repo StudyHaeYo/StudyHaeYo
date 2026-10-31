@@ -6,6 +6,7 @@ import {
   daysBetween,
   studyPages,
   todayISO,
+  type PageProps,
   type PageStudyRecord,
   type StudyPage,
   type SubjectStudyRecord,
@@ -75,6 +76,23 @@ export const useWorkspace = store.useStore
 // false until the first load confirms the columns exist, so hidden UI never flashes in and out.
 const subjectRecordsReadyStore = createStore<boolean>(false)
 export const useSubjectRecordsReady = subjectRecordsReadyStore.useStore
+
+// workspace_nodes.props exists (D-27). False until the first load confirms it: template-specific properties and
+// features stay hidden, and templates only fill their starting blocks.
+const pagePropsReadyStore = createStore<boolean>(false)
+export const usePagePropsReady = pagePropsReadyStore.useStore
+export function setPagePropsReady(ready: boolean) {
+  pagePropsReadyStore.set(() => ready)
+}
+export function pagePropsReady() {
+  return pagePropsReadyStore.get()
+}
+
+// Merges into the page's props (D-27). Does nothing until the props column exists.
+export function updatePageProps(id: string, patch: Partial<PageProps>) {
+  if (!pagePropsReady()) return
+  updatePage(id, (p) => ({ ...p, props: { ...p.props, ...patch } }))
+}
 export function setSubjectRecordsReady(ready: boolean) {
   subjectRecordsReadyStore.set(() => ready)
 }
@@ -241,6 +259,7 @@ export function applyStarter(id: string, starterId: string) {
     templateId: starter.templateId,
     blocks: starter.createBlocks(),
     studyEnabled: starter.templateId === "study-note" ? true : p.studyEnabled,
+    ...(starter.kind && pagePropsReady() ? { props: { ...p.props, kind: starter.kind } } : {}),
   }))
 }
 
