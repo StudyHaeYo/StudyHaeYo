@@ -154,8 +154,9 @@ export function toWorkspaceState(nodes: NodeRow[], records: RecordRow[]): Worksp
       const list = byPage.get(row.page_id) ?? []
       list.push({ ...recordFields(row), pageId: row.page_id })
       byPage.set(row.page_id, list)
-    } else if (row.subject_id) {
-      subjectRecords.push({ ...recordFields(row), subjectId: row.subject_id })
+    } else {
+      // No note: on a subject, or on nothing at all (외부 학습, D-24).
+      subjectRecords.push({ ...recordFields(row), subjectId: row.subject_id ?? null })
     }
   }
   const groups: WorkspaceGroup[] = []

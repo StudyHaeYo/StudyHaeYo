@@ -201,9 +201,10 @@ export interface PageStudyRecord extends StudyRecordFields {
   pageId: string
 }
 
-// Lives in WorkspaceState.subjectRecords; study_records row with page_id null and subject_id set.
+// Lives in WorkspaceState.subjectRecords; study_records row with page_id null. subject_id null = 외부 학습
+// (공부했지만 과목도 노트도 고르지 않은 기록, D-24).
 export interface SubjectStudyRecord extends StudyRecordFields {
-  subjectId: string
+  subjectId: string | null
 }
 
 // Every page (seeded or user-created) uses this one shape.
@@ -254,8 +255,12 @@ export function pageKind(page: Pick<StudyPage, "props" | "templateId">): PageKin
 }
 
 // 오답 노트: a toggle is one problem. Problems still wrong are the ones that come back in review.
+// A toggle is a problem once it has a question. The template's untouched "문제 1" (no 풀이 yet) isn't one.
 export function problemBlocks(blocks: Block[]) {
-  return blocks.filter((b): b is TextBlock => isTextBlock(b) && b.type === "toggle" && b.text.trim() !== "")
+  return blocks.filter(
+    (b): b is TextBlock =>
+      isTextBlock(b) && b.type === "toggle" && b.text.trim() !== "" && !(/^문제\s*\d*$/.test(b.text.trim()) && !b.body?.trim()),
+  )
 }
 
 export function wrongProblems(blocks: Block[]) {
