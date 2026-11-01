@@ -21,6 +21,7 @@ import {
   descendantPages,
   nearestSubject,
   nodePath,
+  setAttachmentPath,
   setPageStudyEnabled,
   updatePage,
   updatePageProps,
@@ -232,6 +233,7 @@ export function StudyPageView({
         onChange={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks }))}
         allowAttachments
         attachRef={attachRef}
+        onAttachmentStored={(blockId, path) => setAttachmentPath(page.id, blockId, path)}
         problemMode={problemReview ? { today } : undefined}
       />
     </div>
