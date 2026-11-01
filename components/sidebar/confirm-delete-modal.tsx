@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import { Trash2 } from "lucide-react"
+import { useFocusTrap } from "@/hooks/use-focus-trap"
 
 interface ConfirmDeleteModalProps {
   open: boolean
@@ -22,6 +23,8 @@ export function ConfirmDeleteModal({
   onConfirm,
 }: ConfirmDeleteModalProps) {
   const cancelRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, open)
 
   useEffect(() => {
     if (!open) return
@@ -43,6 +46,7 @@ export function ConfirmDeleteModal({
       }}
     >
       <div
+        ref={dialogRef}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="delete-modal-title"

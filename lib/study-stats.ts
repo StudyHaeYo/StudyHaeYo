@@ -86,11 +86,14 @@ function newestFirst(a: RecordEntry, b: RecordEntry) {
 
 export interface SubjectMasteryItem {
   subject: string
+  // Average understanding as a share of 5, for the bar (0–100).
   progress: number
+  // Average understanding on the same 1–5 scale as everywhere else (one decimal).
+  average: number
   recordCount: number
 }
 
-// Average understanding per subject as a percentage. Subjects with no records are left out.
+// Average understanding per subject. Subjects with no records are left out.
 export function subjectMastery(workspace: WorkspaceState): SubjectMasteryItem[] {
   const bySubject = new Map<string, { sum: number; count: number }>()
   for (const { record, subject } of allRecordEntries(workspace)) {
@@ -102,6 +105,7 @@ export function subjectMastery(workspace: WorkspaceState): SubjectMasteryItem[] 
   return [...bySubject.entries()].map(([subject, { sum, count }]) => ({
     subject,
     progress: Math.round((sum / count / 5) * 100),
+    average: Math.round((sum / count) * 10) / 10,
     recordCount: count,
   }))
 }
@@ -428,10 +432,10 @@ export function studyInsights(workspace: WorkspaceState, today: string): Insight
     const delta = Math.round((recent - earlier) * 10) / 10
     insights.push(
       delta === 0
-        ? { tone: "info", text: `최근 2주 평균 이해도는 ${recent.toFixed(1)}로 그 전 2주와 같아요.` }
+        ? { tone: "info", text: `최근 2주 평균 이해도는 ${recent.toFixed(1)} / 5로 그 전 2주와 같아요.` }
         : {
             tone: delta > 0 ? "up" : "down",
-            text: `최근 2주 평균 이해도는 ${recent.toFixed(1)}로, 그 전 2주보다 ${delta > 0 ? "+" : ""}${delta.toFixed(1)}예요.`,
+            text: `최근 2주 평균 이해도는 ${recent.toFixed(1)} / 5로, 그 전 2주(${earlier.toFixed(1)})보다 ${Math.abs(delta).toFixed(1)} ${delta > 0 ? "올랐어요" : "내려갔어요"}.`,
           },
     )
   }
@@ -439,7 +443,7 @@ export function studyInsights(workspace: WorkspaceState, today: string): Insight
   const mastery = subjectMastery(workspace)
   if (mastery.length >= 2) {
     const weakest = [...mastery].sort((a, b) => a.progress - b.progress)[0]
-    insights.push({ tone: "info", text: `${weakest.subject}의 이해도가 ${weakest.progress}%로 가장 낮아요. 이 과목 복습을 먼저 해 보세요.` })
+    insights.push({ tone: "info", text: `${weakest.subject}의 평균 이해도가 ${weakest.average.toFixed(1)} / 5로 가장 낮아요. 이 과목 복습을 먼저 해 보세요.` })
   }
   return insights
 }

@@ -4,6 +4,7 @@ import {
   addDays,
   cloneBlock,
   daysBetween,
+  isTextBlock,
   studyPages,
   todayISO,
   type PageProps,
@@ -28,6 +29,7 @@ import {
   check,
   currentUserId,
   db,
+  dropScheduled,
   enqueueWrite,
   flushScheduledKey,
   schedulePatch,
@@ -197,7 +199,34 @@ export function createPage(input: { title: string; starterId: string; parentId: 
   setPages((pages) => [...pages, page])
   insertPage(page)
   syncPositions()
+  if (!page.title) freshPages.add(page.id)
   return page.id
+}
+
+// Pages made from "+ 새 페이지" in this tab that may still be untouched. One left with no title, nothing in the
+// body, no records and nothing under it is removed when the user leaves it, so the sidebar doesn't fill up
+// with "제목 없음". Pages from before this tab, or ever given anything, are never removed this way.
+const freshPages = new Set<string>()
+
+export function discardIfUntouched(id: string) {
+  if (!freshPages.delete(id)) return
+  const s = store.get()
+  const page = s.pages.find((p) => p.id === id)
+  if (!page) return
+  const bodyEmpty = page.blocks.every((b) => isTextBlock(b) && b.type === "p" && b.text === "")
+  const untouched =
+    !page.title.trim() &&
+    bodyEmpty &&
+    page.studyRecords.length === 0 &&
+    !s.pages.some((p) => p.parentId === id) &&
+    !s.groups.some((g) => g.parentId === id) &&
+    plansInSubtree(s, id).length === 0
+  if (!untouched) return
+  dropScheduled(`node:${id}`)
+  store.set((state) => ({ ...state, pages: state.pages.filter((p) => p.id !== id), order: state.order.filter((x) => x !== id) }))
+  enqueueWrite(async (userId) => {
+    check(await db().from("workspace_nodes").delete().eq("id", id).eq("user_id", userId).select("id"), 1)
+  })
 }
 
 export function updatePage(id: string, update: (page: StudyPage) => StudyPage) {

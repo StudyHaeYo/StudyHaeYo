@@ -19,6 +19,7 @@ import { isStudyOn } from "@/lib/templates"
 import {
   applyStarter,
   descendantPages,
+  discardIfUntouched,
   nearestSubject,
   nodePath,
   setAttachmentPath,
@@ -44,6 +45,9 @@ import { SessionIndicator } from "@/components/study-session/session-timer"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { AiPanel } from "@/components/record/ai-panel"
 import { LectureMaterialPane } from "@/components/study-page/lecture-material-pane"
+
+// The page on screen, so leaving and coming straight back (or a remount) isn't taken as leaving.
+let openPageId: string | null = null
 
 // The single page UI: seeded pages and user-created pages both render here.
 // Every page has the same block body (D-23); study features (속성 · 학습 기록 · AI 도구) are on or off per page.
@@ -81,6 +85,18 @@ export function StudyPageView({
   // 속성 window (D-28): opened from the top bar instead of sitting between the title and the body.
   const [infoOpen, setInfoOpen] = useState(false)
   const infoButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Leaving a just-made page that was never given anything removes it (lib/workspace.ts discardIfUntouched).
+  // Checked a tick later so a remount of the same page (dev Strict Mode) doesn't count as leaving.
+  useEffect(() => {
+    openPageId = pageId
+    return () => {
+      if (openPageId === pageId) openPageId = null
+      setTimeout(() => {
+        if (openPageId !== pageId) discardIfUntouched(pageId)
+      }, 0)
+    }
+  }, [pageId])
 
   // Time handed over from a finished timer session opens the record window for this note.
   useEffect(() => {

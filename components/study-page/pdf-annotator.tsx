@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { Check, Loader2 } from "lucide-react"
 import { openPdf, type PDFDocumentProxy } from "@/lib/pdf"
+import { useFocusTrap } from "@/hooks/use-focus-trap"
 import type { AttachmentBlock, DrawingStroke } from "@/lib/study-pages"
 import {
   DrawingToolbar,
@@ -42,6 +43,8 @@ export function PdfAnnotator({
   const [past, setPast] = useState<{ page: string; strokes: DrawingStroke[] }[]>([])
   const [future, setFuture] = useState<{ page: string; strokes: DrawingStroke[] }[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef)
   const latest = useRef(block)
 
   useLayoutEffect(() => {
@@ -143,7 +146,7 @@ export function PdfAnnotator({
   const annotatedPages = Object.keys(block.annotations ?? {}).length
 
   return createPortal(
-    <div role="dialog" aria-modal="true" aria-label={`${block.name} 필기`} className="fixed inset-0 z-50 flex flex-col bg-muted">
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`${block.name} 필기`} className="fixed inset-0 z-50 flex flex-col bg-muted">
       <header className="flex flex-col gap-2 border-b border-border bg-card px-3 py-2 sm:px-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">

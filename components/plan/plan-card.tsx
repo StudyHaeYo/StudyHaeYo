@@ -95,7 +95,7 @@ export function PlanCard({
             {formatDate(plan.startDate)} ~ {formatDate(plan.endDate)}
           </span>
           <span className="tabular-nums">
-            {item.elapsedDays}/{item.totalDays}일
+            {ended ? `${item.totalDays}일 계획` : item.elapsedDays === 0 ? `${item.totalDays}일 계획` : `${item.totalDays}일 중 ${item.elapsedDays}일째`}
           </span>
         </p>
       </div>
