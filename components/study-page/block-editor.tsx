@@ -124,8 +124,8 @@ const handleTop: Record<BlockType, string> = {
   quote: "top-0.5",
   callout: "top-3",
   code: "top-2.5",
-  concept: "top-0.5",
-  confusion: "top-0.5",
+  concept: "top-3",
+  confusion: "top-3",
 }
 
 const emptyParagraph = (): TextBlock => ({ id: newBlockId(), type: "p", text: "" })
@@ -262,6 +262,8 @@ interface BlockEditorProps {
   // A retried upload finished: give the block its Storage path. Returns false if the block is gone.
   // Retries can finish after this editor is gone, so this reads the saved page rather than `blocks`.
   onAttachmentStored?: AttachmentStored
+  // 오답 노트 (D-27): each toggle is a problem; show 맞힘/틀림 marks and save the result on the block.
+  problemMode?: { today: string | null }
 }
 
 export interface AttachmentHandle {
@@ -276,6 +278,7 @@ export function BlockEditor({
   allowAttachments = false,
   attachRef,
   onAttachmentStored,
+  problemMode,
 }: BlockEditorProps) {
   const hintFor = (index: number) => {
     const block = blocks[index]
@@ -793,7 +796,13 @@ export function BlockEditor({
                     ? "border-l-[3px] border-foreground/70 pl-3"
                     : block.type === "callout"
                       ? "rounded-lg bg-muted/70 px-3 py-2.5"
-                      : ""
+                      : block.type === "concept"
+                        ? "my-1 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-2"
+                        : block.type === "confusion"
+                          ? block.checked
+                            ? "my-1 rounded-xl border border-border px-3 py-2"
+                            : "my-1 rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2"
+                          : ""
                 }`}
               >
                 {block.type === "li" && (
@@ -815,7 +824,7 @@ export function BlockEditor({
                   <span
                     aria-hidden="true"
                     title="핵심 개념 · 복습 카드가 돼요"
-                    className="mt-[3px] shrink-0 select-none rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-medium text-indigo-700"
+                    className="mt-[3px] shrink-0 select-none rounded-md bg-white/80 px-1.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100"
                   >
                     개념
                   </span>
@@ -831,8 +840,8 @@ export function BlockEditor({
                     onClick={() => onChange(blocks.map((b) => (b.id === block.id ? { ...block, checked: !block.checked } : b)))}
                     className={`mt-1 flex size-[18px] shrink-0 items-center justify-center rounded-full border transition-colors ${
                       block.checked
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-amber-400 text-amber-600 hover:border-amber-600"
+                        ? "border-muted-foreground/40 bg-muted-foreground/40 text-white"
+                        : "border-amber-600 bg-amber-600 text-white hover:bg-amber-700"
                     }`}
                   >
                     {block.checked ? <Check className="size-3" /> : <span className="text-[11px] font-bold leading-none">?</span>}
@@ -904,11 +913,46 @@ export function BlockEditor({
                         : placeholders[block.type])
                   }
                   className={`w-full resize-none bg-transparent text-foreground outline-none [field-sizing:content] ${
-                    hint || isSoleEmptyBlock
+                    hint || isSoleEmptyBlock || block.type === "concept" || block.type === "confusion"
                       ? "placeholder:text-muted-foreground/60"
                       : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
                   } ${blockStyles[block.type]} ${(block.type === "todo" || block.type === "confusion") && block.checked ? "text-muted-foreground line-through" : ""}`}
                 />
+                {problemMode && block.type === "toggle" && block.text.trim() !== "" && (
+                  <span role="group" aria-label="이 문제 결과" className="mt-0.5 flex shrink-0 gap-0.5">
+                    {(["right", "wrong"] as const).map((r) => {
+                      const on = block.result === r || (r === "wrong" && block.result === undefined)
+                      return (
+                        <button
+                          key={r}
+                          type="button"
+                          aria-pressed={block.result === r}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={() =>
+                            onChange(
+                              blocks.map((b) =>
+                                b.id === block.id
+                                  ? { ...block, result: r, ...(problemMode.today ? { triedOn: problemMode.today } : {}) }
+                                  : b,
+                              ),
+                            )
+                          }
+                          className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+                            block.result === r
+                              ? r === "right"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-rose-50 text-rose-700"
+                              : on
+                                ? "text-muted-foreground/80 hover:bg-muted"
+                                : "text-muted-foreground/50 hover:bg-muted hover:text-foreground"
+                          }`}
+                        >
+                          {r === "right" ? "맞힘" : "틀림"}
+                        </button>
+                      )
+                    })}
+                  </span>
+                )}
               </div>
               {block.type === "toggle" && block.open !== false && (
                 <textarea

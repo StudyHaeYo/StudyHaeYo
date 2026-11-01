@@ -91,7 +91,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
           done ? "border-indigo-600 bg-indigo-600 text-white" : "border-border bg-background hover:border-indigo-400"
         }`}
       >
-        {done && <Check className="size-3.5 animate-in zoom-in-50 duration-150" />}
+        {done && <Check className="size-3.5 animate-in zoom-in-90 fade-in duration-150" />}
       </button>
 
       {editing ? (

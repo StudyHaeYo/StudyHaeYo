@@ -1,5 +1,5 @@
 import { Sidebar } from "@/components/sidebar"
-import { NewPageFlow } from "@/components/new-page/new-page-flow"
+import { CreatePageRedirect } from "@/components/new-page/create-page-redirect"
 
 export default async function NewPage({
   searchParams,
@@ -14,7 +14,7 @@ export default async function NewPage({
       <Sidebar />
 
       <main className="min-w-0 flex-1 overflow-y-auto px-6 py-12 lg:px-10">
-        <NewPageFlow key={contextParentId ?? "global"} contextParentId={contextParentId} />
+        <CreatePageRedirect key={contextParentId ?? "global"} parentId={contextParentId} />
       </main>
     </div>
   )

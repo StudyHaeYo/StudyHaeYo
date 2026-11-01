@@ -1,11 +1,12 @@
 import { toast } from "sonner"
 import { createStore } from "@/lib/create-store"
 import { replacePlans, setPlanGoalsReady } from "@/lib/plans"
-import { replaceWorkspace, setSubjectRecordsReady } from "@/lib/workspace"
+import { replaceWorkspace, setPagePropsReady, setSubjectRecordsReady } from "@/lib/workspace"
 import { replaceTodos } from "@/lib/todos"
 import { db, resetWrites, setCurrentUserId, setWriteFailureHandler } from "@/lib/db/queue"
 import {
   LEGACY_PLAN_COLUMNS,
+  LEGACY_NODE_COLUMNS,
   LEGACY_RECORD_COLUMNS,
   NODE_COLUMNS,
   PLAN_COLUMNS,
@@ -47,6 +48,19 @@ function messageOf(error: unknown) {
 
 let loadSeq = 0
 
+// workspace_nodes without the props column (20261031_page_props.sql not applied): load without it and hide
+// template-specific features (D-27).
+async function selectNodes(userId: string) {
+  try {
+    const rows = await selectAll<NodeRow>("workspace_nodes", NODE_COLUMNS, userId, ["position", "created_at", "id"])
+    return { rows, props: true }
+  } catch (error) {
+    if ((error as { code?: string } | null)?.code !== "42703") throw error
+    const rows = await selectAll<NodeRow>("workspace_nodes", LEGACY_NODE_COLUMNS, userId, ["position", "created_at", "id"])
+    return { rows, props: false }
+  }
+}
+
 // Same for learning_plans.goal_minutes.
 async function selectPlans(userId: string) {
   try {
@@ -83,13 +97,14 @@ export async function loadUserData() {
     const userId = data.user.id
     setCurrentUserId(userId)
 
-    const [nodes, records, plans] = await Promise.all([
-      selectAll<NodeRow>("workspace_nodes", NODE_COLUMNS, userId, ["position", "created_at", "id"]),
+    const [{ rows: nodes, props }, records, plans] = await Promise.all([
+      selectNodes(userId),
       selectRecords(userId),
       selectPlans(userId),
     ])
     if (seq !== loadSeq) return
     setSubjectRecordsReady(records.subjectRecords)
+    setPagePropsReady(props)
     replaceWorkspace(
       toWorkspaceState(nodes, records.rows),
       new Map(nodes.map((n) => [n.id, { parentId: n.parent_id, position: n.position }])),

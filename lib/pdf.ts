@@ -27,7 +27,15 @@ export async function openPdf(url: string): Promise<{ doc: PDFDocumentProxy; clo
   const response = await fetch(url)
   if (!response.ok) throw new Error(`PDF를 불러오지 못했어요 (${response.status})`)
   const data = new Uint8Array(await response.arrayBuffer())
-  const task = pdfjs.getDocument({ data })
+  // Korean PDFs often use CID fonts that need character maps (cMaps); without them the text renders blank.
+  // They are copied to public/pdfjs at build time (scripts/copy-pdf-assets.mjs) and load only when a PDF asks.
+  const assets = "/pdfjs"
+  const task = pdfjs.getDocument({
+    data,
+    cMapUrl: `${assets}/cmaps/`,
+    cMapPacked: true,
+    standardFontDataUrl: `${assets}/standard_fonts/`,
+  })
   const doc = await task.promise
   return { doc, close: () => void task.destroy() }
 }

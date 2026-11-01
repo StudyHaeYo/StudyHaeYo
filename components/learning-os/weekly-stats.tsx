@@ -45,7 +45,7 @@ export function WeeklyStats() {
             aria-valuemax={100}
             aria-label="이번 주 목표 달성률"
           >
-            <div className="h-full rounded-full bg-indigo-600 transition-all duration-500" style={{ width: `${percent}%` }} />
+            <div className="h-full rounded-full bg-indigo-600 transition-[width] duration-500 ease-out" style={{ width: `${percent}%` }} />
           </div>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {stats.perDayToGoal === 0 ? (

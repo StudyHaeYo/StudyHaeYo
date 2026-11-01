@@ -197,3 +197,19 @@
     display: none !important;
   }
 }
+
+/* Reduced motion: keep fades and color changes, drop movement (slide-in sidebar, zoom-ins, spinners stay). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-property: color, background-color, border-color, opacity, box-shadow !important;
+  }
+  [class*="zoom-in"],
+  [class*="slide-in"] {
+    --tw-enter-scale: 1 !important;
+    --tw-enter-translate-x: 0 !important;
+    --tw-enter-translate-y: 0 !important;
+  }
+}

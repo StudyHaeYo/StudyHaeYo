@@ -126,6 +126,16 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
           <span className="flex items-center gap-1.5">
             <span className="truncate text-sm font-medium text-foreground">{item.topic}</span>
             <UnresolvedBadge count={item.unresolvedConfusions} />
+            {item.wrongProblems > 0 && (
+              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                틀린 문제 {item.wrongProblems}
+              </span>
+            )}
+            {item.exam && (
+              <span className="shrink-0 rounded bg-indigo-50 px-1.5 py-0.5 text-[11px] font-medium text-indigo-700">
+                시험 {item.exam}
+              </span>
+            )}
           </span>
           <span className="block truncate text-xs text-muted-foreground">
             {item.subject} · 마지막 학습 {item.lastStudied}

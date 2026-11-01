@@ -90,7 +90,7 @@ export function LoginForm({
         </p>
       )}
       <button type="submit" disabled={pending} className={`mt-2 ${submitButtonClass}`}>
-        {pending ? "로그인 중..." : "로그인"}
+        {pending ? "로그인 중…" : "로그인"}
       </button>
     </form>
   )

@@ -14,6 +14,9 @@ export interface ReviewResult {
   confused: string[]
   // Full text of concepts marked "헷갈려요"; added to the page as 헷갈린 점 blocks only when the review is saved.
   confusedTexts: string[]
+  // 오답 노트 (mode "problems"): problem block ids answered right / wrong this time.
+  rightIds: string[]
+  wrongIds: string[]
 }
 
 export interface ReviewBodyProps {
@@ -21,11 +24,17 @@ export interface ReviewBodyProps {
   concepts: TextBlock[]
   exitHref: string
   onComplete: (result: ReviewResult) => void
+  // "problems": 오답 노트 — `concepts` are the problems still wrong (toggle blocks): front = problem, back = 풀이 (D-27).
+  mode?: "concepts" | "problems"
 }
 
 const understandingLabels = ["", "거의 모름", "조금 앎", "보통", "대부분 앎", "완벽히 앎"]
 
-export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyProps) {
+export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concepts" }: ReviewBodyProps) {
+  const problems = mode === "problems"
+  const noun = problems ? "문제" : "개념"
+  const card = (block: TextBlock) =>
+    problems ? { term: block.text, detail: block.body?.trim() || "풀이가 비어 있어요. 노트에서 토글 안에 풀이를 적어 두세요." } : splitConcept(block.text)
   const [startedAt] = useState(() => Date.now())
   const [answers, setAnswers] = useState<Record<string, ReviewAnswer>>({})
   const [openId, setOpenId] = useState<string | null>(null)
@@ -47,7 +56,9 @@ export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyPr
       durationMinutes: Math.max(1, Math.round((Date.now() - startedAt) / 60_000)),
       remembered: concepts.filter((c) => answers[c.id] === "remembered").map((c) => termOf(c.text)),
       confused: concepts.filter((c) => answers[c.id] === "confused").map((c) => termOf(c.text)),
-      confusedTexts: concepts.filter((c) => answers[c.id] === "confused").map((c) => c.text),
+      confusedTexts: problems ? [] : concepts.filter((c) => answers[c.id] === "confused").map((c) => c.text),
+      rightIds: problems ? concepts.filter((c) => answers[c.id] === "remembered").map((c) => c.id) : [],
+      wrongIds: problems ? concepts.filter((c) => answers[c.id] === "confused").map((c) => c.id) : [],
     })
   }
 
@@ -60,7 +71,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyPr
             복습 모드
           </h2>
           <span className="text-xs text-muted-foreground" aria-live="polite">
-            {`핵심 개념 ${answered}/${concepts.length} 확인`}
+            {problems ? `틀린 문제 ${answered}/${concepts.length} 다시 풀기` : `핵심 개념 ${answered}/${concepts.length} 확인`}
           </span>
         </div>
         <Link href={exitHref} className="text-xs font-medium text-muted-foreground hover:text-foreground">
@@ -68,7 +79,12 @@ export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyPr
         </Link>
       </div>
 
-      {concepts.length === 0 && (
+      {concepts.length === 0 && problems && (
+        <p className="rounded-xl border border-dashed border-border px-5 py-6 text-sm leading-relaxed text-muted-foreground">
+          틀린 문제가 없어요. 아래 노트를 훑어보고 이해도를 골라 주세요.
+        </p>
+      )}
+      {concepts.length === 0 && !problems && (
         <p className="rounded-xl border border-dashed border-border px-5 py-6 text-sm leading-relaxed text-muted-foreground">
           핵심 개념 블록이 없어서 카드 없이 복습해요. 아래 노트를 다시 읽고 이해도를 골라 주세요. (/핵심 개념 으로 블록을 넣으면 다음부터 카드로 복습할 수 있어요)
         </p>
@@ -77,7 +93,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyPr
       {!allDone && (
         <ul className="grid gap-3 sm:grid-cols-2">
           {concepts.map((concept, index) => {
-            const { term, detail } = splitConcept(concept.text)
+            const { term, detail } = card(concept)
             const result = answers[concept.id]
             const open = openId === concept.id
             return (
@@ -100,7 +116,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyPr
                     className="flex items-start justify-between gap-3 px-4 py-3.5 text-left"
                   >
                     <span className="flex min-w-0 flex-col gap-0.5">
-                      <span className="text-xs text-muted-foreground">{`개념 ${index + 1}`}</span>
+                      <span className="text-xs text-muted-foreground">{`${noun} ${index + 1}`}</span>
                       <span className="text-sm font-medium text-card-foreground text-pretty">
                         {term ?? "이 개념을 떠올려보세요"}
                       </span>
@@ -111,7 +127,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyPr
                           result === "remembered" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
                         }`}
                       >
-                        {result === "remembered" ? "기억남" : "헷갈림"}
+                        {result === "remembered" ? (problems ? "맞힘" : "기억남") : problems ? "또 틀림" : "헷갈림"}
                       </span>
                     ) : (
                       <ChevronDown
@@ -122,7 +138,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyPr
                   </button>
                   {open && (
                     <div className="flex flex-col gap-3 border-t border-border px-4 pb-4 pt-3">
-                      <p className="text-sm leading-relaxed text-foreground">{detail}</p>
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{detail}</p>
                       <div className="flex gap-2">
                         <button
                           type="button"
@@ -130,7 +146,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyPr
                           className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
                         >
                           <Check className="size-4" aria-hidden="true" />
-                          기억났어요
+                          {problems ? "맞혔어요" : "기억났어요"}
                         </button>
                         <button
                           type="button"
@@ -138,7 +154,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyPr
                           className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100"
                         >
                           <HelpCircle className="size-4" aria-hidden="true" />
-                          헷갈려요
+                          {problems ? "또 틀렸어요" : "헷갈려요"}
                         </button>
                       </div>
                     </div>
@@ -158,8 +174,10 @@ export function StudyNoteReview({ concepts, exitHref, onComplete }: ReviewBodyPr
               <h3 className="text-base font-semibold text-card-foreground">복습 완료</h3>
               {concepts.length > 0 && (
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {`기억남 ${concepts.filter((c) => answers[c.id] === "remembered").length}개 · 헷갈림 ${concepts.filter((c) => answers[c.id] === "confused").length}개`}
-                  {concepts.some((c) => answers[c.id] === "confused") && " — 복습을 마치면 헷갈린 개념이 헷갈린 점 블록으로 추가돼요."}
+                  {problems
+                    ? `맞힘 ${concepts.filter((c) => answers[c.id] === "remembered").length}개 · 또 틀림 ${concepts.filter((c) => answers[c.id] === "confused").length}개 — 맞힌 문제는 다음 복습부터 빠져요.`
+                    : `기억남 ${concepts.filter((c) => answers[c.id] === "remembered").length}개 · 헷갈림 ${concepts.filter((c) => answers[c.id] === "confused").length}개`}
+                  {!problems && concepts.some((c) => answers[c.id] === "confused") && " — 복습을 마치면 헷갈린 개념이 헷갈린 점 블록으로 추가돼요."}
                 </p>
               )}
             </div>

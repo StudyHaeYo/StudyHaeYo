@@ -1,304 +1,251 @@
 "use client"
 
-import { useState, useSyncExternalStore, type ReactNode } from "react"
-import {
-  BookOpen,
-  CalendarCheck,
-  CalendarClock,
-  ChevronDown,
-  ChevronRight,
-  CircleDot,
-  Clock,
-  Gauge,
-  Hash,
-  Timer,
-  X,
-  type LucideIcon,
-} from "lucide-react"
-import { formatDate, formatDuration, pageStatuses, type PageStats, type PageStatus } from "@/lib/study-pages"
-import { NO_SUBJECT } from "@/lib/workspace"
+import { useState, type ReactNode } from "react"
+import Link from "next/link"
+import { BookMarked, CalendarDays, FileText, ListChecks, X, type LucideIcon } from "lucide-react"
+import { daysBetween, type AttachmentBlock, type PageKind, type PageProps } from "@/lib/study-pages"
 
-// Whether the inline properties are folded. Folded by default; one choice for every page, remembered per browser.
-// The server and the hydration pass always see "folded", so markup matches; a saved "open" applies right after hydration.
-const COLLAPSE_KEY = "studyhaeyo:page-properties-collapsed"
-const COLLAPSE_EVENT = "studyhaeyo:page-properties-collapsed"
-// Fallback when localStorage throws (private mode, blocked site data).
-let memoryCollapsed: boolean | null = null
+// Fields the user types in (D-27): tags, plus a few per template. They live in the 속성 window (D-28); values
+// computed from study records are shown there too, apart from these.
 
-function subscribeCollapsed(onChange: () => void) {
-  window.addEventListener(COLLAPSE_EVENT, onChange)
-  window.addEventListener("storage", onChange)
-  return () => {
-    window.removeEventListener(COLLAPSE_EVENT, onChange)
-    window.removeEventListener("storage", onChange)
-  }
+export const kindLabels: Record<PageKind, string> = {
+  note: "학습 노트",
+  lecture: "강의 노트",
+  "wrong-answers": "오답 노트",
+  exam: "시험 정리",
 }
 
-function readCollapsed() {
-  try {
-    return window.localStorage.getItem(COLLAPSE_KEY) !== "0"
-  } catch {
-    return true
-  }
+// "D-7" before the exam, "D-day" on it, null once it has passed or when unknown.
+export function examCountdown(examDate: string | undefined, today: string | null) {
+  if (!examDate || !today) return null
+  const days = daysBetween(today, examDate)
+  if (days < 0) return null
+  return days === 0 ? "D-day" : `D-${days}`
 }
 
-function setCollapsed(next: boolean) {
-  try {
-    window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0")
-  } catch {
-    // Storage blocked: the toggle still works until the next reload.
-    memoryCollapsed = next
-  }
-  window.dispatchEvent(new Event(COLLAPSE_EVENT))
-}
+const input =
+  "w-full min-w-0 rounded-md bg-transparent px-1.5 py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 hover:bg-muted/60 focus:bg-muted"
 
-
-function getCollapsed() {
-  return memoryCollapsed ?? readCollapsed()
-}
-
-const statusStyles: Record<PageStatus, string> = {
-  "시작 전": "bg-muted text-muted-foreground",
-  "학습 중": "bg-indigo-50 text-indigo-700",
-  "복습 필요": "bg-amber-50 text-amber-700",
-  완료: "bg-indigo-600 text-white",
-}
-
-interface PagePropertiesProps {
-  // null when no subject is above the page (a plain folder doesn't count).
-  subjectName: string | null
-  stats: PageStats
-  recordCount: number
-  tags: string[]
-  onChangeTags: (tags: string[]) => void
-  onChangeStatus: (status: PageStatus | null) => void
-  onChangeUnderstanding: (understanding: number | null) => void
-  // "inline": label | value rows above the body. "panel": label over value, for the narrow side panel.
-  variant?: "inline" | "panel"
-  // Session timer total for this page, shown only when provided.
-  sessionTime?: ReactNode
-}
-
-export function PageProperties({
-  subjectName,
-  stats,
-  recordCount,
-  tags,
-  onChangeTags,
-  onChangeStatus,
-  onChangeUnderstanding,
-  variant = "inline",
-  sessionTime,
-}: PagePropertiesProps) {
-  const [draft, setDraft] = useState("")
-  const collapsedSaved = useSyncExternalStore(subscribeCollapsed, getCollapsed, () => true)
-  // The narrow side panel has its own layout and always shows every row.
-  const collapsed = variant === "inline" && collapsedSaved
-  const Row = variant === "panel" ? PanelRow : InlineRow
-  const empty = <span className="text-muted-foreground/70">비어 있음</span>
-
-  const addTag = () => {
-    const next = draft.trim().replace(/^#/, "")
-    if (next && !tags.includes(next)) onChangeTags([...tags, next])
-    setDraft("")
-  }
-
-  if (collapsed) {
+export function TemplateFields({
+  kind,
+  props,
+  onChangeProps,
+  pdfs,
+  scopeOptions,
+  problems,
+  retryHref,
+  today,
+}: {
+  kind: PageKind | null
+  props: PageProps
+  onChangeProps: (patch: Partial<PageProps>) => void
+  // 강의 노트: PDFs in the body that can be the lecture material.
+  pdfs: AttachmentBlock[]
+  // 시험 정리: notes that can be in the exam scope (same subject first).
+  scopeOptions: { id: string; title: string }[]
+  // 오답 노트: problems in the body and how many are still wrong.
+  problems: { total: number; wrong: number }
+  retryHref?: string
+  today: string | null
+}) {
+  const countdown = kind === "exam" ? examCountdown(props.examDate, today) : null
+  if (kind === "lecture")
     return (
-      <section aria-label="페이지 속성" className="flex flex-col">
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          aria-expanded={false}
-          className="flex min-h-8 items-center gap-2 rounded-md px-2 py-1 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/60"
-        >
-          <ChevronRight className="size-4 shrink-0" aria-hidden="true" />
-          <span className="shrink-0">속성</span>
-          <span className="min-w-0 truncate text-xs text-muted-foreground/80">
-            {[
-              subjectName ?? NO_SUBJECT,
-              stats.status,
-              stats.understanding !== null ? `이해도 ${stats.understanding}/5` : null,
-              stats.nextReviewAt ? `다음 복습 ${formatDate(stats.nextReviewAt)}` : null,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
-        </button>
-      </section>
-    )
-  }
-
-  return (
-    <section aria-label="페이지 속성" className="flex flex-col gap-0.5">
-      {variant === "inline" && (
-        <button
-          type="button"
-          onClick={() => setCollapsed(true)}
-          aria-expanded={true}
-          className="flex min-h-8 items-center gap-2 rounded-md px-2 py-1 text-left text-sm text-muted-foreground transition-colors hover:bg-muted/60"
-        >
-          <ChevronDown className="size-4 shrink-0" aria-hidden="true" />
-          속성
-          <span className="text-xs text-muted-foreground/70">접기</span>
-        </button>
-      )}
-      <dl className="flex flex-col">
-        <Row icon={BookOpen} label="과목">
-          {subjectName ?? (
-            <span className="text-muted-foreground/70" title="과목 안으로 옮기면 과목별 분석과 계획에 잡혀요">
-              {NO_SUBJECT}
-            </span>
-          )}
-        </Row>
-        <Row icon={CircleDot} label="상태">
-          <span className="inline-flex items-center gap-2">
-            <span className="relative inline-flex">
-              <span
-                className={`pointer-events-none rounded px-1.5 py-0.5 text-xs font-medium ${statusStyles[stats.status]}`}
-              >
-                {stats.status}
-              </span>
-              <select
-                aria-label="학습 상태 변경"
-                value={stats.statusIsManual ? stats.status : ""}
-                onChange={(e) => onChangeStatus((e.target.value || null) as PageStatus | null)}
-                className="absolute inset-0 cursor-pointer opacity-0"
-              >
-                <option value="">자동 (학습 기록 기준)</option>
-                {pageStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </span>
-            {!stats.statusIsManual && <span className="text-xs text-muted-foreground/70">자동</span>}
-          </span>
-        </Row>
-        <Row icon={Gauge} label="이해도">
-          <span className="inline-flex items-center gap-2">
-            <span role="group" aria-label="이해도 선택" className="flex">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => onChangeUnderstanding(n)}
-                  aria-label={`이해도 ${n}`}
-                  aria-pressed={stats.understanding === n}
-                  className="group/bar flex h-6 items-center px-px"
-                >
-                  <span
-                    className={`h-1.5 w-3 rounded-full transition-colors ${
-                      n <= (stats.understanding ?? 0)
-                        ? "bg-indigo-600 group-hover/bar:bg-indigo-500"
-                        : "bg-border group-hover/bar:bg-indigo-200"
-                    }`}
-                  />
-                </button>
+      <>
+        <PropertyRow icon={CalendarDays} label="주차" htmlFor="prop-week">
+          <input
+            id="prop-week"
+            value={props.week ?? ""}
+            onChange={(e) => onChangeProps({ week: e.target.value })}
+            placeholder="예: 3주차"
+            autoComplete="off"
+            className={input}
+          />
+        </PropertyRow>
+        <PropertyRow icon={FileText} label="강의 자료" htmlFor="prop-material">
+          {pdfs.length > 0 ? (
+            <select
+              id="prop-material"
+              value={props.materialBlockId ?? ""}
+              onChange={(e) => onChangeProps({ materialBlockId: e.target.value || undefined })}
+              className="max-w-full rounded-md bg-transparent px-1 py-1 text-sm text-foreground outline-none hover:bg-muted/60 focus:bg-muted"
+            >
+              <option value="">고르지 않음</option>
+              {pdfs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
-            </span>
-            {stats.understanding === null ? empty : `${stats.understanding} / 5`}
-            {stats.understandingIsManual && (
-              <button
-                type="button"
-                onClick={() => onChangeUnderstanding(null)}
-                className="rounded px-1 text-xs text-muted-foreground/70 transition-colors hover:bg-muted hover:text-foreground"
-              >
-                기록 기준으로
-              </button>
-            )}
-          </span>
-        </Row>
-        <Row icon={Clock} label="학습 시간">
-          {stats.totalDurationMinutes > 0 ? formatDuration(stats.totalDurationMinutes) : empty}
-        </Row>
-        {sessionTime !== undefined && (
-          <Row icon={Timer} label="타이머 누적">
-            {sessionTime}
-          </Row>
-        )}
-        <Row icon={CalendarCheck} label="마지막 학습">
-          {stats.lastStudiedAt ? formatDate(stats.lastStudiedAt) : empty}
-        </Row>
-        <Row icon={CalendarClock} label="다음 복습">
-          {stats.nextReviewAt ? (
-            <span className={stats.status === "복습 필요" ? "font-medium text-amber-700" : undefined}>
-              {formatDate(stats.nextReviewAt)}
+            </select>
+          ) : (
+            <span className="px-1.5 text-xs text-muted-foreground">본문에 PDF를 올리면 여기서 고를 수 있어요</span>
+          )}
+        </PropertyRow>
+      </>
+    )
+  if (kind === "wrong-answers")
+    return (
+      <>
+        <PropertyRow icon={BookMarked} label="출처" htmlFor="prop-source">
+          <input
+            id="prop-source"
+            value={props.source ?? ""}
+            onChange={(e) => onChangeProps({ source: e.target.value })}
+            placeholder="예: 2024 정보처리기사 실기 1회"
+            autoComplete="off"
+            className={input}
+          />
+        </PropertyRow>
+        <PropertyRow icon={ListChecks} label="틀린 문제">
+          {problems.total > 0 ? (
+            <span className="inline-flex items-center gap-2 px-1.5">
+              <span className="tabular-nums">
+                {problems.wrong} / {problems.total}
+              </span>
+              {problems.wrong > 0 && retryHref && (
+                <Link href={retryHref} className="rounded px-1.5 py-0.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">
+                  다시 풀기
+                </Link>
+              )}
             </span>
           ) : (
-            empty
+            <span className="px-1.5 text-xs text-muted-foreground">토글 하나가 문제 하나예요</span>
           )}
-        </Row>
-        <Row icon={Hash} label="태그">
-          <span className="flex flex-wrap items-center gap-1">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="group inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-xs text-foreground"
-              >
-                #{tag}
-                <button
-                  type="button"
-                  onClick={() => onChangeTags(tags.filter((t) => t !== tag))}
-                  aria-label={`${tag} 태그 삭제`}
-                  className="rounded text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
-                >
-                  <X className="size-3" />
-                </button>
-              </span>
-            ))}
+        </PropertyRow>
+      </>
+    )
+  if (kind === "exam")
+    return (
+      <>
+        <PropertyRow icon={CalendarDays} label="시험일" htmlFor="prop-exam">
+          <span className="inline-flex items-center gap-2">
             <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.nativeEvent.isComposing || e.keyCode === 229) return
-                if (e.key === "Enter") {
-                  e.preventDefault()
-                  addTag()
-                }
-              }}
-              onBlur={addTag}
-              aria-label="태그 추가"
-              placeholder={tags.length === 0 ? "태그 추가" : "+"}
-              className="w-20 rounded bg-transparent px-1 py-0.5 text-xs outline-none placeholder:text-muted-foreground/70 focus:bg-muted"
+              id="prop-exam"
+              type="date"
+              value={props.examDate ?? ""}
+              onChange={(e) => onChangeProps({ examDate: e.target.value || undefined })}
+              className="rounded-md bg-transparent px-1 py-1 text-sm text-foreground outline-none hover:bg-muted/60 focus:bg-muted"
             />
+            {countdown && (
+              <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold text-indigo-700">{countdown}</span>
+            )}
           </span>
-        </Row>
-      </dl>
-      <p className="pl-2 pt-1 text-xs text-muted-foreground/80">
-        {recordCount > 0
-          ? `상태와 이해도는 직접 바꿀 수 있고, 새 학습 기록을 추가하면 기록 기준으로 다시 맞춰져요 (기록 ${recordCount}개)`
-          : "상태와 이해도를 직접 고르거나, 학습 기록을 추가해 복습 일정까지 채워 보세요"}
-      </p>
-    </section>
+        </PropertyRow>
+        <PropertyRow icon={ListChecks} label="범위">
+          <ScopePicker value={props.scope ?? []} options={scopeOptions} onChange={(scope) => onChangeProps({ scope })} />
+        </PropertyRow>
+      </>
+    )
+  return null
+}
+
+// Tag chips with an inline add field. Used at the end of the note and in the 속성 window.
+export function TagEditor({ tags, onChange, size = "sm" }: { tags: string[]; onChange: (tags: string[]) => void; size?: "sm" | "md" }) {
+  const [draft, setDraft] = useState("")
+  const add = () => {
+    const next = draft.trim().replace(/^#/, "")
+    if (next && !tags.includes(next)) onChange([...tags, next])
+    setDraft("")
+  }
+  const chip = size === "md" ? "px-2.5 py-1 text-[13px]" : "px-2 py-0.5 text-xs"
+  return (
+    <span className="flex flex-wrap items-center gap-1.5">
+      {tags.map((tag) => (
+        <span key={tag} className={`group inline-flex items-center gap-0.5 rounded-full bg-muted text-foreground ${chip}`}>
+          #{tag}
+          <button
+            type="button"
+            onClick={() => onChange(tags.filter((t) => t !== tag))}
+            aria-label={`${tag} 태그 삭제`}
+            className="rounded-full text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+          >
+            <X className="size-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.nativeEvent.isComposing || e.keyCode === 229) return
+          if (e.key === "Enter") {
+            e.preventDefault()
+            add()
+          }
+        }}
+        onBlur={add}
+        aria-label="태그 추가"
+        placeholder="+ 태그"
+        autoComplete="off"
+        className={`w-20 rounded-full border border-dashed border-border bg-transparent outline-none placeholder:text-muted-foreground/80 focus:border-indigo-300 focus:bg-background ${chip}`}
+      />
+    </span>
   )
 }
 
-interface RowProps {
-  icon: LucideIcon
+function ScopePicker({
+  value,
+  options,
+  onChange,
+}: {
+  value: string[]
+  options: { id: string; title: string }[]
+  onChange: (scope: string[]) => void
+}) {
+  const picked = value
+    .map((id) => options.find((o) => o.id === id))
+    .filter((o): o is { id: string; title: string } => o !== undefined)
+  const rest = options.filter((o) => !value.includes(o.id))
+  return (
+    <span className="flex flex-wrap items-center gap-1 px-1">
+      {picked.map((o) => (
+        <span key={o.id} className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-xs text-foreground">
+          {o.title || "제목 없음"}
+          <button
+            type="button"
+            onClick={() => onChange(value.filter((id) => id !== o.id))}
+            aria-label={`${o.title || "제목 없음"} 범위에서 빼기`}
+            className="rounded text-muted-foreground hover:text-foreground"
+          >
+            <X className="size-3" />
+          </button>
+        </span>
+      ))}
+      {rest.length > 0 && (
+        <select
+          aria-label="범위에 노트 넣기"
+          value=""
+          onChange={(e) => e.target.value && onChange([...value, e.target.value])}
+          className="rounded bg-transparent px-0.5 py-0.5 text-xs text-muted-foreground outline-none hover:bg-muted/60 focus:bg-muted"
+        >
+          <option value="">+ 노트 넣기</option>
+          {rest.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.title || "제목 없음"}
+            </option>
+          ))}
+        </select>
+      )}
+    </span>
+  )
+}
+
+export function PropertyRow({
+  icon: Icon,
+  label,
+  htmlFor,
+  children,
+}: {
+  icon?: LucideIcon
   label: string
+  htmlFor?: string
   children: ReactNode
-}
-
-function PanelRow({ icon: Icon, label, children }: RowProps) {
+}) {
   return (
-    <div className="flex flex-col gap-1 rounded-md px-2 py-2 text-sm transition-colors hover:bg-muted/60">
-      <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Icon className="size-3.5" aria-hidden="true" />
-        {label}
-      </dt>
-      <dd className="min-w-0 text-foreground">{children}</dd>
-    </div>
-  )
-}
-
-function InlineRow({ icon: Icon, label, children }: RowProps) {
-  return (
-    <div className="flex min-h-8 items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted/60">
-      <dt className="flex w-28 shrink-0 items-center gap-2 text-muted-foreground">
-        <Icon className="size-4" aria-hidden="true" />
-        {label}
+    <div className="flex min-h-9 items-center gap-3 rounded-lg px-2.5 py-1 text-sm">
+      <dt className="flex w-24 shrink-0 items-center gap-2 text-muted-foreground">
+        {Icon && <Icon className="size-4" aria-hidden="true" />}
+        {htmlFor ? <label htmlFor={htmlFor}>{label}</label> : label}
       </dt>
       <dd className="min-w-0 flex-1 text-foreground">{children}</dd>
     </div>

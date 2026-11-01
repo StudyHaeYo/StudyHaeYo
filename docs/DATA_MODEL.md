@@ -37,6 +37,7 @@
 | status | `시작 전｜학습 중｜복습 필요｜완료` (선택) | **사용자가 직접 고른 값.** 없으면 파생 |
 | understanding | number 1~5 (선택) | **사용자가 직접 고른 값.** 없으면 최신 기록에서 파생 |
 | studyEnabled | boolean (선택) | 학습 기능이 "선택"인 템플릿에서 사용자가 켰는지 |
+| props | PageProps (선택) | 템플릿별 값(D-27). `kind`(note｜lecture｜wrong-answers｜exam), 강의 노트 `week` · `materialBlockId`, 오답 노트 `source`, 시험 정리 `examDate` · `scope`(페이지 id 목록). DB `workspace_nodes.props` jsonb. 모르는 키는 지우지 않고 그대로 저장한다 |
 
 ### StudyNoteContent (옛 학습 노트 본문, 읽기 전용)
 - `{learned: Block[], concepts: {id, text}[], confusions: {id, text, resolved}[]}`. D-23 이전 학습 노트의 본문이다
@@ -49,6 +50,7 @@
 - `ol`(번호 목록): 번호는 저장하지 않고 바로 위로 이어진 `ol` 블록 수로 매긴다
 - `todo`(체크 목록): `checked`. 홈의 "오늘의 체크리스트"(`todos` 테이블)와는 따로다
 - `toggle`(토글): `text`가 제목, `body`가 접히는 내용(여러 줄 글), `open`이 펼침 상태. 검색과 AI는 `body`도 읽는다(`textBlockWords`)
+  - 오답 노트에서는 토글 하나가 문제 하나다. `result`(right｜wrong)와 `triedOn`(마지막으로 푼 날)을 둔다. `result`가 없으면 틀린 문제로 본다
 - `quote`(인용), `callout`(💡 강조 박스)은 모양만 다르다
 - 다른 종류로 바꾸면 그 종류가 안 쓰는 칸은 지운다(`withType`). 토글을 본문으로 되돌리면 `body`는 바로 아래 본문 블록이 된다
 
@@ -71,20 +73,21 @@
 **공통**: 첨부와 그림은 텍스트가 아니므로 AI 도구용 본문 텍스트(`blocksPlainText`)에서 빠진다. 페이지를 복제하면 그림은 획 데이터까지 깊은 복사하고(`cloneBlock`), 첨부는 블록만 복사해서 **복제본이 원본과 같은 파일을 가리킨다.**
 
 ### 학습 기록 (PageStudyRecord / SubjectStudyRecord)
-> **바뀔 예정(D-24, 2026-10-25 결정, 발표 뒤 구현)**: 과목도 선택이 된다. 기록은 노트 · 과목 · 둘 다 없음(외부 학습) 중 하나이고, 기록 창에서 과목이나 노트를 새로 만들지 않는다. 모든 기록은 "학습 기록" 화면에 모인다. 아래는 **지금 코드** 기준이다(과목 필수).
-
-기록은 **페이지** 또는 **과목** 중 하나에 붙는다(D-24). 페이지 기록은 `page.studyRecords`, 페이지 없이 과목에 바로 남긴 기록은 `WorkspaceState.subjectRecords`에 있다. DB에서는 같은 `study_records` 테이블이고 `page_id`와 `subject_id` 중 하나만 채운다(`supabase/migrations/20261024_subject_records.sql`).
+기록은 **노트 · 과목 · 둘 다 없음(과목 없음, 외부 학습)** 중 하나에 붙는다(D-24). 노트 기록은 `page.studyRecords`, 노트 없는 기록은 `WorkspaceState.subjectRecords`에 있고 `subjectId`가 `null`이면 과목도 없는 기록이다. DB에서는 같은 `study_records` 테이블이고 `page_id`와 `subject_id`를 둘 다 채우지는 않는다(`supabase/migrations/20261024_subject_records.sql`, 둘 다 비면 과목 없음).
 - 페이지 기록의 과목은 저장하지 않고 페이지 위치에서 계산한다(`nearestSubject`). 그래서 페이지 기록의 `subject_id`는 비워 둔다
 - 과목 기록을 고칠 때 페이지를 고르면 같은 행이 그 페이지 기록이 된다(`attachRecordToPage`: `page_id` 채우고 `subject_id` 비움)
 - 학습 기능이 꺼진 페이지에 밖에서(빠른 기록, 과목 기록 연결) 기록을 붙이면 그 페이지의 학습 기능을 켠다
-- 과목을 지우면 그 과목의 기록도 지워진다(cascade, 되돌리기 가능). 과목 기록이 있는 과목은 폴더로 바꿀 수 없다
-- 기록 창(`quick-record-dialog.tsx`): 과목이 필수이고 노트 연결은 접힌 선택 칸이다. 노트에서 열면(AI 채점) 그 노트로 고정된다. 노트 아래의 기록 폼도 같은 칸(날짜 · 공부한 시간 · 이해도 · 무엇을 했나요)을 쓴다
-- 마이그레이션 전(`subject_id` 컬럼 없음, `useSubjectRecordsReady` false)에는 페이지 기록만 읽고, 노트 밖에서 여는 [+ 기록] 버튼(사이드바, 휴대폰 상단, 과목 화면, 타이머 요약, 홈 시작하기)과 타이머 과목 고르기를 숨긴다. 기록 창이 열려도 노트 연결이 필수다
+- 과목을 지우면 그 과목의 기록은 과목 없는 기록으로 남는다(`subject_id` on delete set null, 되돌리면 다시 과목으로). 과목 기록이 있는 과목은 폴더로 바꿀 수 없다
+- 기록 창(`quick-record-dialog.tsx`, D-28): 무엇을 했나요 → 날짜 · 시간 · 이해도 → 어디에(노트 · 과목 · 연결 안 함, 선택). 노트·과목은 이미 있는 것만 고른다. 노트에 남긴 기록을 고칠 때는 노트를 바꾸지 않는다
+- 노트 없는 기록은 학습 기록 화면에서 나중에 노트에 연결하거나, 그 기록으로 새 노트(오답 · 학습 노트)를 만들어 연결한다. 어려웠던 점은 새 노트의 헷갈린 점이 된다
+- 타이머 요약은 노트별 시간과 노트 밖 시간을 한 번에 기록하고, `createdAt`을 세션 끝 시각으로 둔다(세션 시간이 두 번 세지지 않게, D-10)
+- "복습", "오답 풀기", "AI 채점" 표시는 저장된 칸이 아니라 앱이 쓴 `studyContent` 머리말(`복습 모드:` 등)로 판단한다
+- 마이그레이션 전(`subject_id` 컬럼 없음, `useSubjectRecordsReady` false)에는 페이지 기록만 읽고, 기록 창은 노트만 고를 수 있다(노트를 골라야 저장된다). 타이머 요약의 노트 밖 시간 줄과 타이머 과목 고르기는 숨긴다
 
 | 필드 | 타입 | 메모 |
 |---|---|---|
 | id | string | uuid. 옛 기록은 `<pageId>-r-<생성 ms>`, 시드는 `ds1-r1` |
-| pageId / subjectId | string | 페이지 기록은 `pageId`, 과목 기록은 `subjectId` |
+| pageId / subjectId | string / string ｜ null | 노트 기록은 `pageId`, 노트 없는 기록은 `subjectId`(과목이 없으면 `null`) |
 | date | `"YYYY-MM-DD"` | 공부한 날 |
 | createdAt | number(ms), 선택 | 기록 생성 시각. 세션 시간 중복 집계 판단에 쓴다. 옛 기록은 없을 수 있다 |
 | durationMinutes | number | |

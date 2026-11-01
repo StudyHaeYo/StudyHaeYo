@@ -6,6 +6,7 @@ import {
   daysBetween,
   studyPages,
   todayISO,
+  type PageProps,
   type PageStudyRecord,
   type StudyPage,
   type SubjectStudyRecord,
@@ -72,8 +73,26 @@ export const useWorkspace = store.useStore
 
 // False while study_records has no subject_id column (supabase/migrations/20261024_subject_records.sql not
 // applied): then a record must go on a page. Server snapshot is true so the first render matches.
-const subjectRecordsReadyStore = createStore<boolean>(true)
+// false until the first load confirms the columns exist, so hidden UI never flashes in and out.
+const subjectRecordsReadyStore = createStore<boolean>(false)
 export const useSubjectRecordsReady = subjectRecordsReadyStore.useStore
+
+// workspace_nodes.props exists (D-27). False until the first load confirms it: template-specific properties and
+// features stay hidden, and templates only fill their starting blocks.
+const pagePropsReadyStore = createStore<boolean>(false)
+export const usePagePropsReady = pagePropsReadyStore.useStore
+export function setPagePropsReady(ready: boolean) {
+  pagePropsReadyStore.set(() => ready)
+}
+export function pagePropsReady() {
+  return pagePropsReadyStore.get()
+}
+
+// Merges into the page's props (D-27). Does nothing until the props column exists.
+export function updatePageProps(id: string, patch: Partial<PageProps>) {
+  if (!pagePropsReady()) return
+  updatePage(id, (p) => ({ ...p, props: { ...p.props, ...patch } }))
+}
 export function setSubjectRecordsReady(ready: boolean) {
   subjectRecordsReadyStore.set(() => ready)
 }
@@ -240,6 +259,18 @@ export function renamePage(id: string, title: string) {
   updatePage(id, (p) => ({ ...p, title }))
 }
 
+// Fills an empty page from a template (the starter row on a new page). Study templates turn study features on.
+export function applyStarter(id: string, starterId: string) {
+  const starter = getStarter(starterId)
+  updatePage(id, (p) => ({
+    ...p,
+    templateId: starter.templateId,
+    blocks: starter.createBlocks(),
+    studyEnabled: starter.templateId === "study-note" ? true : p.studyEnabled,
+    ...(starter.kind && pagePropsReady() ? { props: { ...p.props, kind: starter.kind } } : {}),
+  }))
+}
+
 export function setPageStudyEnabled(id: string, studyEnabled: boolean) {
   updatePage(id, (p) => ({ ...p, studyEnabled }))
 }
@@ -374,11 +405,11 @@ function removeSubtree(rootId: string) {
   }
   const name = findNode(s, rootId)?.node.name || "제목 없음"
 
-  // Subject records go with their subject (study_records.subject_id cascades in the DB).
+  // Records left on a deleted subject stay as 외부 학습 (study_records.subject_id is ON DELETE SET NULL, D-24).
   store.set((state) => ({
     pages: state.pages.filter((p) => !removed.has(p.id)),
     groups: state.groups.filter((g) => !removed.has(g.id)),
-    subjectRecords: state.subjectRecords.filter((r) => !removed.has(r.subjectId)),
+    subjectRecords: state.subjectRecords.map((r) => (r.subjectId && removed.has(r.subjectId) ? { ...r, subjectId: null } : r)),
     order: state.order.filter((nodeId) => !removed.has(nodeId)),
   }))
   for (const nodeId of removed) savedPositions.delete(nodeId)
@@ -431,10 +462,13 @@ function undoDelete(
     const groups = merge(snapshot.groups, state.groups)
     const present = new Set([...pages.map((p) => p.id), ...groups.map((g) => g.id)])
     const order = [...snapshot.order.filter((id) => present.has(id)), ...state.order.filter((id) => !snapshot.order.includes(id))]
-    const restoredRecords = snapshot.subjectRecords.filter(
-      (r) => snapshot.removed.has(r.subjectId) && !state.subjectRecords.some((x) => x.id === r.id),
-    )
-    return { pages, groups, order, subjectRecords: [...state.subjectRecords, ...restoredRecords] }
+    // Records the delete moved to 외부 학습 go back onto their subject.
+    const before = new Map(snapshot.subjectRecords.map((r) => [r.id, r.subjectId]))
+    const subjectRecords = state.subjectRecords.map((r) => {
+      const was = before.get(r.id)
+      return r.subjectId === null && was && snapshot.removed.has(was) ? { ...r, subjectId: was } : r
+    })
+    return { pages, groups, order, subjectRecords }
   })
   reattachPlans(snapshot.plans)
   syncPositions()
