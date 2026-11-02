@@ -1,8 +1,8 @@
 import { ClipboardCheck, FilePlus, FileText, GraduationCap, NotebookPen, Presentation, Sparkles, XCircle, type LucideIcon } from "lucide-react"
-import { newBlockId, type Block, type BlockType, type PageKind } from "@/lib/study-pages"
+import { newBlockId, pageKind, type Block, type BlockType, type PageKind } from "@/lib/study-pages"
 
-// Every page is one block body (D-23). A template only decides what a new page starts with:
-// its first blocks and whether study features (속성 · 학습 기록 · AI 도구) start on.
+// Every page is one block body (D-23) and every page can hold study records (D-30: study features are no longer
+// turned on or off). A template (노트 종류) decides what the note starts with and what it is for (props.kind).
 //
 // `templateId` is what the DB stores (workspace_nodes.template_id). It stays "study-note" | "blank":
 // study templates all save as "study-note" (study on by default), so no DB change is needed
@@ -37,8 +37,8 @@ export interface PageStarter {
 export const pageStarters: PageStarter[] = [
   {
     id: "blank",
-    name: "빈 페이지",
-    tagline: "아무것도 없는 페이지. / 로 원하는 블록을 넣어요",
+    name: "빈 노트",
+    tagline: "아무것도 없는 노트. / 로 원하는 블록을 넣어요",
     icon: FilePlus,
     templateId: "blank",
     createBlocks: () => [t("p")],
@@ -76,7 +76,6 @@ export const pageStarters: PageStarter[] = [
     icon: Presentation,
     templateId: "study-note",
     createBlocks: () => [
-      t("callout", "강의 PDF를 이 페이지에 끌어다 놓으면, 속성의 ‘강의 자료’로 골라 옆에 펴 두고 필기할 수 있어요."),
       t("h2", "필기"),
       t("li"),
       t("h2", "핵심 개념"),
@@ -108,7 +107,7 @@ export const pageStarters: PageStarter[] = [
     tagline: "범위를 체크하며 정리하고, 자주 틀리는 것 모아 두기",
     icon: ClipboardCheck,
     templateId: "study-note",
-    // 시험일 · 범위는 속성에 둔다(D-27). 본문은 시험 직전에 볼 것만.
+    // 시험일 · 범위는 props에 두고 본문 맨 위에서 고친다(D-27, D-30). 본문은 시험 직전에 볼 것만.
     createBlocks: () => [
       t("h2", "꼭 나오는 개념"),
       t("concept"),
@@ -124,30 +123,29 @@ export function getStarter(id: string) {
   return pageStarters.find((s) => s.id === id) ?? pageStarters[0]
 }
 
-type PageLike = {
-  templateId: TemplateId
-  studyEnabled?: boolean
-  studyRecords: unknown[]
-}
-
-// Study features can be turned on or off on any page. Pages from a study template start on.
-export function isStudyOn(page: PageLike) {
-  if (page.studyEnabled !== undefined) return page.studyEnabled
-  if (page.templateId === "study-note") return true
-  // Older blank pages saved before the flag existed: show their records rather than hide them.
-  return page.studyRecords.length > 0
-}
-
-export interface TreeAppearance {
+// 노트 종류 (D-30): one list for the new-note picker, the kind chip in the top bar, the sidebar and search.
+// "does" says what the kind is for, in the user's words; only what the app does today.
+export interface NoteKindOption {
+  kind: PageKind | null
+  starterId: string
+  name: string
+  does: string
   icon: LucideIcon
-  // A blank page that is collecting study records.
-  studyBadge: boolean
 }
 
-export function resolveTreeAppearance(page: PageLike): TreeAppearance {
-  return { icon: getTemplate(page.templateId).treeIcon, studyBadge: page.templateId === "blank" && isStudyOn(page) }
+export const noteKinds: NoteKindOption[] = [
+  { kind: "note", starterId: "study-note", name: "학습 노트", does: "핵심 개념을 카드로 복습해요", icon: NotebookPen },
+  { kind: "lecture", starterId: "lecture", name: "강의 노트", does: "강의 PDF를 옆에 펴고 필기해요", icon: Presentation },
+  { kind: "wrong-answers", starterId: "wrong-answers", name: "오답 노트", does: "틀린 문제만 다시 풀어요", icon: XCircle },
+  { kind: "exam", starterId: "exam", name: "시험 정리", does: "시험일까지 범위를 챙겨요", icon: ClipboardCheck },
+  { kind: null, starterId: "blank", name: "빈 노트", does: "모양 없이 자유롭게 써요", icon: FileText },
+]
+
+export function noteKindOption(kind: PageKind | null) {
+  return noteKinds.find((k) => k.kind === kind) ?? noteKinds[noteKinds.length - 1]
 }
 
-// Home's 복습 widgets, review lists and the session timer: every page with study on
-// (a page only gets a review date once it has a record).
-export const isReviewCandidate = isStudyOn
+// The icon a note shows in the sidebar, lists and the kind chip.
+export function noteIcon(page: Parameters<typeof pageKind>[0]): LucideIcon {
+  return noteKindOption(pageKind(page)).icon
+}

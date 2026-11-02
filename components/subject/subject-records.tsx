@@ -4,7 +4,7 @@ import Link from "next/link"
 import { FileText, Plus } from "lucide-react"
 import { formatDate } from "@/lib/study-pages"
 import { subjectPageRows } from "@/lib/study-stats"
-import { resolveTreeAppearance } from "@/lib/templates"
+import { noteIcon } from "@/lib/templates"
 import { useWorkspace } from "@/lib/workspace"
 import { useTodayISO } from "@/hooks/use-today"
 
@@ -31,7 +31,7 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
       {rows.length > 0 ? (
         <ul className="flex flex-col divide-y divide-border border-y border-border">
           {rows.map(({ page, stats }) => {
-            const Icon = resolveTreeAppearance(page).icon
+            const Icon = noteIcon(page)
             const due = stats.status === "복습 필요" ? "text-amber-700" : undefined
             return (
               <li key={page.id}>

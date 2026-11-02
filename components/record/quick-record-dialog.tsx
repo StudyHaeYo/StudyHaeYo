@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { BookMarked, CalendarDays, Clock, FileText, Plus, Trash2, X } from "lucide-react"
 import {
+  addConfusions,
   addDays,
   formatDate,
   formatDuration,
@@ -31,8 +32,10 @@ import { recordShortcuts } from "@/lib/study-stats"
 import { addTodo, useTodosStatus } from "@/lib/todos"
 import { useFocusTrap } from "@/hooks/use-focus-trap"
 
-// 학습 기록 창 (D-24, D-28). What was studied comes first; date · time · 이해도 are one row of buttons; where it goes
-// (a note, a subject, or nothing = 과목 없음) is one optional search. The footer says what saving will do.
+// 학습 기록 창 (D-24, D-28, D-30). What was studied comes first, then date · time, then 이해도 in words. Where it goes
+// (a note, a subject, or nothing = 과목 없음) is one optional search — not asked when opened from a note. What was
+// hard goes into the note as a 헷갈린 점 and what to do next onto the checklist, instead of separate record fields.
+// The footer says what saving will do.
 // Opened from everywhere ([+ 기록], a note, a subject, the timer, AI grading) and for editing any record.
 export interface QuickRecordRequest {
   subjectId?: string | null
@@ -73,7 +76,8 @@ export function QuickRecordLayer() {
 
 type Target = { kind: "page"; id: string } | { kind: "subject"; id: string } | { kind: "none" }
 
-const levelHints = ["거의 모르겠어요", "조금 이해했어요", "절반 정도 이해했어요", "대부분 이해했어요", "완벽히 이해했어요"]
+// 이해도 in words (D-30): the number sets the next review, so each one says what it means.
+const levels = ["처음 본 듯", "많이 헷갈림", "대충 앎", "거의 앎", "설명 가능"]
 const PRESETS = [25, 50, 90]
 
 const isPageRecord = (r: SubjectStudyRecord | PageStudyRecord): r is PageStudyRecord => "pageId" in r
@@ -111,10 +115,16 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
   const [duration, setDuration] = useState(edit ? String(edit.durationMinutes) : request.minutes ? String(request.minutes) : "")
   const [understanding, setUnderstanding] = useState<number | null>(edit?.understanding ?? request.understanding ?? null)
   const [studyContent, setStudyContent] = useState(edit?.studyContent ?? request.studyContent ?? "")
+  // Records written before D-30 can still carry these; they stay editable there and are not asked for anymore.
   const [difficulties, setDifficulties] = useState(edit?.difficulties ?? "")
   const [nextSteps, setNextSteps] = useState(edit?.nextSteps ?? "")
-  const [showHard, setShowHard] = useState(Boolean(edit?.difficulties))
-  const [showNext, setShowNext] = useState(Boolean(edit?.nextSteps))
+  const legacyHard = Boolean(edit?.difficulties)
+  const legacyNext = Boolean(edit?.nextSteps)
+  // New: straight into the note (헷갈린 점) and the checklist (tomorrow).
+  const [confusion, setConfusion] = useState<string | null>(null)
+  const [todo, setTodo] = useState<string | null>(null)
+  // Opened from a note: it goes there, so the where-picker stays folded unless asked for.
+  const [pickWhere, setPickWhere] = useState(!(request.pageId && !edit))
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
@@ -178,11 +188,13 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
       durationMinutes: minutes,
       understanding,
       studyContent: studyContent.trim(),
-      difficulties: showHard ? difficulties.trim() : "",
-      nextSteps: showNext ? nextSteps.trim() : "",
+      difficulties: legacyHard ? difficulties.trim() : "",
+      nextSteps: legacyNext ? nextSteps.trim() : "",
       tags: edit?.tags ?? [],
     }
     let href = "/records"
+    if (page && confusion?.trim()) updatePage(page.id, (p) => ({ ...p, blocks: addConfusions(p.blocks, [confusion.trim()]) }))
+    if (todosReady && todo?.trim()) addTodo(todo, addDays(today, 1))
     if (target.kind === "page" && page) {
       if (edit && isPageRecord(edit))
         updatePage(page.id, (p) => ({ ...p, studyRecords: p.studyRecords.map((r) => (r.id === fields.id ? { ...fields, pageId: page.id } : r)) }))
@@ -245,8 +257,8 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
       >
         <div className="mx-auto mt-2.5 h-1 w-9 rounded-full bg-border sm:hidden" aria-hidden="true" />
         <div className="flex items-center justify-between px-5 pt-3 sm:pt-4">
-          <h2 id="quick-record-title" className="text-sm font-semibold text-foreground">
-            {edit ? "학습 기록 고치기" : "학습 기록 남기기"}
+          <h2 id="quick-record-title" className="min-w-0 truncate text-sm font-semibold text-foreground">
+            {edit ? "학습 기록 고치기" : !pickWhere && page ? `${page.title || "제목 없음"}에 기록` : "학습 기록 남기기"}
           </h2>
           <button
             type="button"
@@ -321,29 +333,6 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
             />
             분
           </label>
-          <div className={pill} role="radiogroup" aria-label="이해도">
-            <span className="text-muted-foreground">이해도</span>
-            <span className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  role="radio"
-                  aria-checked={understanding === n}
-                  aria-label={`${n}점 - ${levelHints[n - 1]}`}
-                  title={levelHints[n - 1]}
-                  onClick={() => setUnderstanding(n)}
-                  className={`flex size-6 items-center justify-center rounded-md text-xs font-semibold transition-colors ${
-                    understanding !== null && n <= understanding
-                      ? "bg-indigo-600 text-white"
-                      : "border border-indigo-200 text-muted-foreground hover:border-indigo-400 hover:text-indigo-700"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </span>
-          </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5 px-5 pt-2">
           {[...(request.minutes && !PRESETS.includes(request.minutes) ? [request.minutes] : []), ...PRESETS].map((m) => (
@@ -359,6 +348,36 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
         </div>
 
         <div className="px-5 pt-4">
+          <p id="qr-level-label" className="mb-1.5 text-xs text-muted-foreground">
+            이해도
+          </p>
+          <div role="radiogroup" aria-labelledby="qr-level-label" className="grid grid-cols-5 gap-1.5">
+            {levels.map((label, i) => {
+              const n = i + 1
+              const on = understanding === n
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setUnderstanding(n)}
+                  className={`flex h-12 flex-col items-center justify-center gap-0.5 rounded-xl border text-xs leading-tight transition-colors ${
+                    on
+                      ? "border-indigo-600 bg-indigo-600 text-white"
+                      : "border-border text-muted-foreground hover:border-indigo-300 hover:text-foreground"
+                  }`}
+                >
+                  <b className={`text-sm tabular-nums ${on ? "text-white" : "text-foreground"}`}>{n}</b>
+                  <span className="px-0.5 text-center">{label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {pickWhere ? (
+        <div className="px-5 pt-4">
           <p id="qr-where-label" className="mb-1.5 text-xs text-muted-foreground">
             어디에 남길까요 <span className="text-muted-foreground/70">· {ready ? "선택" : "노트"}</span>
           </p>
@@ -371,12 +390,18 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
             labelledBy="qr-where-label"
           />
         </div>
+        ) : (
+          <div className="px-5 pt-2">
+            <button type="button" onClick={() => setPickWhere(true)} className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+              다른 곳에 남기기
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-col gap-2 px-5 pt-3">
-          {showHard && (
+          {legacyHard && (
             <textarea
               aria-label="어려웠던 점"
-              autoFocus={!edit}
               value={difficulties}
               onChange={(e) => setDifficulties(e.target.value)}
               rows={1}
@@ -384,10 +409,9 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               className="w-full resize-none rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-amber-700/60 focus:border-amber-400"
             />
           )}
-          {showNext && (
+          {legacyNext && (
             <textarea
               aria-label="다음에 할 일"
-              autoFocus={!edit && !showHard}
               value={nextSteps}
               onChange={(e) => setNextSteps(e.target.value)}
               rows={1}
@@ -395,18 +419,40 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               className="w-full resize-none rounded-xl border border-border px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-muted-foreground/70 focus:border-indigo-400"
             />
           )}
-          {(!showHard || !showNext) && (
-            <div className="flex gap-1.5">
-              {!showHard && (
-                <button type="button" onClick={() => setShowHard(true)} className={`${chip} inline-flex items-center gap-1 border border-dashed border-border text-muted-foreground hover:text-foreground`}>
+          {confusion !== null && page && (
+            <textarea
+              aria-label={`${page.title || "제목 없음"}에 추가할 헷갈린 점`}
+              autoFocus
+              value={confusion}
+              onChange={(e) => setConfusion(e.target.value)}
+              rows={1}
+              placeholder="헷갈린 점. 노트의 헷갈린 점에 들어가요…"
+              className="w-full resize-none rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-amber-800/70 focus:border-amber-400"
+            />
+          )}
+          {todo !== null && (
+            <input
+              aria-label="내일 할 일"
+              autoFocus
+              autoComplete="off"
+              value={todo}
+              onChange={(e) => setTodo(e.target.value)}
+              placeholder="내일 할 일. 체크리스트에 들어가요…"
+              className="h-10 w-full rounded-xl border border-border px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-indigo-400"
+            />
+          )}
+          {((confusion === null && page) || (todo === null && todosReady)) && (
+            <div className="flex flex-wrap gap-1.5">
+              {confusion === null && page && (
+                <button type="button" onClick={() => setConfusion("")} className={`${chip} inline-flex items-center gap-1 border border-dashed border-border text-muted-foreground hover:text-foreground`}>
                   <Plus className="size-3" aria-hidden="true" />
-                  어려웠던 점
+                  헷갈린 점을 노트에 추가
                 </button>
               )}
-              {!showNext && (
-                <button type="button" onClick={() => setShowNext(true)} className={`${chip} inline-flex items-center gap-1 border border-dashed border-border text-muted-foreground hover:text-foreground`}>
+              {todo === null && todosReady && (
+                <button type="button" onClick={() => setTodo("")} className={`${chip} inline-flex items-center gap-1 border border-dashed border-border text-muted-foreground hover:text-foreground`}>
                   <Plus className="size-3" aria-hidden="true" />
-                  다음에 할 일
+                  내일 할 일에 추가
                 </button>
               )}
             </div>

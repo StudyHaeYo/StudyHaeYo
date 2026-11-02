@@ -5,15 +5,19 @@ import {
   cloneBlock,
   daysBetween,
   isTextBlock,
+  newBlockId,
   studyPages,
+  pageKind,
+  problemBlocks,
   todayISO,
+  type PageKind,
   type PageProps,
   type PageStudyRecord,
   type StudyPage,
   type SubjectStudyRecord,
 } from "@/lib/study-pages"
 import { studyTree } from "@/lib/study-tree"
-import { getStarter, isStudyOn } from "@/lib/templates"
+import { getStarter } from "@/lib/templates"
 import {
   deletePlanRows,
   detachPlans,
@@ -288,30 +292,60 @@ export function renamePage(id: string, title: string) {
   updatePage(id, (p) => ({ ...p, title }))
 }
 
-// Fills an empty page from a template (the starter row on a new page). Study templates turn study features on.
+// Fills an empty page from a template (the 노트 종류 picker on a new page, D-30).
 export function applyStarter(id: string, starterId: string) {
   const starter = getStarter(starterId)
   updatePage(id, (p) => ({
     ...p,
     templateId: starter.templateId,
     blocks: starter.createBlocks(),
-    studyEnabled: starter.templateId === "study-note" ? true : p.studyEnabled,
-    ...(starter.kind && pagePropsReady() ? { props: { ...p.props, kind: starter.kind } } : {}),
+    ...(starter.kind && pagePropsReady()
+      ? { props: { ...p.props, kind: starter.kind, ...(starter.kind === "exam" ? examScopeDefault(p) : {}) } }
+      : {}),
   }))
 }
 
-export function setPageStudyEnabled(id: string, studyEnabled: boolean) {
-  updatePage(id, (p) => ({ ...p, studyEnabled }))
+// The kind chip (D-30): change what a note is for without touching what is written. Kinds other than 학습 노트
+// live in props.kind, so they wait for the props column; 학습 노트 ↔ 빈 노트 only needs templateId.
+// The body stays; a 오답 노트 with no problem yet gets an empty first problem at the top.
+export function setPageKind(id: string, kind: PageKind | null) {
+  const ready = pagePropsReady()
+  if (kind && kind !== "note" && !ready) return
+  updatePage(id, (p) => {
+    const { kind: _old, ...rest } = p.props ?? {}
+    const props = ready ? (kind ? { ...rest, kind, ...(kind === "exam" && !rest.scope?.length ? examScopeDefault(p) : {}) } : rest) : p.props
+    const firstProblem =
+      kind === "wrong-answers" && problemBlocks(p.blocks).length === 0
+        ? [{ id: newBlockId(), type: "toggle" as const, text: "문제 1", body: "", open: true }]
+        : []
+    const onlyEmpty = p.blocks.length === 1 && isTextBlock(p.blocks[0]) && p.blocks[0].type === "p" && p.blocks[0].text === ""
+    return {
+      ...p,
+      templateId: kind ? "study-note" : "blank",
+      ...(props !== undefined ? { props } : {}),
+      blocks: firstProblem.length > 0 ? [...firstProblem, ...(onlyEmpty ? [] : p.blocks)] : p.blocks,
+    }
+  })
+}
+
+// 시험 정리 starts with the other notes of its subject in scope; the user takes out what isn't on the exam.
+function examScopeDefault(page: StudyPage): Partial<PageProps> {
+  const state = store.get()
+  const subject = nearestSubject(state, page.parentId)
+  if (!subject) return {}
+  const scope = descendantPages(state, subject.id)
+    .filter((p) => p.id !== page.id && pageKind(p) !== "exam")
+    .map((p) => p.id)
+  return scope.length > 0 ? { scope } : {}
 }
 
 // ---- 학습 기록 바로 남기기 (D-24)
 
-// Adds a record to a page from outside the page (빠른 기록, 타이머). A page with study off gets it turned on,
-// so the record is visible there. Like adding on the page, a new record clears manual status/understanding.
+// Adds a record to a page from outside the page (빠른 기록, 타이머). Like adding on the page, a new record clears
+// manual status/understanding.
 export function addPageRecord(pageId: string, record: PageStudyRecord) {
   updatePage(pageId, ({ status: _s, understanding: _u, ...p }) => ({
     ...p,
-    ...(isStudyOn(p) ? {} : { studyEnabled: true }),
     studyRecords: [...p.studyRecords, { ...record, pageId }],
   }))
 }
@@ -347,7 +381,6 @@ export function deleteSubjectRecord(id: string) {
 export function attachRecordToPage(record: SubjectStudyRecord, pageId: string) {
   const page = store.get().pages.find((p) => p.id === pageId)
   if (!page) return
-  if (!isStudyOn(page)) setPageStudyEnabled(pageId, true)
   const { subjectId: _subject, ...fields } = record
   const moved: PageStudyRecord = { ...fields, pageId }
   // Straight into the store: going through updatePage would insert the record as a new row.

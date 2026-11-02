@@ -12,7 +12,6 @@ import {
   type StudyRecordFields,
 } from "@/lib/study-pages"
 import { recordCreatedAt } from "@/lib/study-session"
-import { isReviewCandidate } from "@/lib/templates"
 import { descendantGroups, descendantPages, nearestSubject, NO_SUBJECT, type WorkspaceState } from "@/lib/workspace"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
 import type { LearningPlan } from "@/lib/plans"
@@ -207,10 +206,9 @@ export interface UpcomingReview {
   due: { label: string; tone: DueTone }
 }
 
-// Same page pool as R2 (study on), not yet 완료, with a review date.
+// Every note (D-30), not yet 완료, with a review date.
 export function upcomingReviews(workspace: WorkspaceState, today: string, limit = 5): UpcomingReview[] {
   return workspace.pages
-    .filter(isReviewCandidate)
     .map((page) => ({ page, stats: computePageStats(page, today) }))
     .filter(({ stats }) => stats.status !== "완료" && stats.nextReviewAt !== null)
     .sort((a, b) => a.stats.nextReviewAt!.localeCompare(b.stats.nextReviewAt!))

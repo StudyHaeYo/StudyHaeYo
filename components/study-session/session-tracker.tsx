@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
-import { isStudyOn } from "@/lib/templates"
 import { useWorkspace } from "@/lib/workspace"
 import {
   HEARTBEAT_MS,
@@ -27,7 +26,7 @@ export function SessionTracker() {
 
   const routePageId = pathname.match(/^\/record\/([^/]+)/)?.[1] ?? null
   const routePage = routePageId ? pages.find((p) => p.id === routePageId) : undefined
-  const trackedPageId = startedAt && visible && !onBreak && routePage && isStudyOn(routePage) ? routePage.id : null
+  const trackedPageId = startedAt && visible && !onBreak && routePage ? routePage.id : null
 
   // Declared first so stale segments from a previous load are closed before tracking resumes.
   useEffect(() => {

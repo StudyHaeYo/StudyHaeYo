@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { BookOpen, ChevronRight, FileQuestion, Paperclip, PenLine, Plus, Printer, SlidersHorizontal, Sparkles } from "lucide-react"
+import { BookOpen, ChevronRight, FileQuestion, Paperclip, PenLine, Printer, Sparkles } from "lucide-react"
 import {
   addConfusions,
   computePageStats,
@@ -15,7 +15,6 @@ import {
 import { useDataStatus } from "@/lib/db/sync"
 import { DataStatusView } from "@/components/data-status-notice"
 import { StudyNoteReview, type ReviewResult } from "@/components/study-page/study-note-review"
-import { isStudyOn } from "@/lib/templates"
 import {
   applyStarter,
   descendantPages,
@@ -23,7 +22,6 @@ import {
   nearestSubject,
   nodePath,
   setAttachmentPath,
-  setPageStudyEnabled,
   updatePage,
   updatePageProps,
   usePagePropsReady,
@@ -31,14 +29,14 @@ import {
 } from "@/lib/workspace"
 import { ExamScope } from "@/components/study-page/exam-scope"
 import { PageStarters } from "@/components/study-page/page-starters"
-import { isTextBlock, pageKind, problemBlocks, wrongProblems, type AttachmentBlock } from "@/lib/study-pages"
+import { isTextBlock, pageKind, problemBlocks, reviewActionLabel, wrongProblems, type AttachmentBlock } from "@/lib/study-pages"
 import { PagesContext } from "@/components/study-page/pages-context"
 import { PageActionsMenu, menuItemClass } from "@/components/page-actions-menu"
 import { BlockEditor, type AttachmentHandle } from "@/components/study-page/block-editor"
 import { clearRecordPrefill, useStudySession } from "@/lib/study-session"
 import { useTodayISO } from "@/hooks/use-today"
-import { TagEditor } from "@/components/study-page/page-properties"
-import { PageInfoPanel } from "@/components/study-page/page-info-panel"
+import { KindChip } from "@/components/study-page/kind-menu"
+import { LectureHead, WrongAnswersHead } from "@/components/study-page/kind-head"
 import { PageStatusChip } from "@/components/study-page/page-status-chip"
 import { PageRecords } from "@/components/study-page/page-records"
 import { SessionIndicator } from "@/components/study-session/session-timer"
@@ -50,7 +48,8 @@ import { LectureMaterialPane } from "@/components/study-page/lecture-material-pa
 let openPageId: string | null = null
 
 // The single page UI: seeded pages and user-created pages both render here.
-// Every page has the same block body (D-23); study features (속성 · 학습 기록 · AI 도구) are on or off per page.
+// Every page has the same block body (D-23) and every page can hold study records (D-30). What the note is for
+// (노트 종류) is the chip in the top bar; the values a kind needs sit at the top of the body.
 export function StudyPageView({
   pageId,
   mode,
@@ -82,9 +81,6 @@ export function StudyPageView({
       return value
     })
   const propsReady = usePagePropsReady()
-  // 속성 window (D-28): opened from the top bar instead of sitting between the title and the body.
-  const [infoOpen, setInfoOpen] = useState(false)
-  const infoButtonRef = useRef<HTMLButtonElement>(null)
 
   // Leaving a just-made page that was never given anything removes it (lib/workspace.ts discardIfUntouched).
   // Checked a tick later so a remount of the same page (dev Strict Mode) doesn't count as leaving.
@@ -126,12 +122,8 @@ export function StudyPageView({
 
   if (!page) return dataStatus.phase === "ready" ? <MissingPage /> : <DataStatusView status={dataStatus} />
 
-  // Study on:  [속성] → [복습 모드 (?mode=review)] → [본문] → [학습 기록] → [AI 학습 도구]
-  // Study off: [본문] → [학습 기능 추가]
-  const studyOn = isStudyOn(page)
-  // Nothing written yet: offer templates. Typing anything (or adding any block) hides the row.
+  // Nothing written yet: offer the kinds. Typing anything (or adding any block) hides the row.
   const bodyEmpty = page.blocks.length === 0 || (page.blocks.length === 1 && isTextBlock(page.blocks[0]) && page.blocks[0].type === "p" && page.blocks[0].text === "")
-  const setStudyEnabled = (studyEnabled: boolean) => setPageStudyEnabled(page.id, studyEnabled)
   const path = nodePath({ groups, pages }, page.parentId)
   const subject = nearestSubject({ groups, pages }, page.parentId)
   const stats = computePageStats(page, today)
@@ -145,7 +137,7 @@ export function StudyPageView({
   }
 
   const pageHref = `/record/${page.id}`
-  const reviewing = mode === "review" && studyOn
+  const reviewing = mode === "review"
   // Review cards come from 핵심 개념 blocks. Without any, the review panel only asks for 이해도 and the
   // note stays readable below it.
   // 오답 노트 reviews the problems still wrong instead (D-27).
@@ -196,7 +188,7 @@ export function StudyPageView({
   )
   // 시험 범위 후보: the subject's other study pages, or every study page when the page has no subject.
   const scopeOptions = (subject ? descendantPages({ groups, pages }, subject.id) : pages)
-    .filter((p) => p.id !== page.id && isStudyOn(p))
+    .filter((p) => p.id !== page.id && pageKind(p) !== "exam")
     .map((p) => ({ id: p.id, title: p.title }))
   const material = kind === "lecture" && propsReady ? pdfs.find((p) => p.id === page.props?.materialBlockId) : undefined
   const problems = { total: problemBlocks(page.blocks).length, wrong: wrongProblems(page.blocks).length }
@@ -210,30 +202,6 @@ export function StudyPageView({
           total: scopePages.length,
         }
       : null
-  const setTags = (tags: string[]) => updatePage(page.id, (p) => ({ ...p, tags }))
-  const infoPanel = infoOpen && (
-    <PageInfoPanel
-      anchorRef={infoButtonRef}
-      page={page}
-      kind={kind}
-      propsReady={propsReady}
-      studyOn={studyOn}
-      stats={stats}
-      today={today}
-      onClose={() => setInfoOpen(false)}
-      onChangeTags={setTags}
-      onChangeProps={(patch) => updatePageProps(page.id, patch)}
-      onChangeStatus={(status) => updatePage(page.id, ({ status: _prev, ...rest }) => (status ? { ...rest, status } : rest))}
-      onChangeUnderstanding={(understanding) =>
-        updatePage(page.id, ({ understanding: _prev, ...rest }) => (understanding ? { ...rest, understanding } : rest))
-      }
-      pdfs={pdfs}
-      scopeOptions={scopeOptions}
-      problems={problems}
-      retryHref={`${pageHref}?mode=review`}
-    />
-  )
-
   const review = reviewing && (
     <StudyNoteReview
       concepts={concepts}
@@ -273,8 +241,8 @@ export function StudyPageView({
     <div
       className={`flex flex-col transition-[padding] ${aiOpen ? "md:pr-[420px]" : material && materialOpen ? "md:pr-[min(48vw,720px)]" : ""}`}
     >
-      {/* Top bar (D-28): where the note is on the left; on the right its study state, 속성, tools and the running
-          session — the same place on every note, so the page itself is only the title and the body. */}
+      {/* Top bar (D-28, D-30): where the note is on the left; on the right its study state, its kind (종류 칩), tools
+          and the running session — the same place on every note, so the page itself is only the title and the body. */}
       <header className="sticky top-12 z-20 border-b border-border bg-background/90 backdrop-blur print:hidden md:top-0">
         <div className="flex h-14 items-center justify-between gap-3 px-4 md:px-6">
           <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
@@ -298,7 +266,7 @@ export function StudyPageView({
             <span className="truncate font-medium text-foreground">{page.title.trim() || "제목 없음"}</span>
           </nav>
           <div className="flex shrink-0 items-center gap-1">
-          {studyOn && !reviewing && (
+          {!reviewing && (
             <PageStatusChip
               kind={kind}
               stats={stats}
@@ -306,29 +274,10 @@ export function StudyPageView({
               reviewHref={`${pageHref}?mode=review`}
               problems={problems}
               exam={examInfo}
-              onOpenInfo={() => setInfoOpen(true)}
+              action={reviewActionLabel(page)}
             />
           )}
-          {studyOn && (
-            <div className="relative">
-              <button
-                ref={infoButtonRef}
-                type="button"
-                data-info-toggle
-                onClick={() => setInfoOpen((v) => !v)}
-                aria-expanded={infoOpen}
-                aria-haspopup="dialog"
-                aria-label="속성"
-                className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-sm font-medium transition-colors sm:px-2.5 ${
-                  infoOpen ? "bg-accent text-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
-              >
-                <SlidersHorizontal className="size-4" aria-hidden="true" />
-                <span className="hidden sm:inline">속성</span>
-              </button>
-              {infoPanel}
-            </div>
-          )}
+          <KindChip pageId={page.id} kind={kind} propsReady={propsReady} />
           {material && (
             <button
               type="button"
@@ -359,7 +308,6 @@ export function StudyPageView({
           <PageActionsMenu
             pageId={page.id}
             title={page.title.trim() || "제목 없음"}
-            showStudyToggle
             extraItems={
               reviewing
                 ? undefined
@@ -452,54 +400,48 @@ export function StudyPageView({
             }}
           />
         )}
-        {studyOn && examInfo && !reviewing && (
-          <div id="exam-scope" className="mt-8 scroll-mt-24">
-            <ExamScope examDate={page.props?.examDate} scope={scopePages} today={today} />
+        {/* The values a kind needs, where they are used (D-30) — not in a 속성 window. */}
+        {propsReady && !reviewing && kind === "exam" && (
+          <div id="exam-scope" className="mt-8 scroll-mt-24 print:hidden">
+            <ExamScope
+              examDate={page.props?.examDate}
+              onChangeDate={(examDate) => updatePageProps(page.id, { examDate })}
+              scope={scopePages}
+              options={scopeOptions}
+              onChangeScope={(scope) => updatePageProps(page.id, { scope })}
+              today={today}
+            />
+          </div>
+        )}
+        {propsReady && !reviewing && kind === "wrong-answers" && (
+          <div className="mt-8 print:hidden">
+            <WrongAnswersHead
+              source={page.props?.source}
+              onChange={(patch) => updatePageProps(page.id, patch)}
+              problems={problems}
+              retryHref={`${pageHref}?mode=review`}
+            />
+          </div>
+        )}
+        {propsReady && !reviewing && kind === "lecture" && (
+          <div className="mt-8 print:hidden">
+            <LectureHead
+              props={page.props ?? {}}
+              onChange={(patch) => updatePageProps(page.id, patch)}
+              pdfs={pdfs}
+              materialOpen={materialOpen}
+              onToggleMaterial={() => {
+                setAiOpenState(false)
+                setMaterialOpen((v) => !v)
+              }}
+            />
           </div>
         )}
         <div className="mt-6">{body}</div>
-        {studyOn && !reviewing && (
-          <div className="mt-10 print:hidden">
-            <TagEditor tags={page.tags} onChange={setTags} size="md" />
-          </div>
-        )}
-        {studyOn && (
-          <div className="mt-16 print:hidden">
-            <PageRecords page={page} stats={stats} today={today} subject={subject ?? null} />
-          </div>
-        )}
+        <div className="mt-16 print:hidden">
+          <PageRecords page={page} stats={stats} today={today} subject={subject ?? null} />
+        </div>
 
-        {!studyOn && (
-          <div className="print:hidden">
-            <hr className="mb-8 mt-16 border-border" />
-            <section
-              aria-labelledby="study-features-heading"
-              className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-border px-5 py-5"
-            >
-              <div className="flex flex-col gap-1">
-                <h2 id="study-features-heading" className="text-base font-semibold text-foreground">
-                  학습 기능
-                </h2>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  학습 기록, 복습 일정, 복습 모드를 사용할 수 있어요. AI 도우미는 학습 기능 없이도 위의 AI 버튼으로 열 수 있어요.
-                </p>
-                {page.studyRecords.length > 0 && (
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    {`보관 중인 학습 기록 ${page.studyRecords.length}개가 있어요. 다시 추가하면 그대로 표시돼요.`}
-                  </p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => setStudyEnabled(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
-              >
-                <Plus className="size-4" />
-                학습 기능 추가
-              </button>
-            </section>
-          </div>
-        )}
 
       </article>
     </div>

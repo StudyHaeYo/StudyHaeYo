@@ -145,7 +145,7 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
         <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>{item.due}</span>
         {first ? (
           <span className="inline-flex shrink-0 items-center rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white transition-colors group-hover:bg-indigo-700">
-            복습하기
+            {item.action}
           </span>
         ) : (
           <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

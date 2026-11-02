@@ -40,7 +40,10 @@ import { GroupActionsMenu } from "@/components/sidebar/group-actions-menu"
 import { SearchDialog, SearchTrigger, openSearch } from "@/components/search-dialog"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { signOut, useCurrentUser } from "@/lib/auth"
-import { resolveTreeAppearance } from "@/lib/templates"
+import { noteIcon } from "@/lib/templates"
+import { computePageStats, pageKind } from "@/lib/study-pages"
+import { examCountdown } from "@/components/study-page/page-properties"
+import { useTodayISO } from "@/hooks/use-today"
 import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
 
 const mainNav = [
@@ -319,10 +322,14 @@ function PageNode({ page, ctx }: { page: StudyPage; ctx: TreeContext }) {
   const hasChildren = nested > 0
   const showChildren = (hasChildren && open) || addingSubgroup
   const { rowProps, indicator, isDragging } = useTreeDrag(page.id, { allowAfter: !showChildren })
+  // null on the server and the first client render (use-today), so the marks never differ at hydration.
+  const today = useTodayISO()
+  const due = today !== null && computePageStats(page, today).status === "복습 필요"
+  const countdown = pageKind(page) === "exam" ? examCountdown(page.props?.examDate, today) : null
 
   return (
     <RecordItem
-      record={{ id: page.id, title: page.title || "제목 없음", ...resolveTreeAppearance(page) }}
+      record={{ id: page.id, title: page.title || "제목 없음", icon: noteIcon(page), due, countdown }}
       active={ctx.pathname === `/record/${page.id}`}
       onRename={(title) => renamePage(page.id, title)}
       onDeleted={() => ctx.onPageDeleted(page.id)}
