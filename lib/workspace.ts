@@ -425,6 +425,40 @@ export function duplicatePage(id: string) {
   syncPositions()
 }
 
+// [틀린 문제를 오답 노트로] (D-32): a new 오답 노트 right after the note the AI quiz was about (same subject), with
+// each wrong problem as a closed toggle (answer folded, so it can be retried) marked 틀림 (answer and explanation inside). Returns its id, or null
+// until the props column exists (a note can't be a 오답 노트 without props.kind).
+export function createWrongAnswerNote(sourceId: string, problems: { text: string; answer: string }[], source: string) {
+  if (!pagePropsReady() || problems.length === 0) return null
+  const pages = store.get().pages
+  const index = pages.findIndex((p) => p.id === sourceId)
+  if (index === -1) return null
+  const from = pages[index]
+  const starter = getStarter("wrong-answers")
+  const blocks = starter.createBlocks()
+  const first = blocks.findIndex((b) => isTextBlock(b) && b.type === "toggle")
+  const toggles = problems.map((p) => ({ id: newBlockId(), type: "toggle" as const, text: p.text, body: p.answer, open: false, result: "wrong" as const }))
+  const note: StudyPage = {
+    id: newId(),
+    title: `${from.title || "제목 없음"} 오답`,
+    parentId: from.parentId,
+    templateId: starter.templateId,
+    createdAt: todayISO(),
+    blocks: [...blocks.slice(0, first), ...toggles, ...blocks.slice(first + 1)],
+    tags: [],
+    studyRecords: [],
+    props: { kind: "wrong-answers", source },
+  }
+  store.set((s) => {
+    const order = flattenTree(s).map((e) => e.node.id)
+    order.splice(order.indexOf(sourceId) + 1, 0, note.id)
+    return { ...s, order, pages: [...pages.slice(0, index + 1), note, ...pages.slice(index + 1)] }
+  })
+  insertPage(note)
+  syncPositions()
+  return note.id
+}
+
 function subtreeIds(s: TreeSource, rootId: string) {
   const isUnder = (parentId: string | null) => nodePath(s, parentId).some((n) => n.id === rootId)
   return new Set([...s.pages, ...s.groups].filter((n) => n.id === rootId || isUnder(n.parentId)).map((n) => n.id))

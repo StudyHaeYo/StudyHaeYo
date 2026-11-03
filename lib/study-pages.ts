@@ -306,6 +306,8 @@ export function todayISO() {
   return toISODate(new Date())
 }
 
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/
+
 export function addDays(iso: string, days: number) {
   const [y, m, d] = iso.split("-").map(Number)
   const date = new Date(y, m - 1, d)
@@ -339,12 +341,18 @@ export function computePageStats(page: StudyPage, today: string | null): PageSta
   // 오답 노트 with every problem answered right has nothing left to retry, so it gets no review day. Adding a
   // problem or marking one wrong brings the review back.
   const solved = pageKind(page) === "wrong-answers" && problemBlocks(page.blocks).length > 0 && wrongProblems(page.blocks).length === 0
-  const nextReviewAt = latest && !solved ? nextReviewDate(latest.date, understanding ?? latest.understanding) : null
+  // 오답 노트 with wrong problems but no record yet (made from AI grading, or written by hand) comes back the
+  // day after it was made, so it shows on 홈 instead of waiting for a record that may never come (D-32).
+  const firstRetry =
+    !latest && pageKind(page) === "wrong-answers" && wrongProblems(page.blocks).length > 0 && ISO_DAY.test(page.createdAt)
+      ? addDays(page.createdAt, 1)
+      : null
+  const nextReviewAt = latest && !solved ? nextReviewDate(latest.date, understanding ?? latest.understanding) : firstRetry
 
   let derivedStatus: PageStatus = "시작 전"
   if (latest) {
     derivedStatus = today && nextReviewAt && nextReviewAt <= today ? "복습 필요" : understanding === 5 ? "완료" : "학습 중"
-  }
+  } else if (today && nextReviewAt && nextReviewAt <= today) derivedStatus = "복습 필요"
 
   return {
     status: page.status ?? derivedStatus,
