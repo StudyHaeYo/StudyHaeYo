@@ -5,7 +5,7 @@ import { createPortal } from "react-dom"
 import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { Check, X } from "lucide-react"
-import { formatDuration, newRecordId, toISODate, type StudyRecordFields } from "@/lib/study-pages"
+import { formatDuration, newRecordId, toISODate, understandingLabel, type StudyRecordFields } from "@/lib/study-pages"
 import { addPageRecord, addSubjectRecord, nearestSubject, useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
 import { usePlans } from "@/lib/plans"
 import { activePlans } from "@/lib/study-stats"
@@ -245,7 +245,8 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
                               type="button"
                               role="radio"
                               aria-checked={r.understanding === n}
-                              aria-label={`이해도 ${n}`}
+                              aria-label={`이해도 ${n} ${understandingLabel(n)}`}
+                              title={understandingLabel(n)}
                               onClick={() => update(r.key, { understanding: n, include: true })}
                               className={`flex size-6 items-center justify-center rounded-md text-xs font-semibold transition-colors ${
                                 r.understanding !== null && n <= r.understanding
@@ -256,6 +257,9 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
                               {n}
                             </button>
                           ))}
+                          <span className="ml-1 min-w-16 whitespace-nowrap text-xs text-muted-foreground" aria-hidden="true">
+                            {r.understanding !== null ? understandingLabel(r.understanding) : ""}
+                          </span>
                         </span>
                       </div>
                     </>

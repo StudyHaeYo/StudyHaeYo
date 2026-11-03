@@ -59,10 +59,14 @@ function relativeDay(iso: string | null, today: string) {
 }
 
 // Pages due for review today or tomorrow (every note can hold records, D-30).
-// Order: review date → understanding → more unresolved 헷갈린 점 first.
+// Order: notes for an exam within a week first (nearest exam first), then review date → understanding → more
+// unresolved 헷갈린 점. Without the first rule a long-overdue note of another subject pushes tomorrow's exam range
+// below the fold on 홈.
 export function reviewCandidates(workspace: WorkspaceState, today: string): StudyCandidate[] {
   const tomorrow = addDays(today, 1)
   const exams = examDeadlines(workspace, today)
+  const weekAhead = addDays(today, 7)
+  const examRank = (exam: { reviewBy: string } | undefined) => (exam && exam.reviewBy <= weekAhead ? exam.reviewBy : "9999-12-31")
   return workspace.pages
     .map((page) => {
       const base = computePageStats(page, today)
@@ -70,7 +74,14 @@ export function reviewCandidates(workspace: WorkspaceState, today: string): Stud
       const exam = exams.get(page.id)
       const pulled = exam && (base.nextReviewAt === null || base.nextReviewAt > exam.reviewBy)
       const stats = pulled ? { ...base, nextReviewAt: exam.reviewBy } : base
-      return { page, stats, pulled: !!pulled, exam: exam?.countdown ?? null, unresolved: unresolvedConfusionCount(page) }
+      return {
+        page,
+        stats,
+        pulled: !!pulled,
+        exam: exam?.countdown ?? null,
+        rank: examRank(exam),
+        unresolved: unresolvedConfusionCount(page),
+      }
     })
     .filter(({ stats, pulled }) => {
       if (stats.status === "완료" && !pulled) return false
@@ -79,6 +90,7 @@ export function reviewCandidates(workspace: WorkspaceState, today: string): Stud
     })
     .sort(
       (a, b) =>
+        a.rank.localeCompare(b.rank) ||
         (a.stats.nextReviewAt ?? today).localeCompare(b.stats.nextReviewAt ?? today) ||
         (a.stats.understanding ?? 0) - (b.stats.understanding ?? 0) ||
         b.unresolved - a.unresolved,

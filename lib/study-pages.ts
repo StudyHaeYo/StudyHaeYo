@@ -274,6 +274,14 @@ export function wrongProblems(blocks: Block[]) {
   return problemBlocks(blocks).filter((b) => b.result !== "right")
 }
 
+// 이해도 1–5 in words (D-31). Every screen that asks for it (기록 창, 복습, 학습 종료) shows these same words,
+// because the number sets the next review day.
+export const understandingLevels = ["처음 본 듯", "많이 헷갈림", "대충 앎", "거의 앎", "설명 가능"] as const
+
+export function understandingLabel(level: number) {
+  return understandingLevels[level - 1] ?? ""
+}
+
 export const pageStatuses = ["시작 전", "학습 중", "복습 필요", "완료"] as const
 export type PageStatus = (typeof pageStatuses)[number]
 
@@ -328,7 +336,10 @@ export function computePageStats(page: StudyPage, today: string | null): PageSta
   const records = sortRecordsNewestFirst(page.studyRecords)
   const latest = records[0]
   const understanding = page.understanding ?? latest?.understanding ?? null
-  const nextReviewAt = latest ? nextReviewDate(latest.date, understanding ?? latest.understanding) : null
+  // 오답 노트 with every problem answered right has nothing left to retry, so it gets no review day. Adding a
+  // problem or marking one wrong brings the review back.
+  const solved = pageKind(page) === "wrong-answers" && problemBlocks(page.blocks).length > 0 && wrongProblems(page.blocks).length === 0
+  const nextReviewAt = latest && !solved ? nextReviewDate(latest.date, understanding ?? latest.understanding) : null
 
   let derivedStatus: PageStatus = "시작 전"
   if (latest) {
@@ -378,19 +389,31 @@ export function unresolvedConfusionCount(page: Pick<StudyPage, "blocks">) {
   return confusionBlocks(page.blocks).filter((b) => !b.checked).length
 }
 
-// Adds "헷갈려요" items as confusion blocks: after the last existing one, or under a new 헷갈린 점 heading.
+// Adds "헷갈려요" items as confusion blocks (from the record window, a review, AI grading). Where they go: the
+// first one fills an empty 헷갈린 점 block (the one a template starts with) and the rest follow it; otherwise after
+// the last 헷갈린 점; otherwise under an existing 헷갈린 점 heading; only then under a new heading at the end.
 // Items already open on the page are skipped.
 export function addConfusions(blocks: Block[], texts: string[]): Block[] {
-  const existing = confusionBlocks(blocks)
-  const open = new Set(existing.filter((b) => !b.checked).map((b) => b.text.trim()))
-  const added: Block[] = texts
-    .filter((t) => t.trim() && !open.has(t.trim()))
-    .map((text) => ({ id: newBlockId(), type: "confusion", text }))
-  if (added.length === 0) return blocks
-  const last = existing.at(-1)
-  if (!last) return [...blocks, { id: newBlockId(), type: "h2", text: "헷갈린 점" }, ...added]
-  const at = blocks.indexOf(last) + 1
-  return [...blocks.slice(0, at), ...added, ...blocks.slice(at)]
+  const all = blocks.filter(isType("confusion"))
+  const open = new Set(all.filter((b) => !b.checked && b.text.trim()).map((b) => b.text.trim()))
+  const fresh = [...new Set(texts.map((t) => t.trim()).filter((t) => t && !open.has(t)))]
+  if (fresh.length === 0) return blocks
+  const block = (text: string): TextBlock => ({ id: newBlockId(), type: "confusion", text })
+  const insertAt = (at: number, added: Block[]) => [...blocks.slice(0, at), ...added, ...blocks.slice(at)]
+
+  const empty = all.find((b) => !b.text.trim())
+  if (empty) {
+    const at = blocks.indexOf(empty)
+    const [first, ...rest] = fresh
+    return [...blocks.slice(0, at), { ...empty, text: first, checked: false }, ...rest.map(block), ...blocks.slice(at + 1)]
+  }
+  const last = all.at(-1)
+  if (last) return insertAt(blocks.indexOf(last) + 1, fresh.map(block))
+  const heading = blocks.findIndex(
+    (b) => isTextBlock(b) && (b.type === "h1" || b.type === "h2" || b.type === "h3") && b.text.trim() === "헷갈린 점",
+  )
+  if (heading !== -1) return insertAt(heading + 1, fresh.map(block))
+  return [...blocks, { id: newBlockId(), type: "h2", text: "헷갈린 점" }, ...fresh.map(block)]
 }
 
 // "용어: 설명" → front "용어", back "설명". Without a separator the whole text is the back of the card.

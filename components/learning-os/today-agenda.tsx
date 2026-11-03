@@ -1,7 +1,8 @@
 "use client"
 
+import { useId, useState } from "react"
 import Link from "next/link"
-import { CalendarRange, ChevronRight, ListTodo, RotateCcw } from "lucide-react"
+import { CalendarRange, ChevronDown, ChevronRight, ListTodo, RotateCcw } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { reviewCandidates, reviewHref, type StudyCandidate } from "@/lib/study-candidates"
 import { dueToneClass, formatDate, formatDuration } from "@/lib/study-pages"
@@ -42,22 +43,7 @@ export function TodayAgenda() {
           ) : reviews.length === 0 ? (
             <Empty>오늘 복습할 학습 노트가 없어요. 새로운 내용을 학습해 보세요.</Empty>
           ) : (
-            <ul className="flex flex-col gap-1">
-              {reviews.slice(0, REVIEW_LIMIT).map((item, i) => (
-                <ReviewRow key={item.pageId} item={item} first={i === 0} />
-              ))}
-              {reviews.length > REVIEW_LIMIT && (
-                <li>
-                  <Link
-                    href="/analytics"
-                    className="inline-flex items-center gap-0.5 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                  >
-                    {`${reviews.length - REVIEW_LIMIT}개 더 · 학습 분석에서 보기`}
-                    <ChevronRight className="size-3.5" />
-                  </Link>
-                </li>
-              )}
-            </ul>
+            <ReviewList reviews={reviews} />
           )}
         </AgendaSection>
 
@@ -152,6 +138,34 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
         )}
       </Link>
     </li>
+  )
+}
+
+// The whole list lives here (D-31: one list in one place): the first few, the rest unfolded in place.
+function ReviewList({ reviews }: { reviews: StudyCandidate[] }) {
+  const [all, setAll] = useState(false)
+  const listId = useId()
+  const shown = all ? reviews : reviews.slice(0, REVIEW_LIMIT)
+  return (
+    <>
+      <ul id={listId} className="flex flex-col gap-1">
+        {shown.map((item, i) => (
+          <ReviewRow key={item.pageId} item={item} first={i === 0} />
+        ))}
+      </ul>
+      {reviews.length > REVIEW_LIMIT && (
+        <button
+          type="button"
+          onClick={() => setAll((v) => !v)}
+          aria-expanded={all}
+          aria-controls={listId}
+          className="mt-1 inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+        >
+          {all ? "접기" : `${reviews.length - REVIEW_LIMIT}개 더 보기`}
+          <ChevronDown className={`size-3.5 transition-transform motion-reduce:transition-none ${all ? "rotate-180" : ""}`} aria-hidden="true" />
+        </button>
+      )}
+    </>
   )
 }
 
