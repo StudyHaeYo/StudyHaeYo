@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
   ArrowUp,
@@ -15,6 +17,7 @@ import {
   RotateCcw,
   Sparkles,
   X,
+  XCircle,
 } from "lucide-react"
 import {
   ANSWER_HEADING,
@@ -24,11 +27,21 @@ import {
   MAX_AI_PDFS,
   pageContextText,
   pagePdfs,
+  formatLevelScore,
+  ladderFeedback,
+  parseQuiz,
   parseScore,
+  passedLevel,
+  quizLevels,
+  quizPlan,
+  quizPrompt,
   scoreToUnderstanding,
+  wrongFromGrading,
   type ChatMessage,
+  type LevelScore,
 } from "@/lib/ai"
-import { blocksPlainText, unresolvedConfusionCount, type StudyPage, type TextBlock } from "@/lib/study-pages"
+import { blocksPlainText, understandingLabel, unresolvedConfusionCount, type StudyPage, type TextBlock } from "@/lib/study-pages"
+import { createWrongAnswerNote, usePagePropsReady } from "@/lib/workspace"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 
 const blockClass: Record<TextBlock["type"], string> = {
@@ -63,6 +76,8 @@ export interface AiPanelProps {
 // it stays while the panel is closed and is gone when the page is left (nothing is saved).
 // Ask in your own words, or tap a suggestion. No material → general knowledge (the answer says so);
 // a problem-set PDF → send your answers and it grades them, ending with "점수: 4/5" → [기록으로 남기기].
+// [확인 문제] (D-32) asks by level; grading then ends "점수: 하 2/2 · 중 1/2 · 상 0/1", which sets the suggested
+// 이해도 by the ladder and offers [틀린 문제를 오답 노트로].
 export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, request }: AiPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState("")
@@ -81,18 +96,18 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
 
   const topic = page.title.trim()
   const hasBody = blocksPlainText(page.blocks).trim().length > 0
+  // 확인 문제 has its own card (QuizStarter); these are the other one-tap asks.
   const quickPrompts =
     picked.length > 0
-      ? ["PDF 핵심을 쪽별로 요약해줘", "PDF 내용으로 확인 문제 5개 만들어줘", "이 PDF는 문제집이야. 내가 답을 보내면 채점해줘"]
+      ? ["PDF 핵심을 쪽별로 요약해줘", "이 PDF는 문제집이야. 내가 답을 보내면 채점해줘"]
       : hasBody
         ? [
             "핵심 개념 정리해줘",
-            "확인 문제 5개 만들어줘",
             "시험 대비 정리 노트로 만들어줘",
             ...(unresolvedConfusionCount(page) > 0 ? ["헷갈린 점을 쉽게 설명해줘"] : []),
           ]
         : topic
-          ? [`${topic} 핵심 정리 노트 만들어줘`, `${topic} 확인 문제 5개 만들어줘`]
+          ? [`${topic} 핵심 정리 노트 만들어줘`]
           : []
 
   const togglePdf = (id: string) =>
@@ -182,6 +197,9 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
                   ? `아직 본문이 없어요. "${topic}"을(를) 주제로 일반 지식으로 만들어 드려요.`
                   : "공부할 주제를 적어 보세요. 예: 운영체제 교착상태 핵심 정리해줘"}
             </p>
+            {(hasBody || picked.length > 0 || topic) && (
+              <QuizStarter page={page} withPdf={picked.length > 0} hasBody={hasBody} onAsk={(prompt) => void send(prompt)} />
+            )}
             {quickPrompts.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {quickPrompts.map((prompt) => (
@@ -209,6 +227,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
               key={i}
               page={page}
               content={message.content}
+              quiz={lastQuizBefore(messages, i)}
               onInsert={onInsert}
               onAddConfusions={onAddConfusions}
             />
@@ -288,19 +307,113 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
   )
 }
 
+// The latest earlier answer that held numbered problems: what a grading answer at `index` graded.
+function lastQuizBefore(messages: ChatMessage[], index: number) {
+  for (let i = index - 1; i >= 0; i--) {
+    const m = messages[i]
+    if (m.role === "assistant" && parseQuiz(m.content).problems.size > 0) return m.content
+  }
+  return undefined
+}
+
+// [확인 문제] (D-32): mixed measures 이해도; one level only is practice. The count follows how much the note holds.
+function QuizStarter({
+  page,
+  withPdf,
+  hasBody,
+  onAsk,
+}: {
+  page: StudyPage
+  withPdf: boolean
+  hasBody: boolean
+  onAsk: (prompt: string) => void
+}) {
+  const plan = quizPlan(page, withPdf)
+  const basis =
+    plan.concepts > 0 ? `핵심 개념 ${plan.concepts}개` : withPdf ? "PDF" : hasBody ? "본문 양" : "제목의 주제"
+  const { 하: low, 중: mid, 상: high } = plan.levels
+  return (
+    <section aria-labelledby="quiz-starter-title" className="flex flex-col gap-2.5 rounded-xl border border-border bg-background p-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+        <h3 id="quiz-starter-title" className="text-sm font-semibold text-foreground">
+          {`확인 문제 ${plan.total}개`}
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          {`${basis}${plan.confusions > 0 ? ` + 헷갈린 점 ${plan.confusions}개` : ""}에 맞췄어요`}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onAsk(quizPrompt(plan, null))}
+        className="flex items-center justify-between gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-left text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+      >
+        <span>섞어서 풀기</span>
+        <span className="text-xs font-normal tabular-nums text-indigo-100">{`하 ${low} · 중 ${mid} · 상 ${high}`}</span>
+      </button>
+      <div role="group" aria-labelledby="quiz-practice-label" className="flex flex-wrap items-center gap-1.5">
+        <span id="quiz-practice-label" className="text-xs text-muted-foreground">
+          한 난이도만 연습
+        </span>
+        {quizLevels.map((level) => (
+          <button
+            key={level}
+            type="button"
+            onClick={() => onAsk(quizPrompt(plan, level))}
+            className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+          >
+            {`${level}만`}
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">
+        섞어서 풀면 채점 결과로 이해도를 재요(하 → 중 → 상 순서로 통과). 한 난이도만 풀면 연습이라 이해도가 그 범위
+        안에서만 정해져요(하 1~3 · 중 2~4 · 상 3~5).
+      </p>
+    </section>
+  )
+}
+
+// Score by level after grading: each level's result (통과 = all right, or one wrong with 3 or more), where the
+// climb stopped, and the 이해도 it suggests.
+function LevelResult({ levels, understanding }: { levels: LevelScore; understanding: number }) {
+  return (
+    <div className="mt-1 flex flex-col gap-1 self-start rounded-md bg-background px-2.5 py-1.5">
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm font-semibold tabular-nums text-foreground">
+        {quizLevels
+          .filter((l) => levels[l])
+          .map((l) => (
+            <span key={l} className="inline-flex items-center gap-1">
+              {`${l} ${levels[l]!.correct}/${levels[l]!.total}`}
+              {passedLevel(levels[l]!) && <span className="text-xs font-medium text-emerald-700">통과</span>}
+            </span>
+          ))}
+      </p>
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        {`${ladderFeedback(levels)} 이해도 ${understanding} ${understandingLabel(understanding)}`}
+      </p>
+    </div>
+  )
+}
+
 function AssistantMessage({
   page,
   content,
+  quiz,
   onInsert,
   onAddConfusions,
 }: {
   page: StudyPage
   content: string
+  // The earlier answer with the problems this one graded (for [틀린 문제를 오답 노트로]).
+  quiz?: string
   onInsert: (blocks: TextBlock[]) => void
   onAddConfusions: (texts: string[]) => void
 }) {
+  const router = useRouter()
+  const propsReady = usePagePropsReady()
   const [showAnswers, setShowAnswers] = useState(false)
   const [confusionsAdded, setConfusionsAdded] = useState(false)
+  const [wrongNoteId, setWrongNoteId] = useState<string | null>(null)
   const blocks = markdownToBlocks(content)
   // "## 정답과 해설" and everything after it stays folded, so the questions can be solved first.
   const answerAt = blocks.findIndex((b) => (b.type === "h1" || b.type === "h2" || b.type === "h3") && ANSWER_HEADING.test(b.text))
@@ -310,6 +423,24 @@ function AssistantMessage({
     (b) => !(score && b.type === "p" && /^점수\s*[:：]/.test(b.text)),
   )
   const confusions = blocks.filter((b) => b.type === "confusion").map((b) => b.text)
+  const understanding = score ? scoreToUnderstanding(score) : null
+  const wrong = score && quiz ? wrongFromGrading(quiz, content) : []
+
+  const makeWrongNote = () => {
+    const id = createWrongAnswerNote(
+      page.id,
+      wrong.map((w) => ({ text: w.level ? `[${w.level}] ${w.text}` : w.text, answer: w.answer })),
+      `AI 확인 문제 · ${page.title || "제목 없음"}`,
+    )
+    if (!id) {
+      toast.error("오답 노트를 만들지 못했어요. 새로고침한 뒤 다시 시도해 주세요.")
+      return
+    }
+    setWrongNoteId(id)
+    toast.success(`틀린 ${wrong.length}문제로 오답 노트를 만들었어요. 내일 다시 풀기에 나와요.`, {
+      action: { label: "열기", onClick: () => router.push(`/record/${id}`) },
+    })
+  }
 
   const insert = () => {
     const pageBlocks = answerToPageBlocks(content)
@@ -347,21 +478,26 @@ function AssistantMessage({
             {showAnswers ? "정답 접기" : "정답과 해설 보기"}
           </button>
         )}
-        {score && (
-          <p className="mt-1 self-start rounded-md bg-background px-2.5 py-1 text-sm font-semibold tabular-nums text-foreground">
-            {`점수 ${score.correct} / ${score.total}`}
-          </p>
+        {score && understanding !== null && score.levels ? (
+          <LevelResult levels={score.levels} understanding={understanding} />
+        ) : (
+          score && (
+            <p className="mt-1 self-start rounded-md bg-background px-2.5 py-1 text-sm font-semibold tabular-nums text-foreground">
+              {`점수 ${score.correct} / ${score.total}`}
+            </p>
+          )
         )}
       </div>
       <div className="flex flex-wrap gap-1">
-        {score && (
+        {score && understanding !== null && (
           <button
             type="button"
             onClick={() =>
               openQuickRecord({
                 pageId: page.id,
-                understanding: scoreToUnderstanding(score),
-                studyContent: `AI 문제 풀이 ${score.correct}/${score.total}`,
+                understanding,
+                // "AI 문제 풀이" is the head the record list reads as the AI 채점 badge (lib/study-stats.ts).
+                studyContent: `AI 문제 풀이 ${score.levels ? formatLevelScore(score.levels) : `${score.correct}/${score.total}`}`,
               })
             }
             className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700"
@@ -370,6 +506,26 @@ function AssistantMessage({
             기록으로 남기기
           </button>
         )}
+        {wrong.length > 0 &&
+          propsReady &&
+          (wrongNoteId ? (
+            <Link
+              href={`/record/${wrongNoteId}`}
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+            >
+              <XCircle className="size-3.5" aria-hidden="true" />
+              오답 노트 열기
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={makeWrongNote}
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+            >
+              <XCircle className="size-3.5" aria-hidden="true" />
+              {`틀린 ${wrong.length}문제를 오답 노트로`}
+            </button>
+          ))}
         {confusions.length > 0 && (
           <button
             type="button"
