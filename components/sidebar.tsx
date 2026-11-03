@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
+import { useFocusTrap } from "@/hooks/use-focus-trap"
 import Link from "next/link"
 import { toast } from "sonner"
 import { usePathname, useRouter } from "next/navigation"
@@ -70,6 +71,9 @@ export function Sidebar(_props: SidebarProps = {}) {
   const [addingGroup, setAddingGroup] = useState(false)
   // Phones and narrow tablets: the sidebar is a drawer opened from the top bar (md and up: always visible).
   const [mobileOpen, setMobileOpen] = useState(false)
+  // The phone drawer is a modal: keep Tab inside it while it is open.
+  const drawerRef = useRef<HTMLElement>(null)
+  useFocusTrap(drawerRef, mobileOpen)
   const [openedAt, setOpenedAt] = useState(pathname)
   if (mobileOpen && openedAt !== pathname) {
     // Navigating closes the drawer (state adjusted during render, no effect needed).
@@ -152,6 +156,7 @@ export function Sidebar(_props: SidebarProps = {}) {
       )}
 
     <aside
+      ref={drawerRef}
       id="app-sidebar"
       onKeyDown={(e) => {
         if (e.key === "Escape") setMobileOpen(false)

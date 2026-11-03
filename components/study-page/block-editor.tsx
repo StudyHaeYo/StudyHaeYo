@@ -32,6 +32,7 @@ import {
   Minus,
   Paperclip,
   PenLine,
+  Plus,
   Pilcrow,
   Quote,
   Sigma,
@@ -280,6 +281,8 @@ export function BlockEditor({
   onAttachmentStored,
   problemMode,
 }: BlockEditorProps) {
+  // 오답 노트: [문제 추가] sits under the last problem.
+  const lastToggleIndex = problemMode ? blocks.findLastIndex((b) => isTextBlock(b) && b.type === "toggle") : -1
   const hintFor = (index: number) => {
     const block = blocks[index]
     const prev = blocks[index - 1]
@@ -1022,6 +1025,20 @@ export function BlockEditor({
                     )
                   })}
                 </ul>
+              )}
+              {problemMode && index === lastToggleIndex && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const added: TextBlock = { id: newBlockId(), type: "toggle", text: "", body: "", open: true }
+                    onChange(insertBlocks(blocks, [added], block.id))
+                    setPendingFocus({ id: added.id, caret: 0 })
+                  }}
+                  className="ml-7 mt-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <Plus className="size-3.5" aria-hidden="true" />
+                  문제 추가
+                </button>
               )}
             </>,
           )

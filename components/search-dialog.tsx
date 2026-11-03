@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { FileText, Search } from "lucide-react"
 import { searchWorkspace, type SearchResult } from "@/lib/search"
 import { useWorkspace } from "@/lib/workspace"
+import { useFocusTrap } from "@/hooks/use-focus-trap"
 
 // Open state shared by the sidebar box, the phone top bar icon and ⌘K / Ctrl+K anywhere.
 let open = false
@@ -63,6 +64,8 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("")
   const [active, setActive] = useState(0)
   const listRef = useRef<HTMLUListElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef)
   const results = searchWorkspace(workspace, query)
   const recent = query.trim() ? [] : workspace.pages.slice(-6).reverse()
 
@@ -84,7 +87,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div role="dialog" aria-modal="true" aria-label="노트 검색" className="w-full max-w-xl overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="노트 검색" className="w-full max-w-xl overflow-hidden rounded-xl border border-border bg-card shadow-xl">
         <div className="flex items-center gap-2 border-b border-border px-4">
           <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <input

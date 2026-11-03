@@ -6,10 +6,17 @@ import { dueToneClass, formatDate } from "@/lib/study-pages"
 import { entryHref, entryTitle, recentActivity, upcomingReviews, weakAreas } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({ title, more, children }: { title: string; more?: { href: string; label: string }; children: React.ReactNode }) {
   return (
     <section className="rounded-xl border border-border bg-card p-5">
-      <h2 className="mb-4 text-[15px] font-semibold text-foreground">{title}</h2>
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h2 className="text-[15px] font-semibold text-foreground">{title}</h2>
+        {more && (
+          <Link href={more.href} className="text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground">
+            {more.label}
+          </Link>
+        )}
+      </div>
       {children}
     </section>
   )
@@ -101,7 +108,7 @@ export function UpcomingReviews() {
 export function RecentActivity() {
   const items = recentActivity(useWorkspace())
   return (
-    <Panel title="최근 학습 활동">
+    <Panel title="최근 학습 활동" more={{ href: "/records", label: "학습 기록 전체 보기" }}>
       {items.length === 0 ? (
         <Empty>아직 학습 기록이 없어요.</Empty>
       ) : (

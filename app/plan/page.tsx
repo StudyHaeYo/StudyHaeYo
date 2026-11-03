@@ -8,8 +8,8 @@ export default function PlanPage() {
     <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <Sidebar />
 
-      <main className="min-w-0 flex-1 overflow-y-auto px-6 py-6 lg:px-10">
-        <div className="mx-auto max-w-5xl">
+      <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 md:h-screen md:overflow-y-auto lg:px-10 lg:py-8">
+        <div className="mx-auto max-w-6xl">
           <header className="mb-6">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">학습 계획</h1>
             <p className="mt-1 text-sm text-muted-foreground">

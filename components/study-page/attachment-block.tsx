@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { Download, Eye, File, FileText, ExternalLink, FileWarning, PenLine, X } from "lucide-react"
 import { downloadAttachment, formatFileSize, previewKind, useAttachmentUrl } from "@/lib/attachments"
 import type { AttachmentBlock } from "@/lib/study-pages"
 import { PdfAnnotator } from "@/components/study-page/pdf-annotator"
+import { useFocusTrap } from "@/hooks/use-focus-trap"
 
 interface AttachmentBlockViewProps {
   block: AttachmentBlock
@@ -162,6 +163,8 @@ function AttachmentViewer({
   pdf: boolean
   onClose: () => void
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef)
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
@@ -178,6 +181,7 @@ function AttachmentViewer({
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={block.name}
