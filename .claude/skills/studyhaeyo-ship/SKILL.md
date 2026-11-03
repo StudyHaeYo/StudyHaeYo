@@ -34,12 +34,13 @@ Also check by hand:
 - Browser-only values (today's date, localStorage) follow `hooks/use-today.ts`: `useSyncExternalStore` with a server snapshot. No `suppressHydrationWarning`.
 - AI calls go only through `app/api/ai/chat/route.ts`; screens call `lib/ai.ts`. No secret in code; no `NEXT_PUBLIC_` on keys.
 - Screens changed? Run the `web-design-guidelines` review on the changed files and fix what applies.
+- Flow (AGENTS.md): every value the PR starts saving is read somewhere, and every new screen leads the user to a next step. If not, connect it in this PR or list it under "아직 없다" in `docs/PROJECT.md`.
 
 ## 3. Commit, push, PR
 
 - Commit message: Korean summary line (`feat:` / `fix:` / `docs:` / `chore:`), body with what and why. Add the attribution lines the session asks for.
 - `git push -u origin <branch>` (the `-u` matters: without an upstream, stop hooks report the branch as unpushed).
-- Open the PR against `main` with `gh api repos/StudyHaeYo/StudyHaeYo/pulls -f title=… -f head=<branch> -f base=main -F body=@<file>`. Body: 무엇 / 왜 / 확인 (what was run and seen).
+- Open the PR against `main` with `gh api repos/StudyHaeYo/StudyHaeYo/pulls -f title=… -f head=<branch> -f base=main -F body=@<file>`. Body: 무엇 / 왜 / 흐름 (where new values are read, where new screens lead) / 확인 (what was run and seen).
 
 ## 4. Vercel preview
 
