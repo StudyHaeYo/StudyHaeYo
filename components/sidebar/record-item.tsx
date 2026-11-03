@@ -16,25 +16,33 @@ import { menuItemClass, PageActionsMenu } from "@/components/page-actions-menu"
 export interface SidebarRecord {
   id: string
   title: string
+  // The note's kind (D-30): 학습 · 강의 · 오답 · 시험 · 빈 노트.
   icon?: LucideIcon
-  studyBadge?: boolean
+  // Due for review: a small amber dot, the same tone as home (no text, so a long tree stays quiet).
+  due?: boolean
+  // An upcoming exam (시험 정리): "D-10". The only text the tree shows next to a title.
+  countdown?: string | null
 }
 
+// The kind icon, with a small amber dot on its corner when the note is due for review (no width taken from the title).
 function PageIcon({ record }: { record: SidebarRecord }) {
   const Icon = record.icon ?? FileText
   return (
-    <span className="relative inline-flex shrink-0">
+    <span className="relative inline-flex shrink-0" title={record.due ? "복습할 때가 됐어요" : undefined}>
       <Icon className="size-3.5" aria-hidden="true" />
-      {record.studyBadge && (
-        <span
-          title="학습 기록이 쌓이고 있는 페이지"
-          className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-indigo-500 ring-2 ring-sidebar"
-        >
-          <span className="sr-only">학습 기능 사용 중</span>
+      {record.due && (
+        <span className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-amber-500 ring-2 ring-sidebar">
+          <span className="sr-only">복습할 때</span>
         </span>
       )}
     </span>
   )
+}
+
+// Right edge of a page row: an upcoming exam's D-day, the only text the tree adds to a title.
+function PageMark({ record }: { record: SidebarRecord }) {
+  if (!record.countdown) return null
+  return <span className="ml-auto shrink-0 pl-1 text-[11px] font-semibold tabular-nums text-amber-700">{record.countdown}</span>
 }
 
 interface RecordItemProps {
@@ -128,6 +136,7 @@ export function RecordItem({
           >
             <PageIcon record={record} />
             <span className="truncate">{record.title}</span>
+            <PageMark record={record} />
           </Link>
           {addChildHref && (
             <Link

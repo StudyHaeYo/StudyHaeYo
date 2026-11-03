@@ -4,12 +4,12 @@ import {
   daysBetween,
   dueLabel,
   pageKind,
+  reviewActionLabel,
   unresolvedConfusionCount,
   wrongProblems,
   type DueTone,
   type PageStatus,
 } from "@/lib/study-pages"
-import { isReviewCandidate } from "@/lib/templates"
 import { nearestSubject, NO_SUBJECT, type WorkspaceState } from "@/lib/workspace"
 
 export interface StudyCandidate {
@@ -26,6 +26,8 @@ export interface StudyCandidate {
   wrongProblems: number
   // In the scope of an upcoming exam (시험 정리): "D-3".
   exam: string | null
+  // 다시 풀기 · 카드 복습 · 복습하기 (reviewActionLabel, D-30).
+  action: string
 }
 
 // 시험 정리 (D-27): for every page in the scope of an exam that hasn't happened yet, the latest day its review
@@ -56,13 +58,12 @@ function relativeDay(iso: string | null, today: string) {
   return `${diff}일 전`
 }
 
-// Pages due for review today or tomorrow, among pages with study features on.
+// Pages due for review today or tomorrow (every note can hold records, D-30).
 // Order: review date → understanding → more unresolved 헷갈린 점 first.
 export function reviewCandidates(workspace: WorkspaceState, today: string): StudyCandidate[] {
   const tomorrow = addDays(today, 1)
   const exams = examDeadlines(workspace, today)
   return workspace.pages
-    .filter(isReviewCandidate)
     .map((page) => {
       const base = computePageStats(page, today)
       // A review planned after the exam comes forward to the day before it.
@@ -96,6 +97,7 @@ export function reviewCandidates(workspace: WorkspaceState, today: string): Stud
         unresolvedConfusions: unresolved,
         wrongProblems: pageKind(page) === "wrong-answers" ? wrongProblems(page.blocks).length : 0,
         exam,
+        action: reviewActionLabel(page),
       }
     })
 }

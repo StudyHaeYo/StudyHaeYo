@@ -1,9 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
-import { Copy, MoreHorizontal, Pencil, Power, PowerOff, Trash2 } from "lucide-react"
-import { isStudyOn } from "@/lib/templates"
-import { deletePage, duplicatePage, flattenTree, plansInSubtree, setPageStudyEnabled, useWorkspace } from "@/lib/workspace"
+import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { deletePage, duplicatePage, flattenTree, plansInSubtree, useWorkspace } from "@/lib/workspace"
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
 
 // Confirmation line for deleting a page or group: what else goes with it.
@@ -26,7 +25,6 @@ interface PageActionsMenuProps {
   onRename: () => void
   onDeleted?: () => void
   onOpenChange?: (open: boolean) => void
-  showStudyToggle?: boolean
   // Caller-specific items rendered between 복제하기 and the delete separator.
   extraItems?: (close: () => void) => ReactNode
   className?: string
@@ -40,7 +38,6 @@ export function PageActionsMenu({
   onRename,
   onDeleted,
   onOpenChange,
-  showStudyToggle = false,
   extraItems,
   className = "",
   triggerClassName,
@@ -51,11 +48,9 @@ export function PageActionsMenu({
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
-  const page = workspace.pages.find((p) => p.id === pageId)
   const nested = flattenTree(workspace, pageId).length
   const planCount = plansInSubtree(workspace, pageId).length
   const deleteNote = deleteNoteText(nested, planCount)
-  const studyOn = page ? isStudyOn(page) : null
 
   const setOpen = (next: boolean) => {
     setOpenState(next)
@@ -134,21 +129,6 @@ export function PageActionsMenu({
             복제하기
           </button>
           {extraItems?.(close)}
-
-          {showStudyToggle && studyOn !== null && (
-            <button
-              role="menuitem"
-              type="button"
-              className={`${menuItemClass} text-foreground`}
-              onClick={() => {
-                close()
-                setPageStudyEnabled(pageId, !studyOn)
-              }}
-            >
-              {studyOn ? <PowerOff className="size-4 text-muted-foreground" /> : <Power className="size-4 text-muted-foreground" />}
-              {studyOn ? "학습 기능 끄기" : "학습 기능 켜기"}
-            </button>
-          )}
 
           <div role="separator" className="my-1 border-t border-border" />
           <button
