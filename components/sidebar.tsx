@@ -29,6 +29,7 @@ import {
   addGroup,
   childNodes,
   flattenTree,
+  nearestSubject,
   renameGroup,
   renamePage,
   useWorkspace,
@@ -88,6 +89,19 @@ export function Sidebar(_props: SidebarProps = {}) {
   }
   const homeActive = pathname === "/"
   const settingsActive = pathname.startsWith("/settings")
+  // "+" next to 내 페이지 makes the page where you are: beside the open note, or in the open subject. Elsewhere it
+  // goes to the top. The label says which, since the new page's place decides whose records it counts toward.
+  const newPageHere = (() => {
+    const noteId = pathname.match(/^\/record\/([^/]+)/)?.[1]
+    const subjectId = pathname.match(/^\/subject\/([^/]+)/)?.[1]
+    const parentId = subjectId ?? (noteId ? (pages.find((p) => p.id === noteId)?.parentId ?? null) : null)
+    const name = parentId
+      ? (groups.find((g) => g.id === parentId)?.name ?? pages.find((p) => p.id === parentId)?.title ?? null)
+      : null
+    return parentId && name !== null
+      ? { href: `/new?parent=${parentId}`, label: `${name || "제목 없음"}에 새 페이지` }
+      : { href: "/new", label: "맨 위에 새 페이지" }
+  })()
 
   const handleLogout = async () => {
     const result = await signOut()
@@ -240,9 +254,9 @@ export function Sidebar(_props: SidebarProps = {}) {
               <FolderPlus className="size-4" />
             </button>
             <Link
-              href="/new"
-              aria-label="새 페이지 (위치 선택)"
-              title="새 페이지 (위치 선택)"
+              href={newPageHere.href}
+              aria-label={newPageHere.label}
+              title={newPageHere.label}
               className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <Plus className="size-4" />
@@ -498,13 +512,16 @@ function GroupRenameInput({
 }
 
 const groupKindOptions: { kind: GroupKind; label: string; hint: string }[] = [
-  { kind: "folder", label: "폴더", hint: "묶어서 정리" },
   { kind: "subject", label: "과목", hint: "학습 계획과 통계의 기준(과목 페이지가 생겨요)" },
+  { kind: "folder", label: "폴더", hint: "과목을 묶거나 과목 안을 나눠요" },
 ]
 
+// A new group starts as a 과목, since records, plans and 학습 분석 all count by subject (a folder's notes land in
+// "과목 없음"). Inside a subject it starts as a folder: a subject within a subject would split its records.
 function NewGroupInput({ parentId = null, onDone }: { parentId?: string | null; onDone: () => void }) {
+  const workspace = useWorkspace()
   const [name, setName] = useState("")
-  const [kind, setKind] = useState<GroupKind>("folder")
+  const [kind, setKind] = useState<GroupKind>(() => (nearestSubject(workspace, parentId) ? "folder" : "subject"))
   const hint = groupKindOptions.find((o) => o.kind === kind)?.hint
 
   const commit = () => {
