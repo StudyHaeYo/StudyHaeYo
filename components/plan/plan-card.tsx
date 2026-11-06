@@ -23,8 +23,8 @@ export function PlanCard({
       : ended
         ? { text: "끝남", className: "bg-muted text-muted-foreground" }
         : item.daysLeft === 0
-          ? { text: "오늘 마감", className: "bg-amber-50 text-amber-700" }
-          : { text: `${item.daysLeft}일 남음`, className: item.daysLeft <= 1 ? "bg-amber-50 text-amber-700" : "bg-indigo-50 text-indigo-700" }
+          ? { text: "오늘 마감", className: "bg-attention-50 text-attention-700" }
+          : { text: `${item.daysLeft}일 남음`, className: item.daysLeft <= 1 ? "bg-attention-50 text-attention-700" : "bg-action-50 text-action-700" }
   // With a goal time the bar shows study time against it; otherwise how far through the period we are.
   const goal = plan.goalMinutes
   const percent = goal
@@ -54,7 +54,7 @@ export function PlanCard({
         (item.targetHref ? (
           <Link
             href={item.targetHref}
-            className="w-fit rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
+            className="w-fit rounded-md bg-action-50 px-2 py-0.5 text-xs font-medium text-action-700 transition-colors hover:bg-action-100"
           >
             {plan.target.scope === "all" ? item.targetLabel : `${plan.target.scope === "subject" ? "과목" : "페이지"} · ${item.targetLabel}`}
           </Link>
@@ -64,7 +64,7 @@ export function PlanCard({
 
       {plan.goal && (
         <p className="flex items-start gap-1.5 text-sm leading-relaxed text-foreground">
-          <Flag className="mt-1 size-3.5 shrink-0 text-indigo-600" aria-hidden="true" />
+          <Flag className="mt-1 size-3.5 shrink-0 text-action-600" aria-hidden="true" />
           {plan.goal}
         </p>
       )}
@@ -73,7 +73,7 @@ export function PlanCard({
         {phase !== "upcoming" && (
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-xs text-muted-foreground">{ended ? "기간 중 학습" : "지금까지 학습"}</span>
-            <span className={`text-sm font-semibold tabular-nums ${ended ? "text-foreground" : "text-indigo-600"}`}>
+            <span className={`text-sm font-semibold tabular-nums ${ended ? "text-foreground" : "text-action-600"}`}>
               {formatDuration(item.studiedMinutes)}
               {goal ? <span className="font-normal text-muted-foreground">{` / ${formatDuration(goal)}`}</span> : null}
             </span>
@@ -87,7 +87,7 @@ export function PlanCard({
           aria-valuemin={0}
           aria-valuemax={100}
         >
-          <div className={`h-full rounded-full ${ended ? "bg-muted-foreground/40" : "bg-indigo-500"}`} style={{ width: `${percent}%` }} />
+          <div className={`h-full rounded-full ${ended ? "bg-muted-foreground/40" : "bg-action-500"}`} style={{ width: `${percent}%` }} />
         </div>
         <p className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">

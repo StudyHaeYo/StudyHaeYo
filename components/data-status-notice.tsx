@@ -37,16 +37,16 @@ export function DataStatusNotice() {
 
   if (status.phase === "error") {
     return (
-      <div role="alert" className="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <div role="alert" className="mb-4 flex items-start gap-3 rounded-xl border border-danger-200 bg-danger-50 p-4 text-sm text-danger-700">
         <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <div className="flex-1">
           <p className="font-medium">학습 데이터를 불러오지 못했어요.</p>
-          <p className="mt-0.5 text-xs text-red-600/90">{status.message}</p>
+          <p className="mt-0.5 text-xs text-danger-600/90">{status.message}</p>
         </div>
         <button
           type="button"
           onClick={() => void loadUserData()}
-          className="shrink-0 rounded-lg border border-red-200 bg-background px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
+          className="shrink-0 rounded-lg border border-danger-200 bg-background px-3 py-1.5 text-xs font-medium text-danger-700 transition-colors hover:bg-danger-100"
         >
           다시 시도
         </button>
@@ -111,7 +111,7 @@ export function DataStatusNotice() {
   )
 }
 
-const stepLink = "font-medium text-indigo-700 underline-offset-4 hover:underline"
+const stepLink = "font-medium text-action-700 underline-offset-4 hover:underline"
 
 function Step({ n, children }: { n: number; children: React.ReactNode }) {
   return (
@@ -130,13 +130,13 @@ export function DataStatusView({ status }: { status: DataStatus }) {
     <div className="mx-auto flex max-w-md flex-col items-center px-6 py-32 text-center">
       {status.phase === "error" ? (
         <>
-          <AlertCircle className="mb-3 size-6 text-red-600" aria-hidden="true" />
+          <AlertCircle className="mb-3 size-6 text-danger-600" aria-hidden="true" />
           <p role="alert" className="text-base font-medium text-foreground">학습 데이터를 불러오지 못했어요</p>
           <p className="mt-1 text-sm text-muted-foreground">{status.message}</p>
           <button
             type="button"
             onClick={() => void loadUserData()}
-            className="mt-5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            className="mt-5 rounded-lg bg-action-600 px-4 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
           >
             다시 시도
           </button>

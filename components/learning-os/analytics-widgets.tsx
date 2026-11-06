@@ -55,7 +55,7 @@ export function WeakAreas() {
                 </span>
                 <span className="flex shrink-0 items-center gap-2 text-xs">
                   {item.unresolved > 0 && (
-                    <span className="font-medium text-amber-700">{`미해결 ${item.unresolved}개`}</span>
+                    <span className="font-medium text-attention-700">{`미해결 ${item.unresolved}개`}</span>
                   )}
                   <span className="text-muted-foreground">
                     {item.understanding === null ? "이해도 -" : `이해도 ${item.understanding}/5`}

@@ -4,20 +4,100 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Design A (2026-10-24): brand navy #1E2B58. The app uses Tailwind's indigo-* classes for the brand color,
-   so the indigo scale itself is redefined as navy instead of rewriting every class. */
-@theme {
-  --color-indigo-50: #f3f5fa;
-  --color-indigo-100: #e4e8f2;
-  --color-indigo-200: #c9d0e3;
-  --color-indigo-300: #9ea9c9;
-  --color-indigo-400: #6f7ea8;
-  --color-indigo-500: #475887;
-  --color-indigo-600: #1e2b58;
-  --color-indigo-700: #18234a;
-  --color-indigo-800: #121b3a;
-  --color-indigo-900: #0d142b;
-  --color-indigo-950: #080d1d;
+/* Role colors (색 PR1, 2026-11-06). Screen code names a role, never a palette color (indigo-600 …):
+   action = 주 버튼 · 링크 · 선택됨, attention = 다시 볼 것 · 헷갈린 점 · 경고, danger = 틀림 · 오류,
+   success = 맞음 · 통과. Each role is a 50–900 scale plus a foreground for text on its solid fill.
+   The values are what the screens showed before: action = Design A navy #1E2B58 (2026-10-24, it used to
+   redefine Tailwind's indigo scale), attention · danger · success = Tailwind's amber · red · emerald.
+   PR2 changes only these values and adds dark ones. `pnpm run check:colors` keeps palette names out. */
+:root {
+  --action-50: #f3f5fa;
+  --action-100: #e4e8f2;
+  --action-200: #c9d0e3;
+  --action-300: #9ea9c9;
+  --action-400: #6f7ea8;
+  --action-500: #475887;
+  --action-600: #1e2b58;
+  --action-700: #18234a;
+  --action-800: #121b3a;
+  --action-900: #0d142b;
+  --action-foreground: #ffffff;
+  --attention-50: oklch(98.7% 0.022 95.277);
+  --attention-100: oklch(96.2% 0.059 95.617);
+  --attention-200: oklch(92.4% 0.12 95.746);
+  --attention-300: oklch(87.9% 0.169 91.605);
+  --attention-400: oklch(82.8% 0.189 84.429);
+  --attention-500: oklch(76.9% 0.188 70.08);
+  --attention-600: oklch(66.6% 0.179 58.318);
+  --attention-700: oklch(55.5% 0.163 48.998);
+  --attention-800: oklch(47.3% 0.137 46.201);
+  --attention-900: oklch(41.4% 0.112 45.904);
+  --attention-foreground: #ffffff;
+  --danger-50: oklch(97.1% 0.013 17.38);
+  --danger-100: oklch(93.6% 0.032 17.717);
+  --danger-200: oklch(88.5% 0.062 18.334);
+  --danger-300: oklch(80.8% 0.114 19.571);
+  --danger-400: oklch(70.4% 0.191 22.216);
+  --danger-500: oklch(63.7% 0.237 25.331);
+  --danger-600: oklch(57.7% 0.245 27.325);
+  --danger-700: oklch(50.5% 0.213 27.518);
+  --danger-800: oklch(44.4% 0.177 26.899);
+  --danger-900: oklch(39.6% 0.141 25.723);
+  --success-50: oklch(97.9% 0.021 166.113);
+  --success-100: oklch(95% 0.052 163.051);
+  --success-200: oklch(90.5% 0.093 164.15);
+  --success-300: oklch(84.5% 0.143 164.978);
+  --success-400: oklch(76.5% 0.177 163.223);
+  --success-500: oklch(69.6% 0.17 162.48);
+  --success-600: oklch(59.6% 0.145 163.225);
+  --success-700: oklch(50.8% 0.118 165.612);
+  --success-800: oklch(43.2% 0.095 166.913);
+  --success-900: oklch(37.8% 0.077 168.94);
+}
+
+@theme inline {
+  --color-action-50: var(--action-50);
+  --color-action-100: var(--action-100);
+  --color-action-200: var(--action-200);
+  --color-action-300: var(--action-300);
+  --color-action-400: var(--action-400);
+  --color-action-500: var(--action-500);
+  --color-action-600: var(--action-600);
+  --color-action-700: var(--action-700);
+  --color-action-800: var(--action-800);
+  --color-action-900: var(--action-900);
+  --color-action-foreground: var(--action-foreground);
+  --color-attention-50: var(--attention-50);
+  --color-attention-100: var(--attention-100);
+  --color-attention-200: var(--attention-200);
+  --color-attention-300: var(--attention-300);
+  --color-attention-400: var(--attention-400);
+  --color-attention-500: var(--attention-500);
+  --color-attention-600: var(--attention-600);
+  --color-attention-700: var(--attention-700);
+  --color-attention-800: var(--attention-800);
+  --color-attention-900: var(--attention-900);
+  --color-attention-foreground: var(--attention-foreground);
+  --color-danger-50: var(--danger-50);
+  --color-danger-100: var(--danger-100);
+  --color-danger-200: var(--danger-200);
+  --color-danger-300: var(--danger-300);
+  --color-danger-400: var(--danger-400);
+  --color-danger-500: var(--danger-500);
+  --color-danger-600: var(--danger-600);
+  --color-danger-700: var(--danger-700);
+  --color-danger-800: var(--danger-800);
+  --color-danger-900: var(--danger-900);
+  --color-success-50: var(--success-50);
+  --color-success-100: var(--success-100);
+  --color-success-200: var(--success-200);
+  --color-success-300: var(--success-300);
+  --color-success-400: var(--success-400);
+  --color-success-500: var(--success-500);
+  --color-success-600: var(--success-600);
+  --color-success-700: var(--success-700);
+  --color-success-800: var(--success-800);
+  --color-success-900: var(--success-900);
 }
 
 @theme inline {
@@ -71,7 +151,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #1e2b58; /* brand navy (indigo-600, see @theme) */
+  --primary: #1e2b58; /* brand navy (= --action-600) */
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);

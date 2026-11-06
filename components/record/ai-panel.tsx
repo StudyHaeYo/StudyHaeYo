@@ -56,8 +56,8 @@ const blockClass: Record<TextBlock["type"], string> = {
   quote: "text-sm leading-relaxed border-l-2 border-foreground/50 pl-3 text-muted-foreground",
   callout: "text-sm leading-relaxed rounded-md bg-background/70 px-3 py-2",
   code: "rounded-md bg-muted px-3 py-2 font-mono text-xs whitespace-pre-wrap",
-  concept: "text-sm leading-relaxed pl-4 relative before:absolute before:left-0.5 before:content-['◆'] before:text-[10px] before:top-1 before:text-indigo-500",
-  confusion: "text-sm leading-relaxed pl-4 relative before:absolute before:left-0.5 before:content-['?'] before:text-amber-600",
+  concept: "text-sm leading-relaxed pl-4 relative before:absolute before:left-0.5 before:content-['◆'] before:text-[10px] before:top-1 before:text-action-500",
+  confusion: "text-sm leading-relaxed pl-4 relative before:absolute before:left-0.5 before:content-['?'] before:text-attention-600",
 }
 
 export interface AiPanelProps {
@@ -159,7 +159,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
     >
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
         <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-foreground">
-          <Sparkles className="size-4 text-indigo-600" aria-hidden="true" />
+          <Sparkles className="size-4 text-action-600" aria-hidden="true" />
           AI 학습 도우미
         </h2>
         <div className="flex items-center gap-1">
@@ -207,7 +207,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
                     key={prompt}
                     type="button"
                     onClick={() => void send(prompt)}
-                    className="rounded-full border border-border bg-background px-3 py-1.5 text-left text-xs font-medium text-foreground transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                    className="rounded-full border border-border bg-background px-3 py-1.5 text-left text-xs font-medium text-foreground transition-colors hover:border-action-300 hover:bg-action-50 hover:text-action-700"
                   >
                     {prompt}
                   </button>
@@ -219,7 +219,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
 
         {messages.map((message, i) =>
           message.role === "user" ? (
-            <p key={i} className="max-w-[85%] self-end whitespace-pre-wrap rounded-2xl rounded-br-md bg-indigo-600 px-3.5 py-2 text-sm text-white">
+            <p key={i} className="max-w-[85%] self-end whitespace-pre-wrap rounded-2xl rounded-br-md bg-action-600 px-3.5 py-2 text-sm text-action-foreground">
               {message.content}
             </p>
           ) : (
@@ -241,7 +241,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
           </p>
         )}
         {error && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className="text-sm text-danger-600">
             {error}
           </p>
         )}
@@ -263,8 +263,8 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
                   title={stored ? `질문할 때 "${block.name}"도 함께 보내요` : "저장되지 않은 PDF라 AI에 보낼 수 없어요. 다시 올려 주세요"}
                   className={`inline-flex max-w-48 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                     on
-                      ? "border-indigo-300 bg-indigo-50 text-indigo-700"
-                      : "border-border bg-background text-muted-foreground hover:border-indigo-200 hover:text-foreground"
+                      ? "border-action-300 bg-action-50 text-action-700"
+                      : "border-border bg-background text-muted-foreground hover:border-action-200 hover:text-foreground"
                   }`}
                 >
                   {on ? <Check className="size-3.5 shrink-0" /> : <FileText className="size-3.5 shrink-0" />}
@@ -296,7 +296,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
             type="submit"
             disabled={pending || !draft.trim()}
             aria-label="보내기"
-            className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white transition-colors hover:bg-indigo-700 disabled:opacity-40"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-action-600 text-action-foreground transition-colors hover:bg-action-700 disabled:opacity-40"
           >
             <ArrowUp className="size-4" />
           </button>
@@ -345,10 +345,10 @@ function QuizStarter({
       <button
         type="button"
         onClick={() => onAsk(quizPrompt(plan, null))}
-        className="flex items-center justify-between gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-left text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+        className="flex items-center justify-between gap-2 rounded-lg bg-action-600 px-3 py-2 text-left text-sm font-medium text-action-foreground transition-colors hover:bg-action-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
       >
         <span>섞어서 풀기</span>
-        <span className="text-xs font-normal tabular-nums text-indigo-100">{`하 ${low} · 중 ${mid} · 상 ${high}`}</span>
+        <span className="text-xs font-normal tabular-nums text-action-100">{`하 ${low} · 중 ${mid} · 상 ${high}`}</span>
       </button>
       <div role="group" aria-labelledby="quiz-practice-label" className="flex flex-wrap items-center gap-1.5">
         <span id="quiz-practice-label" className="text-xs text-muted-foreground">
@@ -359,7 +359,7 @@ function QuizStarter({
             key={level}
             type="button"
             onClick={() => onAsk(quizPrompt(plan, level))}
-            className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+            className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-action-300 hover:bg-action-50 hover:text-action-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
           >
             {`${level}만`}
           </button>
@@ -384,7 +384,7 @@ function LevelResult({ levels, understanding }: { levels: LevelScore; understand
           .map((l) => (
             <span key={l} className="inline-flex items-center gap-1">
               {`${l} ${levels[l]!.correct}/${levels[l]!.total}`}
-              {passedLevel(levels[l]!) && <span className="text-xs font-medium text-emerald-700">통과</span>}
+              {passedLevel(levels[l]!) && <span className="text-xs font-medium text-success-700">통과</span>}
             </span>
           ))}
       </p>
@@ -500,7 +500,7 @@ function AssistantMessage({
                 studyContent: `AI 문제 풀이 ${score.levels ? formatLevelScore(score.levels) : `${score.correct}/${score.total}`}`,
               })
             }
-            className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700"
+            className="inline-flex items-center gap-1 rounded-md bg-action-600 px-2.5 py-1 text-xs font-medium text-action-foreground hover:bg-action-700"
           >
             <NotebookPen className="size-3.5" />
             기록으로 남기기
@@ -511,7 +511,7 @@ function AssistantMessage({
           (wrongNoteId ? (
             <Link
               href={`/record/${wrongNoteId}`}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-danger-700 hover:bg-danger-50"
             >
               <XCircle className="size-3.5" aria-hidden="true" />
               오답 노트 열기
@@ -520,7 +520,7 @@ function AssistantMessage({
             <button
               type="button"
               onClick={makeWrongNote}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-danger-700 hover:bg-danger-50"
             >
               <XCircle className="size-3.5" aria-hidden="true" />
               {`틀린 ${wrong.length}문제를 오답 노트로`}
@@ -535,7 +535,7 @@ function AssistantMessage({
               setConfusionsAdded(true)
               toast.success(`헷갈린 점 ${confusions.length}개를 페이지에 추가했어요`)
             }}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-attention-700 hover:bg-attention-50 disabled:opacity-50"
           >
             <CircleHelp className="size-3.5" />
             {confusionsAdded ? "헷갈린 점에 추가함" : "헷갈린 점에 추가"}
@@ -544,7 +544,7 @@ function AssistantMessage({
         <button
           type="button"
           onClick={insert}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-50"
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-action-700 hover:bg-action-50"
         >
           <FilePlus2 className="size-3.5" />
           본문에 추가

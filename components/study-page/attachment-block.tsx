@@ -109,7 +109,7 @@ function FileCard({
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 pr-12">
       <span
         className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
-          pdf ? "bg-red-50 text-red-600" : "bg-muted text-muted-foreground"
+          pdf ? "bg-danger-50 text-danger-600" : "bg-muted text-muted-foreground"
         }`}
       >
         <Icon className="size-5" aria-hidden="true" />
@@ -118,7 +118,7 @@ function FileCard({
         <span className="truncate text-sm font-medium text-foreground">{block.name}</span>
         <span className="text-xs text-muted-foreground">
           {pdf ? "PDF" : block.mime.split("/")[1]?.toUpperCase() || "파일"} · {formatFileSize(block.size)}
-          {notedPages > 0 && <span className="text-indigo-600"> · 필기 {notedPages}쪽</span>}
+          {notedPages > 0 && <span className="text-action-600"> · 필기 {notedPages}쪽</span>}
         </span>
       </div>
       <div className="flex items-center gap-1">
@@ -126,7 +126,7 @@ function FileCard({
           <button
             type="button"
             onClick={onPreview}
-            className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
+            className="inline-flex items-center gap-1 rounded-md bg-action-50 px-2 py-1 text-xs font-medium text-action-700 transition-colors hover:bg-action-100"
           >
             <PenLine className="size-3.5" aria-hidden="true" />
             보기·필기

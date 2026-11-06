@@ -673,7 +673,7 @@ export function BlockEditor({
           if (!selection || selection.focus !== index) setSelection({ anchor: dragFrom.current, focus: index })
         }}
         className={`relative flex flex-col gap-1 rounded-lg transition-colors ${selection ? "select-none" : ""} ${
-          dragging ? "bg-indigo-50/60 ring-2 ring-indigo-300 ring-offset-4 ring-offset-background" : ""
+          dragging ? "bg-action-50/60 ring-2 ring-action-300 ring-offset-4 ring-offset-background" : ""
         }`}
         aria-label="페이지 본문"
       >
@@ -682,7 +682,7 @@ export function BlockEditor({
             <div
               key={block.id}
               data-block-index={index}
-              className={`group/block relative ${isSelected(index) ? "rounded-md bg-indigo-100/70 ring-1 ring-indigo-200" : ""} ${
+              className={`group/block relative ${isSelected(index) ? "rounded-md bg-action-100/70 ring-1 ring-action-200" : ""} ${
                 moving === index ? "opacity-40" : ""
               }`}
               onDragOver={(e) => {
@@ -705,7 +705,7 @@ export function BlockEditor({
               {dropAt?.index === index && moving !== null && (
                 <span
                   aria-hidden="true"
-                  className={`pointer-events-none absolute inset-x-0 z-10 h-0.5 rounded-full bg-indigo-500 ${
+                  className={`pointer-events-none absolute inset-x-0 z-10 h-0.5 rounded-full bg-action-500 ${
                     dropAt.side === "before" ? "-top-[3px]" : "-bottom-[3px]"
                   }`}
                 />
@@ -812,11 +812,11 @@ export function BlockEditor({
                     : block.type === "callout"
                       ? "rounded-lg bg-muted/70 px-3 py-2.5"
                       : block.type === "concept"
-                        ? "my-1 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-2"
+                        ? "my-1 rounded-xl border border-action-100 bg-action-50/60 px-3 py-2"
                         : block.type === "confusion"
                           ? block.checked
                             ? "my-1 rounded-xl border border-border px-3 py-2"
-                            : "my-1 rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2"
+                            : "my-1 rounded-xl border border-attention-200 bg-attention-50/70 px-3 py-2"
                           : ""
                 }`}
               >
@@ -839,7 +839,7 @@ export function BlockEditor({
                   <span
                     aria-hidden="true"
                     title="핵심 개념 · 복습 카드가 돼요"
-                    className="mt-[3px] shrink-0 select-none rounded-md bg-white/80 px-1.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100"
+                    className="mt-[3px] shrink-0 select-none rounded-md bg-white/80 px-1.5 py-0.5 text-xs font-semibold text-action-700 ring-1 ring-action-100"
                   >
                     개념
                   </span>
@@ -856,7 +856,7 @@ export function BlockEditor({
                     className={`mt-1 flex size-[18px] shrink-0 items-center justify-center rounded-full border transition-colors ${
                       block.checked
                         ? "border-muted-foreground/40 bg-muted-foreground/40 text-white"
-                        : "border-amber-600 bg-amber-600 text-white hover:bg-amber-700"
+                        : "border-attention-600 bg-attention-600 text-attention-foreground hover:bg-attention-700"
                     }`}
                   >
                     {block.checked ? <Check className="size-3" /> : <span className="text-[11px] font-bold leading-none">?</span>}
@@ -957,8 +957,8 @@ export function BlockEditor({
                           className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
                             block.result === r
                               ? r === "right"
-                                ? "bg-emerald-50 text-emerald-700"
-                                : "bg-rose-50 text-rose-700"
+                                ? "bg-success-50 text-success-700"
+                                : "bg-danger-50 text-danger-700"
                               : on
                                 ? "text-muted-foreground/80 hover:bg-muted"
                                 : "text-muted-foreground/50 hover:bg-muted hover:text-foreground"
@@ -1030,7 +1030,7 @@ export function BlockEditor({
                         }}
                         onMouseEnter={() => setSlash({ blockId: block.id, active: i })}
                         className={`flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm ${
-                          active ? "bg-indigo-50 text-indigo-700" : "text-foreground"
+                          active ? "bg-action-50 text-action-700" : "text-foreground"
                         }`}
                       >
                         <span className="flex size-7 items-center justify-center rounded-md border border-border bg-background">
@@ -1060,7 +1060,7 @@ export function BlockEditor({
           )
         })}
         {dragging && (
-          <p className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs font-medium text-indigo-700">
+          <p className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs font-medium text-action-700">
             놓으면 첨부돼요 · 파일당 10MB까지
           </p>
         )}

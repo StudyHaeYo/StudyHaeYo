@@ -45,7 +45,7 @@ export function LectureMaterialPane({
           <button
             type="button"
             onClick={onExtractConcepts}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-50"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-action-700 transition-colors hover:bg-action-50"
           >
             <Sparkles className="size-3.5" aria-hidden="true" />
             AI로 핵심 개념 뽑기
@@ -124,7 +124,7 @@ function PdfPages({ url }: { url: string }) {
   return (
     <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-muted/50 px-3 py-3">
       {error ? (
-        <p className="text-sm text-red-600">PDF를 열지 못했어요.</p>
+        <p className="text-sm text-danger-600">PDF를 열지 못했어요.</p>
       ) : !doc || width === 0 ? (
         <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />

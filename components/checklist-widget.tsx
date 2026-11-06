@@ -88,7 +88,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
         aria-label={`${todo.title} ${done ? "완료 취소" : "완료"}`}
         onClick={() => toggleTodo(todo.id)}
         className={`flex size-5 shrink-0 items-center justify-center rounded-md border transition-[colors,transform] active:scale-90 ${
-          done ? "border-indigo-600 bg-indigo-600 text-white" : "border-border bg-background hover:border-indigo-400"
+          done ? "border-action-600 bg-action-600 text-action-foreground" : "border-border bg-background hover:border-action-400"
         }`}
       >
         {done && <Check className="size-3.5 animate-in zoom-in-90 fade-in duration-150" />}
@@ -110,7 +110,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
               setEditing(false)
             }
           }}
-          className="min-w-0 flex-1 rounded border border-indigo-300 bg-card px-1.5 py-0.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-indigo-200"
+          className="min-w-0 flex-1 rounded border border-action-300 bg-card px-1.5 py-0.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-action-200"
         />
       ) : (
         <button
@@ -126,7 +126,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
       )}
 
       {carried && !editing && (
-        <span className="shrink-0 text-xs text-amber-600" title="전날에 못 끝내서 넘어온 할 일">
+        <span className="shrink-0 text-xs text-attention-600" title="전날에 못 끝내서 넘어온 할 일">
           이월
         </span>
       )}

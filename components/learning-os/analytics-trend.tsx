@@ -15,9 +15,9 @@ function weekLabel(start: string) {
 }
 
 const insightIcon: Record<Insight["tone"], { icon: typeof TrendingUp; className: string }> = {
-  up: { icon: TrendingUp, className: "text-emerald-600" },
-  down: { icon: TrendingDown, className: "text-amber-600" },
-  info: { icon: Lightbulb, className: "text-indigo-600" },
+  up: { icon: TrendingUp, className: "text-success-600" },
+  down: { icon: TrendingDown, className: "text-attention-600" },
+  info: { icon: Lightbulb, className: "text-action-600" },
 }
 
 // 학습 분석: weekly study time over the last 8 weeks, with a few plain-language readings next to it.
@@ -52,7 +52,7 @@ export function AnalyticsTrend() {
                   </span>
                   <div className="flex w-full items-end" style={{ height: CHART_HEIGHT }}>
                     <div
-                      className={`w-full rounded-t-md ${week.minutes === 0 ? "bg-muted" : week.isCurrent ? "bg-indigo-600" : "bg-indigo-300"}`}
+                      className={`w-full rounded-t-md ${week.minutes === 0 ? "bg-muted" : week.isCurrent ? "bg-action-600" : "bg-action-300"}`}
                       style={{ height }}
                       title={`${weekLabel(week.start)} 주 · ${formatDuration(week.minutes)}`}
                     />

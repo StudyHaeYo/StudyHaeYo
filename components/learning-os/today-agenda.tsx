@@ -53,7 +53,7 @@ export function TodayAgenda() {
           ) : running.length === 0 ? (
             <Empty>
               오늘 진행 중인 계획이 없어요.{" "}
-              <Link href="/plan" className="font-medium text-indigo-600 hover:underline">
+              <Link href="/plan" className="font-medium text-action-600 hover:underline">
                 계획 만들기
               </Link>
             </Empty>
@@ -106,7 +106,7 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
     <li>
       <Link
         href={reviewHref(item.pageId)}
-        className={`group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent ${first ? "bg-indigo-50" : ""}`}
+        className={`group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent ${first ? "bg-action-50" : ""}`}
       >
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
@@ -118,7 +118,7 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
               </span>
             )}
             {item.exam && (
-              <span className="shrink-0 rounded bg-indigo-50 px-1.5 py-0.5 text-[11px] font-medium text-indigo-700">
+              <span className="shrink-0 rounded bg-action-50 px-1.5 py-0.5 text-[11px] font-medium text-action-700">
                 시험 {item.exam}
               </span>
             )}
@@ -130,7 +130,7 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
         </span>
         <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>{item.due}</span>
         {first ? (
-          <span className="inline-flex shrink-0 items-center rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white transition-colors group-hover:bg-indigo-700">
+          <span className="inline-flex shrink-0 items-center rounded-md bg-action-600 px-2.5 py-1 text-xs font-medium text-action-foreground transition-colors group-hover:bg-action-700">
             {item.action}
           </span>
         ) : (
@@ -159,7 +159,7 @@ function ReviewList({ reviews }: { reviews: StudyCandidate[] }) {
           onClick={() => setAll((v) => !v)}
           aria-expanded={all}
           aria-controls={listId}
-          className="mt-1 inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+          className="mt-1 inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
         >
           {all ? "접기" : `${reviews.length - REVIEW_LIMIT}개 더 보기`}
           <ChevronDown className={`size-3.5 transition-transform motion-reduce:transition-none ${all ? "rotate-180" : ""}`} aria-hidden="true" />

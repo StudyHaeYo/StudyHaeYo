@@ -68,7 +68,7 @@ export function MoveDialog({ pageId, title, onClose }: { pageId: string; title: 
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            className="-mr-2 flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-indigo-500"
+            className="-mr-2 flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-action-500"
           >
             <X className="size-4" aria-hidden="true" />
           </button>
@@ -84,7 +84,7 @@ export function MoveDialog({ pageId, title, onClose }: { pageId: string; title: 
                   aria-current={here}
                   onClick={() => move(t)}
                   style={{ paddingLeft: `${0.75 + t.depth * 1}rem` }}
-                  className={`flex w-full items-center gap-2 rounded-lg py-2.5 pr-3 text-left text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-indigo-500 ${
+                  className={`flex w-full items-center gap-2 rounded-lg py-2.5 pr-3 text-left text-sm transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-action-500 ${
                     here ? "text-muted-foreground" : "text-foreground"
                   }`}
                 >

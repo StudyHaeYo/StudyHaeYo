@@ -144,7 +144,7 @@ export function Sidebar(_props: SidebarProps = {}) {
           <Menu className="size-5" />
         </button>
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-indigo-600 text-white">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-action-600 text-action-foreground">
             <BookOpen className="size-3.5" />
           </span>
           <span className="text-sm font-semibold tracking-tight text-foreground">스터디 해요</span>
@@ -184,7 +184,7 @@ export function Sidebar(_props: SidebarProps = {}) {
     >
       {/* Logo */}
       <div className="flex items-center gap-2 px-5 py-5">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+        <div className="flex size-8 items-center justify-center rounded-lg bg-action-600 text-action-foreground">
           <BookOpen className="size-4" />
         </div>
         <span className="flex-1 text-base font-semibold tracking-tight text-foreground">
@@ -276,7 +276,7 @@ export function Sidebar(_props: SidebarProps = {}) {
       {/* User / settings / logout */}
       <div className="border-t border-border p-3">
         <div className="flex items-center gap-2 rounded-lg px-2 py-2">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-action-100 text-sm font-semibold text-action-700">
             {user?.name.charAt(0)}
           </div>
           {user ? (
@@ -433,7 +433,7 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
             aria-current={active ? "page" : undefined}
             className={`flex min-w-0 flex-1 items-center gap-1.5 py-1.5 pr-2 text-sm text-foreground ${active ? "font-medium" : ""}`}
           >
-            <KindIcon className="size-3.5 shrink-0 text-indigo-600" aria-hidden="true" />
+            <KindIcon className="size-3.5 shrink-0 text-action-600" aria-hidden="true" />
             <span className="truncate">{group.name}</span>
             <span className="sr-only">(과목)</span>
           </Link>
@@ -505,7 +505,7 @@ function GroupRenameInput({
           if (e.key === "Enter") commit()
           if (e.key === "Escape") onDone()
         }}
-        className="min-w-0 flex-1 rounded border border-indigo-300 bg-card px-1.5 py-0.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-indigo-200"
+        className="min-w-0 flex-1 rounded border border-action-300 bg-card px-1.5 py-0.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-action-200"
       />
     </div>
   )
@@ -548,7 +548,7 @@ function NewGroupInput({ parentId = null, onDone }: { parentId?: string | null; 
         }}
         placeholder={kind === "subject" ? "새 과목 이름" : "새 폴더 이름"}
         aria-label="새 그룹 이름"
-        className="w-full rounded-md border border-indigo-300 bg-card px-2 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-indigo-200"
+        className="w-full rounded-md border border-action-300 bg-card px-2 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-action-200"
       />
       <div role="radiogroup" aria-label="그룹 종류" className="flex gap-1">
         {groupKindOptions.map((o) => (
@@ -561,7 +561,7 @@ function NewGroupInput({ parentId = null, onDone }: { parentId?: string | null; 
             onClick={() => setKind(o.kind)}
             className={`flex-1 rounded-md border px-2 py-1 text-xs transition-colors ${
               kind === o.kind
-                ? "border-indigo-300 bg-indigo-50 font-medium text-indigo-700"
+                ? "border-action-300 bg-action-50 font-medium text-action-700"
                 : "border-border text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >

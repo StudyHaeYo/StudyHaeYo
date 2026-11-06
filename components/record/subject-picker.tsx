@@ -8,7 +8,7 @@ const NEW = "__new__"
 const NONE = ""
 
 export const pickerFieldClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/30"
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-action-300 focus:ring-2 focus:ring-action-500/30"
 
 // Subjects in sidebar order, labeled with the folders above them ("전공 공부 › 자료구조").
 export function useSubjectOptions() {
@@ -79,7 +79,7 @@ export function SubjectPicker({
           onClick={create}
           disabled={!name.trim()}
           aria-label="과목 만들기"
-          className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+          className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-action-600 text-action-foreground transition-colors hover:bg-action-700 disabled:opacity-50"
         >
           <Check className="size-4" />
         </button>

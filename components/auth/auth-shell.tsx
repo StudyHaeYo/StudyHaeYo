@@ -16,7 +16,7 @@ export function AuthShell({
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10 text-foreground">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Link href="/" className="flex items-center justify-center gap-2 self-center rounded-lg">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-action-600 text-action-foreground">
             <BookOpen className="size-4" aria-hidden="true" />
           </span>
           <span className="text-base font-semibold tracking-tight text-foreground">스터디 해요</span>

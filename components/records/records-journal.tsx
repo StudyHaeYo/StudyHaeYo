@@ -71,7 +71,7 @@ export function RecordsJournal() {
         <button
           type="button"
           onClick={() => openQuickRecord()}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-action-600 px-3.5 text-sm font-semibold text-action-foreground transition-colors hover:bg-action-700"
         >
           <Plus className="size-4" aria-hidden="true" />
           기록 남기기
@@ -95,7 +95,7 @@ export function RecordsJournal() {
             </button>
           )}
         </div>
-        <label className="hidden h-8 w-52 shrink-0 items-center gap-2 rounded-lg border border-border px-2.5 text-sm text-muted-foreground focus-within:border-indigo-400 sm:flex">
+        <label className="hidden h-8 w-52 shrink-0 items-center gap-2 rounded-lg border border-border px-2.5 text-sm text-muted-foreground focus-within:border-action-400 sm:flex">
           <Search className="size-4 shrink-0" aria-hidden="true" />
           <span className="sr-only">기록 검색</span>
           <input

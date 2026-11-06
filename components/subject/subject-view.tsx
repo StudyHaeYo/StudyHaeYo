@@ -43,7 +43,7 @@ function SubjectNotFound() {
       </p>
       <Link
         href="/"
-        className="mt-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+        className="mt-2 rounded-lg bg-action-600 px-4 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
       >
         홈으로 가기
       </Link>

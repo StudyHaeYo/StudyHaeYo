@@ -1,5 +1,5 @@
 const fieldClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-indigo-500"
+  "w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-action-500"
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export const MIN_PASSWORD_LENGTH = 8
@@ -24,11 +24,11 @@ export function AuthField({
         id={id}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={`${fieldClass} ${error ? "border-red-400 focus:ring-red-300" : ""}`}
+        className={`${fieldClass} ${error ? "border-danger-400 focus:ring-danger-300" : ""}`}
         {...inputProps}
       />
       {error && (
-        <p id={errorId} className="text-xs text-red-600">
+        <p id={errorId} className="text-xs text-danger-600">
           {error}
         </p>
       )}
@@ -37,4 +37,4 @@ export function AuthField({
 }
 
 export const submitButtonClass =
-  "w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-indigo-600"
+  "w-full rounded-lg bg-action-600 px-4 py-2.5 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-action-600"

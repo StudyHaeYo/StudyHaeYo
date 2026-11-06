@@ -182,7 +182,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
                   disabled={r.recorded}
                   onClick={() => update(r.key, { include: !r.include })}
                   className={`mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors ${
-                    r.include && !r.recorded ? "border-indigo-600 bg-indigo-600 text-white" : "border-muted-foreground/40 bg-background"
+                    r.include && !r.recorded ? "border-action-600 bg-action-600 text-action-foreground" : "border-muted-foreground/40 bg-background"
                   }`}
                 >
                   {r.include && !r.recorded && <Check className="size-3" />}
@@ -191,7 +191,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
                   <div className="flex items-baseline justify-between gap-3">
                     <p className={`truncate text-sm font-semibold ${r.pageId ? "text-foreground" : "text-foreground"}`}>{r.title}</p>
                     {r.recorded ? (
-                      <span className="shrink-0 text-xs font-semibold text-emerald-700">이미 기록됨</span>
+                      <span className="shrink-0 text-xs font-semibold text-success-700">이미 기록됨</span>
                     ) : (
                       <label className="flex shrink-0 items-center gap-1 text-sm tabular-nums text-foreground">
                         <input
@@ -215,7 +215,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
                         aria-label={`${r.title}에서 무엇을 했나요`}
                         autoComplete="off"
                         placeholder={r.pageId ? "무엇을 했나요? (비워 둬도 돼요)" : "무엇을 했나요? 예: 문제집 3장, 학교 수업…"}
-                        className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-indigo-400"
+                        className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-action-400"
                       />
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         {!r.pageId ? (
@@ -250,8 +250,8 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
                               onClick={() => update(r.key, { understanding: n, include: true })}
                               className={`flex size-6 items-center justify-center rounded-md text-xs font-semibold transition-colors ${
                                 r.understanding !== null && n <= r.understanding
-                                  ? "bg-indigo-600 text-white"
-                                  : "border border-indigo-200 text-muted-foreground hover:border-indigo-400"
+                                  ? "bg-action-600 text-action-foreground"
+                                  : "border border-action-200 text-muted-foreground hover:border-action-400"
                               }`}
                             >
                               {n}
@@ -289,7 +289,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
             type="button"
             onClick={save}
             disabled={chosen.length === 0 || Boolean(missing)}
-            className="h-10 flex-1 rounded-xl bg-indigo-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+            className="h-10 flex-1 rounded-xl bg-action-600 px-5 text-sm font-semibold text-action-foreground transition-colors hover:bg-action-700 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
           >
             {chosen.length > 0 ? `${chosen.length}개 기록 남기기` : "기록 남기기"}
           </button>

@@ -287,7 +287,7 @@ export function ToolButton({
       disabled={disabled}
       onClick={onClick}
       className={`flex size-8 items-center justify-center rounded-md transition-colors disabled:pointer-events-none disabled:opacity-40 ${
-        active ? "bg-indigo-50 text-indigo-700" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        active ? "bg-action-50 text-action-700" : "text-muted-foreground hover:bg-muted hover:text-foreground"
       }`}
     >
       {children}

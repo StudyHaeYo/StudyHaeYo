@@ -292,7 +292,7 @@ export function StudyPageView({
               }}
               aria-pressed={materialOpen}
               className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
-                materialOpen ? "bg-indigo-50 text-indigo-700" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                materialOpen ? "bg-action-50 text-action-700" : "text-muted-foreground hover:bg-accent hover:text-foreground"
               }`}
             >
               <BookOpen className="size-4" />
@@ -304,7 +304,7 @@ export function StudyPageView({
             onClick={() => setAiOpen((v) => !v)}
             aria-pressed={aiOpen}
             className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
-              aiOpen ? "bg-indigo-50 text-indigo-700" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              aiOpen ? "bg-action-50 text-action-700" : "text-muted-foreground hover:bg-accent hover:text-foreground"
             }`}
           >
             <Sparkles className="size-4" />
@@ -505,7 +505,7 @@ export function MissingPage() {
       <p className="mt-1 text-sm text-muted-foreground">삭제되었거나 존재하지 않는 페이지예요.</p>
       <Link
         href="/"
-        className="mt-5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+        className="mt-5 rounded-lg bg-action-600 px-4 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
       >
         홈으로
       </Link>

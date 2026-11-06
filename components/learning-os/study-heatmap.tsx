@@ -12,10 +12,10 @@ const DAY_NAMES = ["월", "화", "수", "목", "금", "토", "일"]
 function shade(day: StudyDay) {
   if (day.future) return "bg-transparent text-muted-foreground/40"
   if (day.minutes === 0) return "bg-muted text-muted-foreground"
-  if (day.minutes < 30) return "bg-indigo-100 text-indigo-900"
-  if (day.minutes < 60) return "bg-indigo-200 text-indigo-900"
-  if (day.minutes < 120) return "bg-indigo-400 text-white"
-  return "bg-indigo-600 text-white"
+  if (day.minutes < 30) return "bg-action-100 text-action-900"
+  if (day.minutes < 60) return "bg-action-200 text-action-900"
+  if (day.minutes < 120) return "bg-action-400 text-action-foreground"
+  return "bg-action-600 text-action-foreground"
 }
 
 // 학습 달력: the last five weeks laid out like a calendar (월~일 across, a week per row), each day shaded by
@@ -66,7 +66,7 @@ export function StudyHeatmap() {
 
       <div className="mt-2 flex items-center justify-end gap-1 text-[10px] text-muted-foreground" aria-hidden="true">
         적게
-        {["bg-muted", "bg-indigo-100", "bg-indigo-200", "bg-indigo-400", "bg-indigo-600"].map((c) => (
+        {["bg-muted", "bg-action-100", "bg-action-200", "bg-action-400", "bg-action-600"].map((c) => (
           <span key={c} className={`size-2.5 rounded-[2px] ${c}`} />
         ))}
         많이

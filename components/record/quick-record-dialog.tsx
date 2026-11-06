@@ -164,7 +164,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
           <b className="font-semibold text-foreground">{page.title || "제목 없음"}</b>에 남아요
           {understanding !== null && (
             <>
-              {" · "}다음 복습 <b className="font-semibold text-emerald-700">{formatDate(nextReviewDate(date, understanding))}</b>
+              {" · "}다음 복습 <b className="font-semibold text-success-700">{formatDate(nextReviewDate(date, understanding))}</b>
             </>
           )}
         </>
@@ -235,7 +235,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
   }
 
   const pill =
-    "relative inline-flex h-9 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm text-foreground transition-colors focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-50"
+    "relative inline-flex h-9 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm text-foreground transition-colors focus-within:border-action-400 focus-within:ring-4 focus-within:ring-action-50"
   const chip = "rounded-full px-2.5 py-1 text-xs transition-colors"
 
   return (
@@ -281,7 +281,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
                   setDuration(String(s.durationMinutes))
                   setTarget(s.pageId ? { kind: "page", id: s.pageId } : s.subjectId ? { kind: "subject", id: s.subjectId } : { kind: "none" })
                 }}
-                className="inline-flex max-w-full items-center gap-1 rounded-full bg-muted px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-indigo-50 hover:text-indigo-700"
+                className="inline-flex max-w-full items-center gap-1 rounded-full bg-muted px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-action-50 hover:text-action-700"
               >
                 <span className="truncate">{s.studyContent.split("\n")[0].slice(0, 18)}</span>
                 <span className="shrink-0 text-muted-foreground">· {formatDuration(s.durationMinutes)}</span>
@@ -339,7 +339,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               key={m}
               type="button"
               onClick={() => setDuration(String(m))}
-              className={`${chip} ${String(m) === duration ? "bg-indigo-50 font-semibold text-indigo-700" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+              className={`${chip} ${String(m) === duration ? "bg-action-50 font-semibold text-action-700" : "bg-muted text-muted-foreground hover:text-foreground"}`}
             >
               {m === request.minutes && !edit ? `세션 ${formatDuration(m)}` : formatDuration(m)}
             </button>
@@ -363,11 +363,11 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
                   onClick={() => setUnderstanding(n)}
                   className={`flex h-12 flex-col items-center justify-center gap-0.5 rounded-xl border text-xs leading-tight transition-colors ${
                     on
-                      ? "border-indigo-600 bg-indigo-600 text-white"
-                      : "border-border text-muted-foreground hover:border-indigo-300 hover:text-foreground"
+                      ? "border-action-600 bg-action-600 text-action-foreground"
+                      : "border-border text-muted-foreground hover:border-action-300 hover:text-foreground"
                   }`}
                 >
-                  <b className={`text-sm tabular-nums ${on ? "text-white" : "text-foreground"}`}>{n}</b>
+                  <b className={`text-sm tabular-nums ${on ? "text-action-foreground" : "text-foreground"}`}>{n}</b>
                   <span className="px-0.5 text-center">{label}</span>
                 </button>
               )
@@ -405,7 +405,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               onChange={(e) => setDifficulties(e.target.value)}
               rows={1}
               placeholder="어려웠던 점"
-              className="w-full resize-none rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-amber-700/60 focus:border-amber-400"
+              className="w-full resize-none rounded-xl border border-attention-200 bg-attention-50/60 px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-attention-700/60 focus:border-attention-400"
             />
           )}
           {legacyNext && (
@@ -415,7 +415,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               onChange={(e) => setNextSteps(e.target.value)}
               rows={1}
               placeholder="다음에 할 일"
-              className="w-full resize-none rounded-xl border border-border px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-muted-foreground/70 focus:border-indigo-400"
+              className="w-full resize-none rounded-xl border border-border px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-muted-foreground/70 focus:border-action-400"
             />
           )}
           {confusion !== null && page && (
@@ -426,7 +426,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               onChange={(e) => setConfusion(e.target.value)}
               rows={1}
               placeholder="헷갈린 점. 노트의 헷갈린 점에 들어가요…"
-              className="w-full resize-none rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-amber-800/70 focus:border-amber-400"
+              className="w-full resize-none rounded-xl border border-attention-200 bg-attention-50/60 px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-attention-800/70 focus:border-attention-400"
             />
           )}
           {todo !== null && (
@@ -437,7 +437,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               value={todo}
               onChange={(e) => setTodo(e.target.value)}
               placeholder="내일 할 일. 체크리스트에 들어가요…"
-              className="h-10 w-full rounded-xl border border-border px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-indigo-400"
+              className="h-10 w-full rounded-xl border border-border px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-action-400"
             />
           )}
           {((confusion === null && page) || (todo === null && todosReady)) && (
@@ -475,7 +475,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="h-10 flex-1 rounded-xl bg-indigo-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+            className="h-10 flex-1 rounded-xl bg-action-600 px-5 text-sm font-semibold text-action-foreground transition-colors hover:bg-action-700 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
           >
             {edit ? "저장" : "기록 남기기"}
           </button>
@@ -543,29 +543,29 @@ function WherePicker({
       <FileText className="size-3.5" aria-hidden="true" />
       <span className="truncate">{page.title || "제목 없음"}</span>
       {nearestSubject(workspace, page.parentId) && (
-        <span className="shrink-0 font-normal text-indigo-700/70">{nearestSubject(workspace, page.parentId)?.name}</span>
+        <span className="shrink-0 font-normal text-action-700/70">{nearestSubject(workspace, page.parentId)?.name}</span>
       )}
     </>
   ) : subject ? (
     <>
       <BookMarked className="size-3.5" aria-hidden="true" />
       <span className="truncate">{subject.name}</span>
-      <span className="shrink-0 font-normal text-indigo-700/70">과목</span>
+      <span className="shrink-0 font-normal text-action-700/70">과목</span>
     </>
   ) : null
 
   return (
     <div className="relative">
-      <div className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-2 py-1.5 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-50">
+      <div className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-2 py-1.5 focus-within:border-action-400 focus-within:ring-4 focus-within:ring-action-50">
         {token && (
-          <span className="inline-flex h-7 min-w-0 max-w-full items-center gap-1.5 rounded-lg bg-indigo-50 pl-2.5 pr-1 text-sm font-semibold text-indigo-700">
+          <span className="inline-flex h-7 min-w-0 max-w-full items-center gap-1.5 rounded-lg bg-action-50 pl-2.5 pr-1 text-sm font-semibold text-action-700">
             {token}
             {!locked && (
               <button
                 type="button"
                 aria-label="선택 지우기"
                 onClick={() => onChange(ready ? { kind: "none" } : null)}
-                className="flex size-5 shrink-0 items-center justify-center rounded text-indigo-700/70 hover:bg-indigo-100 hover:text-indigo-700"
+                className="flex size-5 shrink-0 items-center justify-center rounded text-action-700/70 hover:bg-action-100 hover:text-action-700"
               >
                 <X className="size-3.5" />
               </button>
@@ -639,7 +639,7 @@ function WherePicker({
                 }}
                 onMouseEnter={() => setActive(i)}
                 className={`flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm ${
-                  i === active ? "bg-indigo-50 text-indigo-900" : "text-foreground"
+                  i === active ? "bg-action-50 text-action-900" : "text-foreground"
                 } ${option.target.kind === "none" ? "mt-1 border-t border-border text-muted-foreground" : ""}`}
               >
                 {option.target.kind === "page" ? (

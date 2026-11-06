@@ -29,7 +29,7 @@ export function LearningPlans() {
             <button
               type="button"
               onClick={() => setFormOpen(true)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-action-600 px-3 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
             >
               <Plus className="size-4" />
               계획 만들기
@@ -120,12 +120,12 @@ function PlanForm({ workspace, onClose }: { workspace: WorkspaceState; onClose: 
   }
 
   const fieldClass =
-    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-indigo-500"
+    "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-action-500"
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid gap-4 rounded-xl border border-indigo-200 bg-card p-5 sm:grid-cols-2"
+      className="grid gap-4 rounded-xl border border-action-200 bg-card p-5 sm:grid-cols-2"
     >
       <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
         계획 제목
@@ -212,7 +212,7 @@ function PlanForm({ workspace, onClose }: { workspace: WorkspaceState; onClose: 
         </button>
         <button
           type="submit"
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+          className="rounded-lg bg-action-600 px-4 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
         >
           계획 생성
         </button>

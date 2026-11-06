@@ -79,7 +79,7 @@ export function TableBlockView({ block, onChange }: { block: TableBlock; onChang
                       onChange={(e) => setCell(r, c, e.target.value)}
                       onKeyDown={(e) => onKeyDown(e, r, c)}
                       placeholder={r === 0 ? "제목" : ""}
-                      className={`block w-full resize-none bg-transparent px-2.5 py-1.5 leading-relaxed text-foreground outline-none [field-sizing:content] placeholder:text-muted-foreground/40 focus:bg-indigo-50/40 ${
+                      className={`block w-full resize-none bg-transparent px-2.5 py-1.5 leading-relaxed text-foreground outline-none [field-sizing:content] placeholder:text-muted-foreground/40 focus:bg-action-50/40 ${
                         r === 0 ? "font-semibold" : ""
                       }`}
                     />

@@ -56,7 +56,7 @@ export function PageRecords({
         <button
           type="button"
           onClick={add}
-          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold text-foreground transition-colors hover:border-indigo-300 hover:text-indigo-700"
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold text-foreground transition-colors hover:border-action-300 hover:text-action-700"
         >
           <Plus className="size-4" aria-hidden="true" />
           기록 남기기
@@ -73,7 +73,7 @@ export function PageRecords({
                 {oldestFirst.map((r, i) => (
                   <span
                     key={r.id}
-                    className={`w-1.5 rounded-sm ${i === oldestFirst.length - 1 ? "bg-indigo-600" : "bg-indigo-200"}`}
+                    className={`w-1.5 rounded-sm ${i === oldestFirst.length - 1 ? "bg-action-600" : "bg-action-200"}`}
                     style={{ height: `${4 + r.understanding * 2.4}px` }}
                   />
                 ))}
@@ -86,7 +86,7 @@ export function PageRecords({
             {stats.nextReviewAt && (
               <span>
                 다음 복습{" "}
-                <b className={`font-semibold ${stats.status === "복습 필요" ? "text-amber-700" : "text-foreground"}`}>
+                <b className={`font-semibold ${stats.status === "복습 필요" ? "text-attention-700" : "text-foreground"}`}>
                   {formatDate(stats.nextReviewAt)}
                   {overdue > 0 ? `, ${overdue}일 지남` : stats.status === "복습 필요" ? ", 오늘" : ""}
                 </b>
@@ -98,7 +98,7 @@ export function PageRecords({
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls="page-records-list"
-            className="inline-flex items-center gap-1.5 self-start rounded-md py-1.5 text-sm font-semibold text-indigo-700 hover:underline"
+            className="inline-flex items-center gap-1.5 self-start rounded-md py-1.5 text-sm font-semibold text-action-700 hover:underline"
           >
             <ChevronDown className={`size-4 transition-transform ${open ? "" : "-rotate-90"}`} aria-hidden="true" />
             {open ? "기록 접기" : `기록 ${records.length}개 보기`}

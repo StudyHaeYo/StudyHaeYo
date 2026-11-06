@@ -22,7 +22,7 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
         </h2>
         <Link
           href={newPageHref}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-action-600 px-3.5 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
         >
           <Plus className="size-4" />새 페이지
         </Link>
@@ -32,7 +32,7 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
         <ul className="flex flex-col divide-y divide-border border-y border-border">
           {rows.map(({ page, stats }) => {
             const Icon = noteIcon(page)
-            const due = stats.status === "복습 필요" ? "text-amber-700" : undefined
+            const due = stats.status === "복습 필요" ? "text-attention-700" : undefined
             return (
               <li key={page.id}>
                 <Link
@@ -60,7 +60,7 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
           <p className="text-sm text-muted-foreground">이 과목에는 아직 페이지가 없어요.</p>
           <Link
             href={newPageHref}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-action-200 bg-action-50 px-3.5 py-2 text-sm font-medium text-action-700 transition-colors hover:bg-action-100"
           >
             <Plus className="size-4" />이 과목에 새 페이지 만들기
           </Link>

@@ -49,9 +49,9 @@ export function ExamScope({
           type="date"
           value={examDate ?? ""}
           onChange={(e) => onChangeDate(e.target.value || undefined)}
-          className="h-9 scroll-mt-24 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
+          className="h-9 scroll-mt-24 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground outline-none focus:border-action-400 focus:ring-4 focus:ring-action-50"
         />
-        {countdown && <span className="text-sm font-semibold tabular-nums text-amber-700">{countdown}</span>}
+        {countdown && <span className="text-sm font-semibold tabular-nums text-attention-700">{countdown}</span>}
       </div>
 
       <div className="flex flex-wrap items-baseline justify-between gap-2 pt-1">
@@ -82,10 +82,10 @@ export function ExamScope({
                   <span className="hidden shrink-0 tabular-nums text-muted-foreground sm:inline">
                     {stats.understanding !== null ? `이해도 ${stats.understanding}/5` : "기록 없음"}
                   </span>
-                  <span className={`shrink-0 text-right text-xs tabular-nums ${pulled ? "font-medium text-indigo-700" : "text-muted-foreground"}`}>
+                  <span className={`shrink-0 text-right text-xs tabular-nums ${pulled ? "font-medium text-action-700" : "text-muted-foreground"}`}>
                     {next ? `복습 ${formatDate(next)}${pulled ? " (당김)" : ""}` : "복습 일정 없음"}
                   </span>
-                  {due && <span className="shrink-0 text-xs font-semibold text-indigo-700">{reviewActionLabel(page)}</span>}
+                  {due && <span className="shrink-0 text-xs font-semibold text-action-700">{reviewActionLabel(page)}</span>}
                 </Link>
                 <button
                   type="button"
@@ -106,7 +106,7 @@ export function ExamScope({
           <select
             value=""
             onChange={(e) => e.target.value && onChangeScope([...ids, e.target.value])}
-            className="h-8 rounded-lg border border-dashed border-border bg-background px-2 text-sm text-muted-foreground outline-none hover:text-foreground focus:border-indigo-400"
+            className="h-8 rounded-lg border border-dashed border-border bg-background px-2 text-sm text-muted-foreground outline-none hover:text-foreground focus:border-action-400"
           >
             <option value="">+ 노트 넣기</option>
             {rest.map((o) => (
