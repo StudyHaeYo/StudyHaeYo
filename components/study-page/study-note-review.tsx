@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { Brain, Check, CheckCircle2, ChevronDown, HelpCircle, RotateCcw } from "lucide-react"
-import { splitConcept, type TextBlock } from "@/lib/study-pages"
+import { splitConcept, understandingLabel, type TextBlock } from "@/lib/study-pages"
 
 export type ReviewAnswer = "remembered" | "confused"
 
@@ -28,7 +28,6 @@ export interface ReviewBodyProps {
   mode?: "concepts" | "problems"
 }
 
-const understandingLabels = ["", "거의 모름", "조금 앎", "보통", "대부분 앎", "완벽히 앎"]
 
 export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concepts" }: ReviewBodyProps) {
   const problems = mode === "problems"
@@ -203,7 +202,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concep
                 >
                   <span className="font-semibold">{value}</span>
                   <span className={`text-xs ${understanding === value ? "text-indigo-100" : "text-muted-foreground"}`}>
-                    {understandingLabels[value]}
+                    {understandingLabel(value)}
                   </span>
                 </button>
               ))}

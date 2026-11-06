@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
-import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { Copy, FolderInput, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import { deletePage, duplicatePage, flattenTree, plansInSubtree, useWorkspace } from "@/lib/workspace"
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
+import { MoveDialog } from "@/components/sidebar/move-dialog"
 
 // Confirmation line for deleting a page or group: what else goes with it.
 export function deleteNoteText(nestedCount: number, planCount: number, subjectRecordCount = 0) {
@@ -45,6 +46,7 @@ export function PageActionsMenu({
   const workspace = useWorkspace()
   const [open, setOpenState] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [moving, setMoving] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
@@ -128,6 +130,18 @@ export function PageActionsMenu({
             <Copy className="size-4 text-muted-foreground" />
             복제하기
           </button>
+          <button
+            role="menuitem"
+            type="button"
+            className={`${menuItemClass} text-foreground`}
+            onClick={() => {
+              close()
+              setMoving(true)
+            }}
+          >
+            <FolderInput className="size-4 text-muted-foreground" />
+            옮기기
+          </button>
           {extraItems?.(close)}
 
           <div role="separator" className="my-1 border-t border-border" />
@@ -146,6 +160,7 @@ export function PageActionsMenu({
         </div>
       )}
 
+      {moving && <MoveDialog pageId={pageId} title={title} onClose={() => setMoving(false)} />}
       <ConfirmDeleteModal
         open={confirmOpen}
         title={title}

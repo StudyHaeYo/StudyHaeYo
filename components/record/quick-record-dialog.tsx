@@ -13,6 +13,7 @@ import {
   newRecordId,
   nextReviewDate,
   todayISO,
+  understandingLevels,
   type PageStudyRecord,
   type StudyRecordFields,
   type SubjectStudyRecord,
@@ -76,8 +77,6 @@ export function QuickRecordLayer() {
 
 type Target = { kind: "page"; id: string } | { kind: "subject"; id: string } | { kind: "none" }
 
-// 이해도 in words (D-30): the number sets the next review, so each one says what it means.
-const levels = ["처음 본 듯", "많이 헷갈림", "대충 앎", "거의 앎", "설명 가능"]
 const PRESETS = [25, 50, 90]
 
 const isPageRecord = (r: SubjectStudyRecord | PageStudyRecord): r is PageStudyRecord => "pageId" in r
@@ -352,7 +351,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
             이해도
           </p>
           <div role="radiogroup" aria-labelledby="qr-level-label" className="grid grid-cols-5 gap-1.5">
-            {levels.map((label, i) => {
+            {understandingLevels.map((label, i) => {
               const n = i + 1
               const on = understanding === n
               return (
