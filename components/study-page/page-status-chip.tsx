@@ -15,14 +15,17 @@ export function PageStatusChip({
   problems,
   exam,
   action,
+  canTryCards = false,
 }: {
   kind: PageKind | null
   stats: PageStats
   today: string | null
   reviewHref: string
   problems: { total: number; wrong: number }
-  exam: { date: string | undefined; ready: number; total: number } | null
+  exam: { date: string | undefined; ready: number; total: number; recorded: number } | null
   action: string
+  // The note has concept cards but no review day yet (nothing recorded): offer a first try.
+  canTryCards?: boolean
 }) {
   if (!today) return null
   const due = "inline-flex h-8 items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 pl-2.5 pr-[3px] text-[13px] font-semibold text-amber-800"
@@ -46,7 +49,7 @@ export function PageStatusChip({
         title="시험 범위로 가기"
       >
         시험 {countdown}
-        {exam.total > 0 && <span className="hidden font-medium sm:inline">· 준비 {exam.ready}/{exam.total}</span>}
+        {exam.recorded > 0 && <span className="hidden font-medium sm:inline">· 준비 {exam.ready}/{exam.total}</span>}
       </a>
     )
   }
@@ -63,7 +66,14 @@ export function PageStatusChip({
     )
   }
 
-  if (!stats.nextReviewAt) return null
+  // A new card note has no review day until something is recorded, so there was no way in to the cards.
+  // Finishing this first try records it and starts the review days.
+  if (!stats.nextReviewAt)
+    return canTryCards ? (
+      <Link href={reviewHref} className={`${calm} !inline-flex border border-border font-medium text-foreground`}>
+        카드로 복습해 보기
+      </Link>
+    ) : null
   if (stats.status === "복습 필요") {
     const late = daysBetween(stats.nextReviewAt, today)
     return (

@@ -33,6 +33,8 @@ export function ExamScope({
     return { page, stats, next, pulled: next !== stats.nextReviewAt }
   })
   const ready = rows.filter((r) => (r.stats.understanding ?? 0) >= 4).length
+  // "이해도 4 이상 0 / 2" before any note in scope has a record reads like a failing grade; show it once one has.
+  const anyRecorded = rows.some((r) => r.stats.understanding !== null)
   const ids = scope.map((p) => p.id)
   const rest = options.filter((o) => !ids.includes(o.id))
 
@@ -56,7 +58,7 @@ export function ExamScope({
         <h2 id="exam-scope-heading" className="text-base font-semibold text-foreground">
           범위 <span className="ml-1 text-sm font-medium text-muted-foreground">{rows.length}</span>
         </h2>
-        {rows.length > 0 && (
+        {anyRecorded && (
           <p className="text-sm text-muted-foreground">
             이해도 4 이상 <span className="font-medium tabular-nums text-foreground">{ready}</span> / {rows.length}
           </p>

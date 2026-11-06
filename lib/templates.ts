@@ -91,11 +91,12 @@ export const pageStarters: PageStarter[] = [
     tagline: "틀린 문제와 풀이를 접어 두고 다시 풀어보기",
     icon: XCircle,
     templateId: "study-note",
+    // The first problem starts empty with a hint, not the text "문제 1": people typed under it without deleting it,
+    // so their problem landed in the 풀이 and "문제 1" counted as a wrong problem. Why it was wrong goes in each
+    // problem's 풀이 (a separate "왜 틀렸나" section lost which problem it was about).
     createBlocks: () => [
       t("h2", "틀린 문제"),
-      { id: newBlockId(), type: "toggle", text: "문제 1", body: "", open: true },
-      t("h2", "왜 틀렸나"),
-      t("li"),
+      { id: newBlockId(), type: "toggle", text: "", body: "", open: true },
       t("h2", "핵심 개념"),
       t("concept"),
     ],
@@ -118,6 +119,14 @@ export const pageStarters: PageStarter[] = [
     ],
   },
 ]
+
+// A faint hint on the empty line right under a template heading, so the note shows where to write without text
+// to delete first. Typing on the line hides it.
+export const starterSectionHints: Record<string, string> = {
+  "오늘 배운 내용": "배운 내용을 자유롭게 적어요",
+  필기: "수업을 들으며 적어요",
+  "시험 직전 체크": "시험 전에 확인할 것",
+}
 
 export function getStarter(id: string) {
   return pageStarters.find((s) => s.id === id) ?? pageStarters[0]

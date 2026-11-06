@@ -246,7 +246,8 @@ function insertBlocks(blocks: Block[], inserted: Block[], afterId: string | null
   let index = afterId ? blocks.findIndex((b) => b.id === afterId) : -1
   if (index === -1) index = blocks.length - 1
   const target = blocks[index]
-  const replaceTarget = target !== undefined && isTextBlock(target) && target.text === ""
+  // Only an empty paragraph gives way. An empty card, question or list line from a template stays put.
+  const replaceTarget = target !== undefined && isTextBlock(target) && target.type === "p" && target.text === ""
   const before = blocks.slice(0, replaceTarget ? index : index + 1)
   const after = blocks.slice(index + 1)
   const trailing = after[0] && isTextBlock(after[0]) ? [] : [emptyParagraph()]
@@ -270,6 +271,8 @@ interface BlockEditorProps {
 export interface AttachmentHandle {
   openPicker: () => void
   insertDrawing: () => void
+  // Attaches files at the top of the note (강의 노트's [강의 PDF 올리기]) and returns the new blocks.
+  attachAtTop: (files: File[]) => Promise<Block[]>
 }
 
 export function BlockEditor({
@@ -286,8 +289,8 @@ export function BlockEditor({
   const hintFor = (index: number) => {
     const block = blocks[index]
     const prev = blocks[index - 1]
-    if (!sectionHints || !isTextBlock(block) || block.type !== "p" || block.text !== "") return undefined
-    if (!prev || !isTextBlock(prev) || prev.type === "p") return undefined
+    if (!sectionHints || !isTextBlock(block) || !["p", "li", "ol", "todo"].includes(block.type) || block.text !== "") return undefined
+    if (!prev || !isTextBlock(prev) || !["h1", "h2", "h3"].includes(prev.type)) return undefined
     return sectionHints[prev.text.trim()]
   }
   const refs = useRef(new Map<string, HTMLTextAreaElement>())
@@ -295,7 +298,7 @@ export function BlockEditor({
   const containerRef = useRef<HTMLDivElement>(null)
   const lastFocusedId = useRef<string | null>(null)
   // Attachment URLs resolve asynchronously; insert into the latest blocks, not the ones from the event.
-  const latest = useRef({ blocks, onChange })
+  const latest = useRef({ blocks, onChange, onAttachmentStored })
   const [pendingFocus, setPendingFocus] = useState<{ id: string; caret: number } | null>(null)
   // A table just added from the "/" menu: its first cell takes focus once the table is on screen.
   const [focusTableId, setFocusTableId] = useState<string | null>(null)
@@ -322,7 +325,7 @@ export function BlockEditor({
   const isSoleEmptyBlock = blocks.length === 1 && isTextBlock(first) && first.text === ""
 
   useLayoutEffect(() => {
-    latest.current = { blocks, onChange }
+    latest.current = { blocks, onChange, onAttachmentStored }
   })
 
   useImperativeHandle(
@@ -335,6 +338,14 @@ export function BlockEditor({
         current.onChange(insertBlocks(current.blocks, [drawing], lastFocusedId.current))
         lastFocusedId.current = drawing.id
         setAutoEditId(drawing.id)
+      },
+      attachAtTop: async (files) => {
+        if (files.length === 0) return []
+        const created = await createAttachmentBlocks(files, (blockId, path) => latest.current.onAttachmentStored?.(blockId, path) ?? false)
+        if (created.length === 0) return []
+        const current = latest.current
+        current.onChange([...created, ...current.blocks])
+        return created
       },
     }),
     [],
@@ -701,6 +712,7 @@ export function BlockEditor({
               )}
               <BlockHandle
                 top={isTextBlock(block) ? handleTop[block.type] : "top-1"}
+                textLine={isTextBlock(block)}
                 index={index}
                 count={blocks.length}
                 open={handleMenu === block.id}
@@ -911,12 +923,14 @@ export function BlockEditor({
                     hint ??
                     (isSoleEmptyBlock
                       ? "자유롭게 학습 내용을 작성해보세요. / 를 누르면 제목, 목록, 그림 같은 메뉴가 나와요"
-                      : block.type === "p"
-                        ? undefined
-                        : placeholders[block.type])
+                      : problemMode && block.type === "toggle"
+                        ? "틀린 문제를 적어요"
+                        : block.type === "p"
+                          ? undefined
+                          : placeholders[block.type])
                   }
                   className={`w-full resize-none bg-transparent text-foreground outline-none [field-sizing:content] ${
-                    hint || isSoleEmptyBlock || block.type === "concept" || block.type === "confusion"
+                    hint || isSoleEmptyBlock || block.type === "concept" || block.type === "confusion" || (problemMode && block.type === "toggle")
                       ? "placeholder:text-muted-foreground/60"
                       : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
                   } ${blockStyles[block.type]} ${(block.type === "todo" || block.type === "confusion") && block.checked ? "text-muted-foreground line-through" : ""}`}
@@ -967,7 +981,7 @@ export function BlockEditor({
                   rows={1}
                   spellCheck={false}
                   aria-label={`${block.text || "토글"} 내용`}
-                  placeholder="펼치면 보이는 내용 (예: 정답과 풀이)"
+                  placeholder={problemMode ? "정답 · 풀이 · 왜 틀렸는지" : "펼치면 보이는 내용 (예: 정답과 풀이)"}
                   onChange={(e) => onChange(blocks.map((b) => (b.id === block.id ? { ...block, body: e.target.value } : b)))}
                   onKeyDown={(e) => {
                     if (e.nativeEvent.isComposing || e.keyCode === 229) return
@@ -977,7 +991,9 @@ export function BlockEditor({
                       setPendingFocus({ id: block.id, caret: block.text.length })
                     }
                   }}
-                  className="ml-7 w-[calc(100%-1.75rem)] resize-none bg-transparent text-base leading-relaxed text-foreground outline-none [field-sizing:content] placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
+                  className={`ml-7 w-[calc(100%-1.75rem)] resize-none bg-transparent text-base leading-relaxed text-foreground outline-none [field-sizing:content] ${
+                    problemMode ? "placeholder:text-muted-foreground/60" : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
+                  }`}
                 />
               )}
               {linkPicker === block.id && (
@@ -1081,8 +1097,11 @@ function BlockHandle({
   onMove,
   onDuplicate,
   onDelete,
+  textLine,
 }: {
   top: string
+  // Text lines can take focus; a picture, file or drawing can't on every phone, so it keeps a faint grip.
+  textLine: boolean
   index: number
   count: number
   open: boolean
@@ -1096,10 +1115,16 @@ function BlockHandle({
   const item = "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm disabled:opacity-40"
   return (
     <div data-block-menu className={`absolute -left-5 z-20 ${top}`}>
+      {/* On a phone every line used to carry a faint grip, and the 16px grip was hard to hit. Touch screens show it
+          only on the line being edited, with a hit area that reaches past the grip. */}
       <button
         type="button"
         draggable
         onMouseDown={(e) => e.stopPropagation()}
+        // A tap keeps the line focused, so the grip shown for that line stays tappable until the click lands.
+        onPointerDown={(e) => {
+          if (e.pointerType !== "mouse") e.preventDefault()
+        }}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         onClick={onToggle}
@@ -1107,8 +1132,12 @@ function BlockHandle({
         aria-haspopup="menu"
         aria-expanded={open}
         title="끌어서 옮기기 · 눌러서 메뉴"
-        className={`flex h-6 w-4 cursor-grab items-center justify-center rounded text-muted-foreground transition-opacity hover:bg-accent hover:text-foreground active:cursor-grabbing focus-visible:opacity-100 ${
-          open ? "opacity-100" : "opacity-0 group-hover/block:opacity-100 [@media(hover:none)]:opacity-30"
+        className={`relative flex h-6 w-4 cursor-grab items-center justify-center rounded text-muted-foreground transition-opacity after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-[''] hover:bg-accent hover:text-foreground active:cursor-grabbing focus-visible:opacity-100 ${
+          open
+            ? "opacity-100"
+            : textLine
+              ? "opacity-0 group-hover/block:opacity-100 [@media(hover:none)]:pointer-events-none [@media(hover:none)]:group-focus-within/block:pointer-events-auto [@media(hover:none)]:group-focus-within/block:opacity-100"
+              : "opacity-0 group-hover/block:opacity-100 [@media(hover:none)]:opacity-30"
         }`}
       >
         <GripVertical className="size-3.5" />

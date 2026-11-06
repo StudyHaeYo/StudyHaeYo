@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { BookOpen, FileText } from "lucide-react"
+import { BookOpen, FileText, Upload } from "lucide-react"
 import type { AttachmentBlock, PageProps } from "@/lib/study-pages"
 
 // The top of a note's body for kinds that need a value or two (D-30): set where it is used, not in a 속성 window.
@@ -55,12 +55,14 @@ export function LectureHead({
   props,
   onChange,
   pdfs,
+  onUpload,
   materialOpen,
   onToggleMaterial,
 }: {
   props: PageProps
   onChange: (patch: Partial<PageProps>) => void
   pdfs: AttachmentBlock[]
+  onUpload: (files: File[]) => void
   materialOpen: boolean
   onToggleMaterial: () => void
 }) {
@@ -87,7 +89,24 @@ export function LectureHead({
           </select>
         </label>
       ) : (
-        <p className="min-w-0 flex-1 text-sm text-muted-foreground">강의 PDF를 이 노트에 끌어다 놓으면, 여기서 골라 옆에 펴 두고 필기할 수 있어요.</p>
+        // A button, not only drag and drop: phones have no dragging. The PDF opens beside the note once uploaded.
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+          <label className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-indigo-500">
+            <Upload className="size-4" aria-hidden="true" />
+            강의 PDF 올리기
+            <input
+              type="file"
+              accept="application/pdf"
+              className="sr-only"
+              onChange={(e) => {
+                const files = Array.from(e.target.files ?? [])
+                e.target.value = ""
+                if (files.length > 0) onUpload(files)
+              }}
+            />
+          </label>
+          <p className="min-w-0 text-sm text-muted-foreground">옆에 펴 두고 필기할 수 있어요</p>
+        </div>
       )}
       <label className="flex items-center gap-2 text-sm">
         <span className="shrink-0 text-muted-foreground">주차</span>
