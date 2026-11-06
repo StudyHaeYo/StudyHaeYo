@@ -133,15 +133,8 @@ export function markdownToBlocks(markdown: string): TextBlock[] {
 
 // ── 확인 문제 (D-32) ──────────────────────────────────────────────────────────────────────────────────────
 // 하 = 용어와 정의, 중 = 예제에 적용, 상 = 비교하고 이유 설명. Mixed problems measure 이해도; one level is practice.
-// The values stay 하 · 중 · 상; screens and the AI call them 기억 · 적용 · 비교 (D-32). The AI's older "[하]" and
-// "점수: 하 2/2" still parse.
 export const quizLevels = ["하", "중", "상"] as const
 export type QuizLevel = (typeof quizLevels)[number]
-export const levelName: Record<QuizLevel, string> = { 하: "기억", 중: "적용", 상: "비교" }
-const LEVEL_WORD = "하|중|상|기억|적용|비교"
-function levelOf(word: string): QuizLevel {
-  return quizLevels.find((l) => l === word || levelName[l] === word) ?? "하"
-}
 export type LevelScore = Partial<Record<QuizLevel, { correct: number; total: number }>>
 
 // How many problems, from how much the note holds: one per 핵심 개념 (no concepts: one per ~400 characters of
@@ -161,21 +154,20 @@ export function quizPlan(page: StudyPage, withPdf: boolean) {
 // The message the [확인 문제] buttons send (shown in the chat as the user's words).
 export function quizPrompt(plan: ReturnType<typeof quizPlan>, level: QuizLevel | null) {
   const fromConfusions = plan.confusions > 0 ? `, 그중 ${plan.confusions}문제는 아직 안 풀린 헷갈린 점에서` : ""
-  if (level) return `${levelName[level]} 문제만 ${plan.total}개 만들어줘 (연습)${fromConfusions}.`
+  if (level) return `${level} 문제만 ${plan.total}개 만들어줘 (연습)${fromConfusions}.`
   const { 하: low, 중: mid, 상: high } = plan.levels
-  return `확인 문제 ${plan.total}개 만들어줘. 기억 ${low} · 적용 ${mid} · 비교 ${high}${fromConfusions}.`
+  return `확인 문제 ${plan.total}개 만들어줘. 하 ${low} · 중 ${mid} · 상 ${high}${fromConfusions}.`
 }
 
-// "점수: 기억 2/2 · 적용 1/2 · 비교 0/1" (or the older "점수: 하 2/2 · …" and "점수: 4/5") on the last lines of a
-// grading answer.
+// "점수: 하 2/2 · 중 1/2 · 상 0/1" (or the older "점수: 4/5") on the last lines of a grading answer.
 export function parseScore(text: string): { correct: number; total: number; levels: LevelScore | null } | null {
   const line = [...text.matchAll(/점수\s*[:：]\s*([^\n]+)/g)].at(-1)?.[1]
   if (!line) return null
   const levels: LevelScore = {}
-  for (const m of line.matchAll(new RegExp(`(${LEVEL_WORD})\\s*(\\d+)\\s*\\/\\s*(\\d+)`, "g"))) {
+  for (const m of line.matchAll(/([하중상])\s*(\d+)\s*\/\s*(\d+)/g)) {
     const correct = Number(m[2])
     const total = Number(m[3])
-    if (total > 0 && correct <= total) levels[levelOf(m[1])] = { correct, total }
+    if (total > 0 && correct <= total) levels[m[1] as QuizLevel] = { correct, total }
   }
   const parts = Object.values(levels)
   if (parts.length > 0)
@@ -222,9 +214,8 @@ const levelAdvice: Record<QuizLevel, string> = {
 export function ladderFeedback(levels: LevelScore) {
   const asked = quizLevels.filter((l) => (levels[l]?.total ?? 0) > 0)
   const stuck = asked.find((l) => !passedLevel(levels[l]!))
-  if (!stuck)
-    return asked.includes("상") ? "비교까지 통과했어요. 설명할 수 있는 수준이에요." : `${levelName[asked.at(-1)!]}까지 통과했어요.`
-  return `${levelName[stuck]}에서 막혔어요. ${levelAdvice[stuck]}.`
+  if (!stuck) return asked.includes("상") ? "상까지 통과했어요. 설명할 수 있는 수준이에요." : `${asked.at(-1)}까지 통과했어요.`
+  return `${stuck}에서 막혔어요. ${levelAdvice[stuck]}.`
 }
 
 // 이해도 a score suggests for the record (the user can change it): the ladder when levels were marked,
@@ -238,7 +229,7 @@ export function scoreToUnderstanding(score: { correct: number; total: number; le
 export function formatLevelScore(levels: LevelScore) {
   return quizLevels
     .filter((l) => levels[l])
-    .map((l) => `${levelName[l]} ${levels[l]!.correct}/${levels[l]!.total}`)
+    .map((l) => `${l} ${levels[l]!.correct}/${levels[l]!.total}`)
     .join(" · ")
 }
 
@@ -260,7 +251,7 @@ export function answerToPageBlocks(markdown: string): TextBlock[] {
   return blocks.slice(start, end)
 }
 
-// Problems of a quiz answer by number ("1. [기억] 질문", options ① … on the next lines) and their answers under
+// Problems of a quiz answer by number ("1. [하] 질문", options ① … on the next lines) and their answers under
 // "## 정답과 해설" ("1. ③ — 해설", explanation lines after it).
 export function parseQuiz(markdown: string) {
   const problems = new Map<number, { level: QuizLevel | null; text: string }>()
@@ -276,11 +267,11 @@ export function parseQuiz(markdown: string) {
       last = null
       continue
     }
-    const numbered = line.match(new RegExp(`^(\\d+)[.)]\\s+(?:\\[(${LEVEL_WORD})\\]\\s*)?(.*)$`))
+    const numbered = line.match(/^(\d+)[.)]\s+(?:\[([하중상])\]\s*)?(.*)$/)
     if (numbered) {
       last = Number(numbered[1])
       if (inAnswers) answers.set(last, clean(numbered[3]))
-      else problems.set(last, { level: numbered[2] ? levelOf(numbered[2]) : null, text: clean(numbered[3]) })
+      else problems.set(last, { level: (numbered[2] as QuizLevel | undefined) ?? null, text: clean(numbered[3]) })
       continue
     }
     // The score line and the closing "답을 보내 주면 채점해 드릴게요." belong to no problem.
@@ -298,8 +289,7 @@ export function parseQuiz(markdown: string) {
 export function wrongFromGrading(quiz: string, grading: string) {
   const { problems, answers } = parseQuiz(quiz)
   const wrong: { level: QuizLevel | null; text: string; answer: string }[] = []
-  const wrongLine = new RegExp(`^\\s*(\\d+)[.)]\\s*(?:\\[(?:${LEVEL_WORD})\\]\\s*)?틀림\\s*[—–:-]?\\s*(.*)$`, "gm")
-  for (const m of grading.replace(/\r/g, "").matchAll(wrongLine)) {
+  for (const m of grading.replace(/\r/g, "").matchAll(/^\s*(\d+)[.)]\s*(?:\[[하중상]\]\s*)?틀림\s*[—–:-]?\s*(.*)$/gm)) {
     const problem = problems.get(Number(m[1]))
     if (!problem) continue
     wrong.push({ level: problem.level, text: problem.text, answer: answers.get(Number(m[1])) ?? clean(m[2]) })
