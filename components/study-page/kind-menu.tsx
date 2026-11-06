@@ -8,8 +8,8 @@ import { noteKindOption, noteKinds } from "@/lib/templates"
 import { setPageKind } from "@/lib/workspace"
 
 // 종류 칩 (D-30): what the note is, in the top bar where [속성] used to be. It only changes the kind; the body
-// stays as written (an empty body starts like the kind's button on a new note). Kinds other than 학습 노트 · 빈 노트
-// are kept in props, so they wait for the props column.
+// stays as written (an empty body starts like the kind's button on a new note). Kinds are kept in props, so they
+// wait for the props column; 빈 노트 is always there.
 export function KindChip({ pageId, kind, propsReady }: { pageId: string; kind: PageKind | null; propsReady: boolean }) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -134,7 +134,7 @@ function KindMenu({
         {noteKinds.map((option) => {
           const Icon = option.icon
           const checked = option.kind === kind
-          const waits = !propsReady && option.kind !== null && option.kind !== "note"
+          const waits = !propsReady && option.kind !== null
           return (
             <button
               key={option.starterId}

@@ -8,8 +8,31 @@ import { noteKinds } from "@/lib/templates"
 // drawing of what makes it different, so the choice is visible rather than a list of names.
 // AI isn't a kind — it fills the note from the title — so it sits apart at the end.
 // A note that already has a kind (picked earlier, then emptied) stays that kind when typed into.
-export function PageStarters({ hasKind, onPick, onAi }: { hasKind: boolean; onPick: (starterId: string) => void; onAi: () => void }) {
+// Before the props column exists no kind can be saved (D-27), so only the AI button is offered.
+export function PageStarters({
+  kindsReady,
+  hasKind,
+  onPick,
+  onAi,
+}: {
+  kindsReady: boolean
+  hasKind: boolean
+  onPick: (starterId: string) => void
+  onAi: () => void
+}) {
   const kinds = noteKinds.filter((k) => k.kind !== null)
+  const ai = (
+    <button
+      type="button"
+      onClick={onAi}
+      title="제목을 주제로 AI가 정리 노트나 문제를 만들어 줘요"
+      className="inline-flex items-center gap-1.5 rounded-md text-sm font-semibold text-action-700 hover:underline"
+    >
+      <Sparkles className="size-4" aria-hidden="true" />
+      AI로 채우기
+    </button>
+  )
+  if (!kindsReady) return <div className="mt-6 print:hidden">{ai}</div>
   return (
     <section aria-labelledby="starters-heading" className="mt-6 flex flex-col gap-3 print:hidden">
       <p className="text-sm text-muted-foreground">
@@ -18,7 +41,7 @@ export function PageStarters({ hasKind, onPick, onAi }: { hasKind: boolean; onPi
         </b>
         고르면 그 노트에 맞는 칸이 생겨요
       </p>
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-2.5">
         {kinds.map((k) => (
           <button
             key={k.starterId}
@@ -34,15 +57,7 @@ export function PageStarters({ hasKind, onPick, onAi }: { hasKind: boolean; onPi
       </div>
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
         <span>{hasKind ? "고르지 않고 바로 써도 돼요" : "그냥 쓰기 시작하면 빈 노트가 돼요"}</span>
-        <button
-          type="button"
-          onClick={onAi}
-          title="제목을 주제로 AI가 정리 노트나 문제를 만들어 줘요"
-          className="inline-flex items-center gap-1.5 rounded-md font-semibold text-action-700 hover:underline"
-        >
-          <Sparkles className="size-4" aria-hidden="true" />
-          AI로 채우기
-        </button>
+        {ai}
       </p>
     </section>
   )
@@ -53,20 +68,13 @@ function Mini({ kind }: { kind: string }) {
   const line = "absolute h-[3px] rounded-full bg-muted-foreground/25"
   return (
     <span aria-hidden="true" className="relative block h-16 overflow-hidden rounded-lg bg-muted">
-      {kind === "study-note" && (
-        <>
-          <span className="absolute left-3 top-3 h-8 w-14 -rotate-3 rounded-sm border border-border bg-card" />
-          <span className="absolute left-9 top-5 h-8 w-14 rotate-2 rounded-sm border border-border bg-card">
-            <span className="absolute inset-x-1.5 top-2.5 h-px bg-action-200" />
-          </span>
-        </>
-      )}
       {kind === "lecture" && (
         <>
-          <span className="absolute left-3 top-3 h-10 w-12 rounded-sm border border-border bg-card" />
-          <span className={`${line} left-[4.5rem] top-4 w-10`} />
-          <span className={`${line} left-[4.5rem] top-7 w-8`} />
-          <span className={`${line} left-[4.5rem] top-10 w-9`} />
+          {/* Three cards in a row on a phone too, so the drawing shrinks with the card instead of being cut off. */}
+          <span className="absolute left-3 top-3 h-10 w-[38%] max-w-12 rounded-sm border border-border bg-card" />
+          <span className={`${line} left-[calc(min(38%,3rem)+1.5rem)] top-4 w-[30%] max-w-10`} />
+          <span className={`${line} left-[calc(min(38%,3rem)+1.5rem)] top-7 w-[24%] max-w-8`} />
+          <span className={`${line} left-[calc(min(38%,3rem)+1.5rem)] top-10 w-[27%] max-w-9`} />
         </>
       )}
       {kind === "wrong-answers" && (
@@ -75,12 +83,12 @@ function Mini({ kind }: { kind: string }) {
           <svg className="absolute left-1 top-1 size-6 fill-none stroke-muted-foreground" viewBox="0 0 52 52" strokeWidth="3.5" strokeLinecap="round">
             <path d="M27 5C40 5 47 14 47 26C47 38 38 47 26 47C13 47 5 38 5 26C5 15 13 6 24 6.5" />
           </svg>
-          <span className={`${line} left-9 top-4 w-14`} />
+          <span className={`${line} left-9 top-4 w-14 max-w-[calc(100%-3rem)]`} />
           <span className="absolute left-3 top-9 text-sm font-bold text-foreground">2</span>
           <svg className="absolute left-1.5 top-8 size-5 fill-none stroke-muted-foreground" viewBox="0 0 52 52" strokeWidth="4" strokeLinecap="round">
             <path d="M10 44L44 8" />
           </svg>
-          <span className={`${line} left-9 top-[2.65rem] w-11`} />
+          <span className={`${line} left-9 top-[2.65rem] w-11 max-w-[calc(100%-3rem)]`} />
         </>
       )}
       {kind === "exam" && (

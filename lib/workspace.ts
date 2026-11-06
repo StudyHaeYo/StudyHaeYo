@@ -305,13 +305,13 @@ export function applyStarter(id: string, starterId: string) {
   }))
 }
 
-// The kind chip (D-30): change what a note is for without touching what is written. Kinds other than 학습 노트
-// live in props.kind, so they wait for the props column; 학습 노트 ↔ 빈 노트 only needs templateId.
+// The kind chip (D-30): change what a note is for without touching what is written. Kinds live in props.kind,
+// so they wait for the props column; going back to 빈 노트 only needs templateId.
 // The body stays; a 오답 노트 with no problem yet gets an empty first problem at the top. An empty body gets the
 // kind's starting blocks.
 export function setPageKind(id: string, kind: PageKind | null) {
   const ready = pagePropsReady()
-  if (kind && kind !== "note" && !ready) return
+  if (kind && !ready) return
   updatePage(id, (p) => {
     const { kind: _old, ...rest } = p.props ?? {}
     const props = ready ? (kind ? { ...rest, kind, ...(kind === "exam" && !rest.scope?.length ? examScopeDefault(p) : {}) } : rest) : p.props
