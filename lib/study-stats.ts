@@ -395,6 +395,25 @@ export function weeklyTrend(workspace: WorkspaceState, today: string, weeks = 8)
   return totals
 }
 
+// 학습 분석 says nothing it can't back up: a comparison needs this many records on each side (one or two records
+// make an "average" that is just those records).
+export const MIN_RECORDS_TO_COMPARE = 3
+
+// The weekly chart shows once two weeks have study time; one week is not a trend.
+export function trendReady(weeks: WeekTotal[]) {
+  return weeks.filter((w) => w.minutes > 0).length >= 2
+}
+
+// Average per finished week, counted from the first week with study time (weeks before someone started using the
+// app are not 0-minute weeks). Null when no finished week has started yet.
+export function trendAverage(weeks: WeekTotal[]): { minutes: number; weeks: number } | null {
+  const finished = weeks.filter((w) => !w.isCurrent)
+  const first = finished.findIndex((w) => w.minutes > 0)
+  if (first === -1) return null
+  const counted = finished.slice(first)
+  return { minutes: Math.round(counted.reduce((s, w) => s + w.minutes, 0) / counted.length), weeks: counted.length }
+}
+
 export type Insight = { tone: "up" | "down" | "info"; text: string }
 
 // A few plain-language readings of the records: pace against last week, understanding trend, weakest subject.
@@ -409,7 +428,10 @@ export function studyInsights(workspace: WorkspaceState, today: string): Insight
   const lastWeek = addDays(thisWeek, -7)
   const now = sum(thisWeek, today)
   const before = sum(lastWeek, addDays(lastWeek, dayOfWeek))
-  if (now > 0 || before > 0) {
+  // Only once there is a record by that day last week: someone who started this week (or late last week) did not
+  // "study more than last week".
+  const startedByThen = records.some((r) => r.date <= addDays(lastWeek, dayOfWeek))
+  if (startedByThen && (now > 0 || before > 0)) {
     const diff = now - before
     insights.push(
       diff === 0
@@ -422,7 +444,7 @@ export function studyInsights(workspace: WorkspaceState, today: string): Insight
 
   const average = (from: string, to: string) => {
     const list = records.filter((r) => r.date >= from && r.date <= to)
-    return list.length > 0 ? list.reduce((total, r) => total + r.understanding, 0) / list.length : null
+    return list.length >= MIN_RECORDS_TO_COMPARE ? list.reduce((total, r) => total + r.understanding, 0) / list.length : null
   }
   const recent = average(addDays(today, -13), today)
   const earlier = average(addDays(today, -27), addDays(today, -14))
@@ -438,7 +460,7 @@ export function studyInsights(workspace: WorkspaceState, today: string): Insight
     )
   }
 
-  const mastery = subjectMastery(workspace)
+  const mastery = subjectMastery(workspace).filter((m) => m.recordCount >= MIN_RECORDS_TO_COMPARE)
   if (mastery.length >= 2) {
     const weakest = [...mastery].sort((a, b) => a.progress - b.progress)[0]
     insights.push({ tone: "info", text: `${weakest.subject}의 평균 이해도가 ${weakest.average.toFixed(1)} / 5로 가장 낮아요. 이 과목 복습을 먼저 해 보세요.` })

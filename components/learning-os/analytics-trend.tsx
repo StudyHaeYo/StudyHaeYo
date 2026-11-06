@@ -3,7 +3,7 @@
 import { TrendingDown, TrendingUp, Lightbulb } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
-import { studyInsights, weeklyTrend, type Insight } from "@/lib/study-stats"
+import { studyInsights, trendAverage, trendReady, weeklyTrend, type Insight } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
 
 const WEEKS = 8
@@ -27,7 +27,8 @@ export function AnalyticsTrend() {
   const weeks = today ? weeklyTrend(workspace, today, WEEKS) : null
   const insights = today ? studyInsights(workspace, today) : null
   const max = Math.max(...(weeks?.map((w) => w.minutes) ?? []), 1)
-  const average = weeks ? Math.round(weeks.slice(0, -1).reduce((s, w) => s + w.minutes, 0) / (WEEKS - 1)) : 0
+  const ready = weeks !== null && trendReady(weeks)
+  const average = ready ? trendAverage(weeks) : null
 
   return (
     <section aria-labelledby="trend-title" className="grid gap-4 rounded-xl border border-border bg-card p-5 lg:grid-cols-[1fr_280px]">
@@ -36,10 +37,17 @@ export function AnalyticsTrend() {
           <h2 id="trend-title" className="text-[15px] font-semibold text-foreground">
             주별 학습 시간
           </h2>
-          {weeks && <span className="text-xs text-muted-foreground">지난 7주 평균 {formatDuration(average)}</span>}
+          {average && (
+            <span className="text-xs text-muted-foreground">{`지난 ${average.weeks}주 평균 ${formatDuration(average.minutes)}`}</span>
+          )}
         </div>
         {weeks === null ? (
           <div className="animate-pulse rounded-lg bg-muted" style={{ height: CHART_HEIGHT + 36 }} aria-hidden="true" />
+        ) : !ready ? (
+          <p className="text-sm text-muted-foreground text-pretty">
+            최근 8주 중 두 주 이상 공부한 기록이 쌓이면 주별 변화를 보여 드려요.
+            {weeks.at(-1)!.minutes > 0 && ` 이번 주는 지금까지 ${formatDuration(weeks.at(-1)!.minutes)} 공부했어요.`}
+          </p>
         ) : (
           <div className="flex items-end gap-2" role="img" aria-label={`최근 ${WEEKS}주 주별 학습 시간`}>
             {weeks.map((week) => {
