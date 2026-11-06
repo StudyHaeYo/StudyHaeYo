@@ -255,8 +255,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* Korean wraps between words, not inside one ("정 / 의", "59 / 분"); a long unbroken string still wraps. */
   body {
     @apply bg-background text-foreground;
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
 }
 
