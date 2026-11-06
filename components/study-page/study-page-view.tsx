@@ -43,6 +43,7 @@ import { SessionIndicator } from "@/components/study-session/session-timer"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { AiPanel } from "@/components/record/ai-panel"
 import { LectureMaterialPane } from "@/components/study-page/lecture-material-pane"
+import { starterSectionHints } from "@/lib/templates"
 
 // The page on screen, so leaving and coming straight back (or a remount) isn't taken as leaving.
 let openPageId: string | null = null
@@ -200,6 +201,8 @@ export function StudyPageView({
           date: page.props?.examDate,
           ready: scopePages.filter((p) => (computePageStats(p, today).understanding ?? 0) >= 4).length,
           total: scopePages.length,
+          // "준비 0/2" before anything in scope has been studied reads like a failing grade; wait for a record.
+          recorded: scopePages.filter((p) => computePageStats(p, today).understanding !== null).length,
         }
       : null
   const review = reviewing && (
@@ -219,6 +222,7 @@ export function StudyPageView({
         attachRef={attachRef}
         onAttachmentStored={(blockId, path) => setAttachmentPath(page.id, blockId, path)}
         problemMode={problemReview ? { today } : undefined}
+        sectionHints={starterSectionHints}
       />
     </div>
   )
@@ -275,6 +279,7 @@ export function StudyPageView({
               problems={problems}
               exam={examInfo}
               action={reviewActionLabel(page)}
+              canTryCards={!problemReview && concepts.length > 0}
             />
           )}
           <KindChip pageId={page.id} kind={kind} propsReady={propsReady} />
@@ -429,6 +434,13 @@ export function StudyPageView({
               props={page.props ?? {}}
               onChange={(patch) => updatePageProps(page.id, patch)}
               pdfs={pdfs}
+              onUpload={(files) => {
+                // The first lecture PDF becomes the material right away, so [나란히 보기] works without a second step.
+                void attachRef.current?.attachAtTop(files).then((created) => {
+                  const pdf = created.find((b) => "mime" in b && b.mime === "application/pdf")
+                  if (pdf && !page.props?.materialBlockId) updatePageProps(page.id, { materialBlockId: pdf.id })
+                })
+              }}
               materialOpen={materialOpen}
               onToggleMaterial={() => {
                 setAiOpenState(false)

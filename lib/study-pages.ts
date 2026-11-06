@@ -262,7 +262,8 @@ export function reviewActionLabel(page: Pick<StudyPage, "props" | "templateId" |
 }
 
 // 오답 노트: a toggle is one problem. Problems still wrong are the ones that come back in review.
-// A toggle is a problem once it has a question. The template's untouched "문제 1" (no 풀이 yet) isn't one.
+// A toggle is a problem once it has a question. The new first problem starts empty; older notes may still hold the
+// template's untouched "문제 1" (no 풀이 yet), which isn't one either.
 export function problemBlocks(blocks: Block[]) {
   return blocks.filter(
     (b): b is TextBlock =>

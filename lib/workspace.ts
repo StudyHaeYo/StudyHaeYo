@@ -316,7 +316,7 @@ export function setPageKind(id: string, kind: PageKind | null) {
     const props = ready ? (kind ? { ...rest, kind, ...(kind === "exam" && !rest.scope?.length ? examScopeDefault(p) : {}) } : rest) : p.props
     const firstProblem =
       kind === "wrong-answers" && problemBlocks(p.blocks).length === 0
-        ? [{ id: newBlockId(), type: "toggle" as const, text: "문제 1", body: "", open: true }]
+        ? [{ id: newBlockId(), type: "toggle" as const, text: "", body: "", open: true }]
         : []
     const onlyEmpty = p.blocks.length === 1 && isTextBlock(p.blocks[0]) && p.blocks[0].type === "p" && p.blocks[0].text === ""
     return {
