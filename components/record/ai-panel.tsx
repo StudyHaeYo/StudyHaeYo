@@ -194,8 +194,8 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
               {hasBody || picked.length > 0
                 ? "이 페이지 내용으로 정리하거나 문제를 만들어요. 문제를 풀고 답을 보내면 채점해요."
                 : topic
-                  ? `아직 본문이 없어요. "${topic}"을(를) 주제로 일반 지식으로 만들어 드려요.`
-                  : "공부할 주제를 적어 보세요. 예: 운영체제 교착상태 핵심 정리해줘"}
+                  ? "아직 본문이 없어서 노트 내용 대신 일반 지식으로 만들어요."
+                  : "공부할 주제나 궁금한 것을 아래 칸에 보내 보세요(예: 운영체제 교착상태). 노트 제목을 적으면 그 주제로 확인 문제도 만들 수 있어요."}
             </p>
             {(hasBody || picked.length > 0 || topic) && (
               <QuizStarter page={page} withPdf={picked.length > 0} hasBody={hasBody} onAsk={(prompt) => void send(prompt)} />

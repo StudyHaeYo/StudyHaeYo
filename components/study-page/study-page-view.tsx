@@ -394,15 +394,13 @@ export function StudyPageView({
 
         {bodyEmpty && mode !== "review" && (
           <PageStarters
+            hasKind={kind !== null}
             onPick={(starterId) => {
               applyStarter(page.id, starterId)
               focusBody()
             }}
-            onAi={() => {
-              applyStarter(page.id, "ai")
-              setAiOpen(true)
-              if (!page.title) titleRef.current?.focus()
-            }}
+            // A button, not a template (D-26): it only opens the panel, so the note stays what it was (빈 노트).
+            onAi={() => setAiOpen(true)}
           />
         )}
         {/* The values a kind needs, where they are used (D-30) — not in a 속성 window. */}

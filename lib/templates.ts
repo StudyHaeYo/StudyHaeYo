@@ -1,4 +1,4 @@
-import { ClipboardCheck, FilePlus, FileText, GraduationCap, NotebookPen, Presentation, Sparkles, XCircle, type LucideIcon } from "lucide-react"
+import { ClipboardCheck, FilePlus, FileText, GraduationCap, NotebookPen, Presentation, XCircle, type LucideIcon } from "lucide-react"
 import { newBlockId, pageKind, type Block, type BlockType, type PageKind } from "@/lib/study-pages"
 
 // Every page is one block body (D-23) and every page can hold study records (D-30: study features are no longer
@@ -20,7 +20,8 @@ export function getTemplate(id: TemplateId) {
 
 const t = (type: BlockType, text = ""): Block => ({ id: newBlockId(), type, text })
 
-// The cards on "+ 새 페이지". Add a template by appending here.
+// What each kind starts with: the buttons on an empty note, the kind chip on an empty note, and 기록 → 새 노트.
+// [AI로 채우기] is a button, not a starter (D-26).
 export interface PageStarter {
   id: string
   name: string
@@ -28,8 +29,6 @@ export interface PageStarter {
   icon: LucideIcon
   templateId: TemplateId
   createBlocks: () => Block[]
-  // Opens the AI panel on the new page (/record/<id>?ai=1).
-  openAi?: boolean
   // What the page is for (D-27), saved in props.kind once the props column exists.
   kind?: PageKind
 }
@@ -42,15 +41,6 @@ export const pageStarters: PageStarter[] = [
     icon: FilePlus,
     templateId: "blank",
     createBlocks: () => [t("p")],
-  },
-  {
-    id: "ai",
-    name: "AI로 시작하기",
-    tagline: "제목에 주제를 적으면 AI가 정리 노트나 문제를 만들어 줘요",
-    icon: Sparkles,
-    templateId: "study-note",
-    createBlocks: () => [t("p")],
-    openAi: true,
   },
   {
     id: "study-note",
