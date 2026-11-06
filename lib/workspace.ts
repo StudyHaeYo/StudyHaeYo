@@ -17,7 +17,7 @@ import {
   type SubjectStudyRecord,
 } from "@/lib/study-pages"
 import { studyTree } from "@/lib/study-tree"
-import { getStarter } from "@/lib/templates"
+import { getStarter, noteKindOption } from "@/lib/templates"
 import {
   deletePlanRows,
   detachPlans,
@@ -307,23 +307,27 @@ export function applyStarter(id: string, starterId: string) {
 
 // The kind chip (D-30): change what a note is for without touching what is written. Kinds other than 학습 노트
 // live in props.kind, so they wait for the props column; 학습 노트 ↔ 빈 노트 only needs templateId.
-// The body stays; a 오답 노트 with no problem yet gets an empty first problem at the top.
+// The body stays; a 오답 노트 with no problem yet gets an empty first problem at the top. An empty body gets the
+// kind's starting blocks.
 export function setPageKind(id: string, kind: PageKind | null) {
   const ready = pagePropsReady()
   if (kind && kind !== "note" && !ready) return
   updatePage(id, (p) => {
     const { kind: _old, ...rest } = p.props ?? {}
     const props = ready ? (kind ? { ...rest, kind, ...(kind === "exam" && !rest.scope?.length ? examScopeDefault(p) : {}) } : rest) : p.props
+    const onlyEmpty = p.blocks.length === 1 && isTextBlock(p.blocks[0]) && p.blocks[0].type === "p" && p.blocks[0].text === ""
+    // Nothing written yet: start the same way the kind's button on the empty note does, so the chip and the
+    // buttons don't give two different notes.
+    const starter = kind && onlyEmpty ? getStarter(noteKindOption(kind).starterId).createBlocks() : null
     const firstProblem =
       kind === "wrong-answers" && problemBlocks(p.blocks).length === 0
         ? [{ id: newBlockId(), type: "toggle" as const, text: "", body: "", open: true }]
         : []
-    const onlyEmpty = p.blocks.length === 1 && isTextBlock(p.blocks[0]) && p.blocks[0].type === "p" && p.blocks[0].text === ""
     return {
       ...p,
       templateId: kind ? "study-note" : "blank",
       ...(props !== undefined ? { props } : {}),
-      blocks: firstProblem.length > 0 ? [...firstProblem, ...(onlyEmpty ? [] : p.blocks)] : p.blocks,
+      blocks: starter ?? (firstProblem.length > 0 ? [...firstProblem, ...p.blocks] : p.blocks),
     }
   })
 }

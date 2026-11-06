@@ -7,7 +7,8 @@ import { noteKinds } from "@/lib/templates"
 // row goes away as soon as the body has anything in it, and the note stays a 빈 노트. Each kind shows a small
 // drawing of what makes it different, so the choice is visible rather than a list of names.
 // AI isn't a kind — it fills the note from the title — so it sits apart at the end.
-export function PageStarters({ onPick, onAi }: { onPick: (starterId: string) => void; onAi: () => void }) {
+// A note that already has a kind (picked earlier, then emptied) stays that kind when typed into.
+export function PageStarters({ hasKind, onPick, onAi }: { hasKind: boolean; onPick: (starterId: string) => void; onAi: () => void }) {
   const kinds = noteKinds.filter((k) => k.kind !== null)
   return (
     <section aria-labelledby="starters-heading" className="mt-6 flex flex-col gap-3 print:hidden">
@@ -32,7 +33,7 @@ export function PageStarters({ onPick, onAi }: { onPick: (starterId: string) => 
         ))}
       </div>
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-        <span>그냥 쓰기 시작하면 빈 노트가 돼요</span>
+        <span>{hasKind ? "고르지 않고 바로 써도 돼요" : "그냥 쓰기 시작하면 빈 노트가 돼요"}</span>
         <button
           type="button"
           onClick={onAi}
