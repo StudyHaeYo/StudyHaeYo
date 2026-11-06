@@ -1,12 +1,12 @@
-import { ClipboardCheck, FilePlus, FileText, GraduationCap, NotebookPen, Presentation, XCircle, type LucideIcon } from "lucide-react"
+import { ClipboardCheck, FilePlus, FileText, GraduationCap, Presentation, XCircle, type LucideIcon } from "lucide-react"
 import { newBlockId, pageKind, type Block, type BlockType, type PageKind } from "@/lib/study-pages"
 
 // Every page is one block body (D-23) and every page can hold study records (D-30: study features are no longer
 // turned on or off). A template (노트 종류) decides what the note starts with and what it is for (props.kind).
 //
 // `templateId` is what the DB stores (workspace_nodes.template_id). It stays "study-note" | "blank":
-// study templates all save as "study-note" (study on by default), so no DB change is needed
-// and an older build can still open every page.
+// 강의 · 오답 · 시험 save as "study-note" with props.kind, so no DB change is needed and an older build can still
+// open every page. A "study-note" page with no kind (a 학습 노트 from before D-33) is a 빈 노트.
 export const templateRegistry = [
   { id: "study-note", treeIcon: GraduationCap },
   { id: "blank", treeIcon: FileText },
@@ -41,22 +41,6 @@ export const pageStarters: PageStarter[] = [
     icon: FilePlus,
     templateId: "blank",
     createBlocks: () => [t("p")],
-  },
-  {
-    id: "study-note",
-    kind: "note",
-    name: "학습 노트",
-    tagline: "배운 내용 · 핵심 개념 · 헷갈린 점. 핵심 개념은 복습 카드가 돼요",
-    icon: NotebookPen,
-    templateId: "study-note",
-    createBlocks: () => [
-      t("h2", "오늘 배운 내용"),
-      t("p"),
-      t("h2", "핵심 개념"),
-      t("concept"),
-      t("h2", "헷갈린 점"),
-      t("confusion"),
-    ],
   },
   {
     id: "lecture",
@@ -113,7 +97,6 @@ export const pageStarters: PageStarter[] = [
 // A faint hint on the empty line right under a template heading, so the note shows where to write without text
 // to delete first. Typing on the line hides it.
 export const starterSectionHints: Record<string, string> = {
-  "오늘 배운 내용": "배운 내용을 자유롭게 적어요",
   필기: "수업을 들으며 적어요",
   "시험 직전 체크": "시험 전에 확인할 것",
 }
@@ -122,7 +105,8 @@ export function getStarter(id: string) {
   return pageStarters.find((s) => s.id === id) ?? pageStarters[0]
 }
 
-// 노트 종류 (D-30): one list for the new-note picker, the kind chip in the top bar, the sidebar and search.
+// 노트 종류 (D-30, D-33): one list for the new-note picker, the kind chip in the top bar, the sidebar and search.
+// Each kind has something a 빈 노트 doesn't; 학습 노트 had nothing of its own, so it became the 빈 노트.
 // "does" says what the kind is for, in the user's words; only what the app does today.
 export interface NoteKindOption {
   kind: PageKind | null
@@ -133,7 +117,6 @@ export interface NoteKindOption {
 }
 
 export const noteKinds: NoteKindOption[] = [
-  { kind: "note", starterId: "study-note", name: "학습 노트", does: "핵심 개념을 카드로 복습해요", icon: NotebookPen },
   { kind: "lecture", starterId: "lecture", name: "강의 노트", does: "강의 PDF를 옆에 펴고 필기해요", icon: Presentation },
   { kind: "wrong-answers", starterId: "wrong-answers", name: "오답 노트", does: "틀린 문제만 다시 풀어요", icon: XCircle },
   { kind: "exam", starterId: "exam", name: "시험 정리", does: "시험일까지 범위를 챙겨요", icon: ClipboardCheck },

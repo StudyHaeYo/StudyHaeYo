@@ -231,9 +231,10 @@ export interface StudyPage {
   props?: PageProps
 }
 
-// What the page is for (D-27). Missing on pages made before props existed: a study page is a 학습 노트.
-export type PageKind = "note" | "lecture" | "wrong-answers" | "exam"
-export const pageKinds: readonly PageKind[] = ["note", "lecture", "wrong-answers", "exam"]
+// What the page is for (D-27). No kind is a 빈 노트. "note" (학습 노트) is gone (D-33): a page saved with it, or a
+// "study-note" page with no kind, reads as a 빈 노트.
+export type PageKind = "lecture" | "wrong-answers" | "exam"
+export const pageKinds: readonly PageKind[] = ["lecture", "wrong-answers", "exam"]
 
 export interface PageProps {
   kind?: PageKind
@@ -248,15 +249,14 @@ export interface PageProps {
   [key: string]: unknown
 }
 
-export function pageKind(page: Pick<StudyPage, "props" | "templateId">): PageKind | null {
+export function pageKind(page: Pick<StudyPage, "props">): PageKind | null {
   const kind = page.props?.kind
-  if (kind && pageKinds.includes(kind)) return kind
-  return page.templateId === "study-note" ? "note" : null
+  return kind && pageKinds.includes(kind) ? kind : null
 }
 
 // The review action, named the same everywhere (홈 · 상태 칩 · 노트 · 시험 범위, D-30): 오답 노트 → 다시 풀기,
 // a note with concept cards → 카드 복습, otherwise read it again → 복습하기.
-export function reviewActionLabel(page: Pick<StudyPage, "props" | "templateId" | "blocks">) {
+export function reviewActionLabel(page: Pick<StudyPage, "props" | "blocks">) {
   if (pageKind(page) === "wrong-answers") return "다시 풀기"
   return conceptBlocks(page.blocks).length > 0 ? "카드 복습" : "복습하기"
 }
@@ -486,7 +486,7 @@ function seedNote(prefix: string, learned: Block[], concepts: string[], confusio
   }
 }
 
-// Seed pages: initial data created from the 학습 노트 template, not a separate kind of page.
+// Seed pages: notes with headings, concept cards and confusions (빈 노트 since D-33).
 const seedPages: StudyPage[] = [
   {
     id: "ds-1",

@@ -23,6 +23,7 @@ import {
   deleteSubjectRecord,
   descendantPages,
   updatePage,
+  usePagePropsReady,
   useWorkspace,
 } from "@/lib/workspace"
 
@@ -221,6 +222,7 @@ function WherePill({ entry }: { entry: RecordEntry }) {
 // review date (D-24), and a written difficulty becomes the note's 헷갈린 점.
 function LinkToNote({ record, onClose }: { record: SubjectStudyRecord; onClose: () => void }) {
   const workspace = useWorkspace()
+  const propsReady = usePagePropsReady()
   const router = useRouter()
   const [query, setQuery] = useState("")
   const boxRef = useRef<HTMLDivElement>(null)
@@ -254,9 +256,10 @@ function LinkToNote({ record, onClose }: { record: SubjectStudyRecord; onClose: 
     if (created) router.push(`/record/${pageId}`)
   }
 
-  const makeNote = (starterId: "wrong-answers" | "study-note") => {
+  // A 오답 노트 needs props.kind, so it waits for the props column like the kind chip; a plain note always works.
+  const makeNote = (starterId: "wrong-answers" | "blank") => {
     const id = createPage({ title, starterId: "blank", parentId: record.subjectId })
-    applyStarter(id, starterId)
+    if (starterId !== "blank") applyStarter(id, starterId)
     if (record.difficulties.trim())
       updatePage(id, (p) => ({ ...p, blocks: addConfusions(p.blocks, [record.difficulties.trim()]) }))
     attachRecordToPage(record, id)
@@ -295,12 +298,15 @@ function LinkToNote({ record, onClose }: { record: SubjectStudyRecord; onClose: 
       <div id={listId} className="mt-1 flex flex-col">
         {!query.trim() && (
           <>
-            <button type="button" onClick={() => makeNote("wrong-answers")} className={`${option} font-semibold text-action-700`}>
-              <FilePlus2 className="size-4" aria-hidden="true" />새 오답 노트로 만들기
-              {subjectName && <span className="ml-auto text-xs font-normal text-muted-foreground">{subjectName}</span>}
-            </button>
-            <button type="button" onClick={() => makeNote("study-note")} className={`${option} text-action-700`}>
-              <FilePlus2 className="size-4" aria-hidden="true" />새 학습 노트로 만들기
+            {propsReady && (
+              <button type="button" onClick={() => makeNote("wrong-answers")} className={`${option} font-semibold text-action-700`}>
+                <FilePlus2 className="size-4" aria-hidden="true" />새 오답 노트로 만들기
+                {subjectName && <span className="ml-auto text-xs font-normal text-muted-foreground">{subjectName}</span>}
+              </button>
+            )}
+            <button type="button" onClick={() => makeNote("blank")} className={`${option} text-action-700 ${propsReady ? "" : "font-semibold"}`}>
+              <FilePlus2 className="size-4" aria-hidden="true" />새 노트로 만들기
+              {!propsReady && subjectName && <span className="ml-auto text-xs font-normal text-muted-foreground">{subjectName}</span>}
             </button>
           </>
         )}

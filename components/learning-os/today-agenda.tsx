@@ -41,7 +41,7 @@ export function TodayAgenda() {
           {reviews === null ? (
             <Skeleton />
           ) : reviews.length === 0 ? (
-            <Empty>오늘 복습할 학습 노트가 없어요. 새로운 내용을 학습해 보세요.</Empty>
+            <Empty>오늘 복습할 노트가 없어요. 새로운 내용을 학습해 보세요.</Empty>
           ) : (
             <ReviewList reviews={reviews} />
           )}

@@ -394,6 +394,7 @@ export function StudyPageView({
 
         {bodyEmpty && mode !== "review" && (
           <PageStarters
+            kindsReady={propsReady}
             hasKind={kind !== null}
             onPick={(starterId) => {
               applyStarter(page.id, starterId)

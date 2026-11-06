@@ -922,7 +922,7 @@ export function BlockEditor({
                   placeholder={
                     hint ??
                     (isSoleEmptyBlock
-                      ? "/ 를 누르면 제목, 목록, 그림 같은 메뉴가 나와요"
+                      ? "/ 를 누르면 제목, 목록, 핵심 개념(복습 카드) 같은 메뉴가 나와요"
                       : problemMode && block.type === "toggle"
                         ? "틀린 문제를 적어요"
                         : block.type === "p"
