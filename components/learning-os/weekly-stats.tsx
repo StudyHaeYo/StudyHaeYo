@@ -45,11 +45,11 @@ export function WeeklyStats() {
             aria-valuemax={100}
             aria-label="이번 주 목표 달성률"
           >
-            <div className="h-full rounded-full bg-indigo-600 transition-[width] duration-500 ease-out" style={{ width: `${percent}%` }} />
+            <div className="h-full rounded-full bg-action-600 transition-[width] duration-500 ease-out" style={{ width: `${percent}%` }} />
           </div>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {stats.perDayToGoal === 0 ? (
-              <span className="font-medium text-indigo-700">이번 주 목표를 채웠어요.</span>
+              <span className="font-medium text-action-700">이번 주 목표를 채웠어요.</span>
             ) : (
               <>
                 목표의 {percent}% · 하루 <span className="font-medium text-foreground">{formatDuration(stats.perDayToGoal)}</span>씩
@@ -65,7 +65,7 @@ export function WeeklyStats() {
                   <div
                     title={`${DAY_NAMES[i]} · ${day.minutes > 0 ? formatDuration(day.minutes) : "기록 없음"}`}
                     className={`w-full rounded-sm ${
-                      day.future ? "bg-transparent" : day.minutes === 0 ? "bg-muted" : day.isToday ? "bg-indigo-600" : "bg-indigo-300"
+                      day.future ? "bg-transparent" : day.minutes === 0 ? "bg-muted" : day.isToday ? "bg-action-600" : "bg-action-300"
                     }`}
                     style={{ height: day.future ? 0 : Math.max(day.minutes === 0 ? 3 : 6, Math.round((day.minutes / maxDay) * 56)) }}
                   />
@@ -86,7 +86,7 @@ export function WeeklyStats() {
                     <span className="tabular-nums text-muted-foreground">{formatDuration(s.minutes)}</span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-indigo-400" style={{ width: `${(s.minutes / maxSubject) * 100}%` }} />
+                    <div className="h-full rounded-full bg-action-400" style={{ width: `${(s.minutes / maxSubject) * 100}%` }} />
                   </div>
                 </li>
               ))}

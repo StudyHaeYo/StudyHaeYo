@@ -49,7 +49,7 @@ export function MathBlockView({ block, onChange }: { block: MathBlock; onChange:
           className="block w-full overflow-x-auto rounded-lg px-3 py-1 text-left text-foreground hover:bg-accent/60"
         >
           {rendered.error ? (
-            <span className="text-sm text-amber-700">수식을 읽지 못했어요. 눌러서 고쳐 주세요.</span>
+            <span className="text-sm text-attention-700">수식을 읽지 못했어요. 눌러서 고쳐 주세요.</span>
           ) : (
             <span dangerouslySetInnerHTML={{ __html: rendered.html }} />
           )}

@@ -134,7 +134,7 @@ export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActi
       }}
       onFocus={onActivate}
       onKeyDown={handleKeyDown}
-      className="group relative flex flex-col gap-2 rounded-lg py-1 outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
+      className="group relative flex flex-col gap-2 rounded-lg py-1 outline-none focus-visible:ring-2 focus-visible:ring-action-300"
     >
       {editing && (
         <DrawingToolbar
@@ -156,7 +156,7 @@ export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActi
           style={{ height: block.height, touchAction: input.touchAction }}
           className={`relative overflow-hidden rounded-lg border bg-card transition-colors ${
             editing
-              ? `border-indigo-300 ring-2 ring-indigo-100 ${input.cursor}`
+              ? `border-action-300 ring-2 ring-action-100 ${input.cursor}`
               : "cursor-pointer border-border hover:border-muted-foreground/40"
           }`}
         >

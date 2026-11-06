@@ -5,7 +5,7 @@ export function UnresolvedBadge({ count, long = false }: { count: number; long?:
   return (
     <span
       title={`미해결 헷갈린 점 ${count}개`}
-      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200"
+      className="inline-flex shrink-0 items-center gap-1 rounded-full bg-attention-50 px-1.5 py-0.5 text-xs font-medium text-attention-700 ring-1 ring-inset ring-attention-200"
     >
       <HelpCircle className="size-3" aria-hidden="true" />
       {long ? `미해결 헷갈린 점 ${count}개` : count}

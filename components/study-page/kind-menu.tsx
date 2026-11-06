@@ -26,7 +26,7 @@ export function KindChip({ pageId, kind, propsReady }: { pageId: string; kind: P
         aria-expanded={open}
         aria-label={`노트 종류: ${current.name}. 바꾸기`}
         className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2 text-[13px] font-semibold transition-colors sm:pl-2.5 ${
-          open ? "border-indigo-200 bg-indigo-50 text-foreground" : "border-border text-foreground hover:bg-accent"
+          open ? "border-action-200 bg-action-50 text-foreground" : "border-border text-foreground hover:bg-accent"
         }`}
       >
         <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
@@ -142,7 +142,7 @@ function KindMenu({
               aria-checked={checked}
               disabled={waits}
               onClick={() => onPick(option.kind)}
-              className={`flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-indigo-400 disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={`flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-action-400 disabled:cursor-not-allowed disabled:opacity-50 ${
                 checked ? "bg-accent" : "hover:bg-accent"
               }`}
             >
@@ -153,7 +153,7 @@ function KindMenu({
                 <span className="block text-sm font-semibold text-foreground">{option.name}</span>
                 <span className="block text-xs text-muted-foreground">{waits ? "데이터 준비가 끝나면 쓸 수 있어요" : option.does}</span>
               </span>
-              {checked && <Check className="size-4 shrink-0 text-indigo-600" aria-hidden="true" />}
+              {checked && <Check className="size-4 shrink-0 text-action-600" aria-hidden="true" />}
             </button>
           )
         })}

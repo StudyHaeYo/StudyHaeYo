@@ -53,7 +53,7 @@ export function TagEditor({ tags, onChange, size = "sm" }: { tags: string[]; onC
         aria-label="태그 추가"
         placeholder="+ 태그"
         autoComplete="off"
-        className={`w-20 rounded-full border border-dashed border-border bg-transparent outline-none placeholder:text-muted-foreground/80 focus:border-indigo-300 focus:bg-background ${chip}`}
+        className={`w-20 rounded-full border border-dashed border-border bg-transparent outline-none placeholder:text-muted-foreground/80 focus:border-action-300 focus:bg-background ${chip}`}
       />
     </span>
   )

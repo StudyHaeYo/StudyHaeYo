@@ -90,9 +90,9 @@ export function useTreeDrag(id: string, { allowAfter = true }: { allowAfter?: bo
 }
 
 export function dropIndicatorClass(indicator: DropPosition | null) {
-  if (indicator === "inside") return "bg-indigo-50 ring-1 ring-inset ring-indigo-300"
-  if (indicator === "before") return "before:absolute before:inset-x-1 before:-top-px before:h-0.5 before:rounded-full before:bg-indigo-500"
-  if (indicator === "after") return "after:absolute after:inset-x-1 after:-bottom-px after:h-0.5 after:rounded-full after:bg-indigo-500"
+  if (indicator === "inside") return "bg-action-50 ring-1 ring-inset ring-action-300"
+  if (indicator === "before") return "before:absolute before:inset-x-1 before:-top-px before:h-0.5 before:rounded-full before:bg-action-500"
+  if (indicator === "after") return "after:absolute after:inset-x-1 after:-bottom-px after:h-0.5 after:rounded-full after:bg-action-500"
   return ""
 }
 

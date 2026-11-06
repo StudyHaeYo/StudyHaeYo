@@ -19,6 +19,7 @@
 - 페이지/기록 데이터의 접근은 `lib/workspace.ts`, `lib/plans.ts`의 함수 시그니처 뒤에 둔다. DB를 붙일 때도 UI 컴포넌트가 직접 DB를 부르지 않게 한다.
 - 서버 렌더와 클라이언트 첫 렌더 결과가 달라지면 안 된다(hydration). 현재 날짜 같은 브라우저 값은 `hooks/use-today.ts` 패턴(서버 스냅샷은 null)을 따른다. `suppressHydrationWarning`으로 덮지 않는다.
 - PR 전에 `pnpm run build`가 통과해야 한다(타입 검사만으로는 서버/클라이언트 경계 오류를 못 잡는다). 빌드는 타입 오류를 건너뛰도록 설정돼 있으니(`ignoreBuildErrors`) `npx tsc --noEmit`도 같이 돌린다.
+- 화면 코드에는 색 이름 클래스(`indigo-600`, `amber-50` 등)를 쓰지 않고 역할 토큰(`action` · `attention` · `danger` · `success`, `app/globals.css`)을 쓴다. 디자인을 바꾸거나 어두운 모드를 넣을 때 값을 한 곳에서만 바꾸기 위해서다. PR 전에 `pnpm run check:colors`.
 - 서버 컴포넌트(`page.tsx`, `layout.tsx` 등)에서는 `lib/workspace.ts`, `lib/plans.ts`, `lib/create-store.ts`, `lib/study-stats.ts`를 직접·간접으로 import하지 않는다. 서버와 클라이언트가 같이 쓰는 상수나 함수는 `lib/goals.ts`처럼 import가 없는 파일에 둔다.
 - v0의 Publish로 main에 바로 반영하지 않는다. PR의 Vercel 미리보기 빌드가 Ready인지 확인하고 merge한다.
 - PR의 merge 버튼은 이재윤이 누른다. Vercel 프로젝트가 이재윤의 Hobby 계정이라, 다른 사람이 만든 merge 커밋은 배포가 막힌다(D-19). 김준혁은 리뷰와 승인(Approve)을 남긴다.

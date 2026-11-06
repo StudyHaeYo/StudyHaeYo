@@ -186,7 +186,7 @@ function Highlight({ result }: { result: SearchResult }) {
   return (
     <>
       {result.snippet.slice(0, a)}
-      <mark className="rounded-sm bg-amber-100 px-0.5 text-foreground">{result.snippet.slice(a, b)}</mark>
+      <mark className="rounded-sm bg-attention-100 px-0.5 text-foreground">{result.snippet.slice(a, b)}</mark>
       {result.snippet.slice(b)}
     </>
   )

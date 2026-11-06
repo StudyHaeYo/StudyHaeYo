@@ -63,10 +63,10 @@ export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concep
 
   return (
     <section aria-labelledby="review-heading" className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50/60 px-5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-action-200 bg-action-50/60 px-5 py-3">
         <div className="flex items-center gap-2">
-          <RotateCcw className="size-4 text-indigo-600" aria-hidden="true" />
-          <h2 id="review-heading" className="text-sm font-semibold text-indigo-700">
+          <RotateCcw className="size-4 text-action-600" aria-hidden="true" />
+          <h2 id="review-heading" className="text-sm font-semibold text-action-700">
             복습 모드
           </h2>
           <span className="text-xs text-muted-foreground" aria-live="polite">
@@ -100,11 +100,11 @@ export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concep
                 <div
                   className={`flex h-full flex-col rounded-xl border bg-card transition-colors ${
                     result === "remembered"
-                      ? "border-emerald-200"
+                      ? "border-success-200"
                       : result === "confused"
-                        ? "border-amber-200"
+                        ? "border-attention-200"
                         : open
-                          ? "border-indigo-300"
+                          ? "border-action-300"
                           : "border-border"
                   }`}
                 >
@@ -123,7 +123,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concep
                     {result ? (
                       <span
                         className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                          result === "remembered" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                          result === "remembered" ? "bg-success-50 text-success-700" : "bg-attention-50 text-attention-700"
                         }`}
                       >
                         {result === "remembered" ? (problems ? "맞힘" : "기억남") : problems ? "또 틀림" : "헷갈림"}
@@ -142,7 +142,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concep
                         <button
                           type="button"
                           onClick={() => answer(concept.id, "remembered")}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-success-200 bg-success-50 px-3 py-2 text-sm font-medium text-success-700 transition-colors hover:bg-success-100"
                         >
                           <Check className="size-4" aria-hidden="true" />
                           {problems ? "맞혔어요" : "기억났어요"}
@@ -150,7 +150,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concep
                         <button
                           type="button"
                           onClick={() => answer(concept.id, "confused")}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100"
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-attention-200 bg-attention-50 px-3 py-2 text-sm font-medium text-attention-700 transition-colors hover:bg-attention-100"
                         >
                           <HelpCircle className="size-4" aria-hidden="true" />
                           {problems ? "또 틀렸어요" : "헷갈려요"}
@@ -168,7 +168,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concep
       {allDone && (
         <div className="flex flex-col gap-5 rounded-xl border border-border bg-card px-6 py-6">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" aria-hidden="true" />
+            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success-600" aria-hidden="true" />
             <div className="flex flex-col gap-1">
               <h3 className="text-base font-semibold text-card-foreground">복습 완료</h3>
               {concepts.length > 0 && (
@@ -184,7 +184,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concep
 
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-2 flex items-center gap-1.5 text-sm font-medium text-card-foreground">
-              <Brain className="size-4 text-indigo-600" aria-hidden="true" />
+              <Brain className="size-4 text-action-600" aria-hidden="true" />
               지금 이해도는 어느 정도인가요?
             </legend>
             <div className="flex flex-wrap gap-2">
@@ -196,12 +196,12 @@ export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concep
                   onClick={() => setUnderstanding(value)}
                   className={`flex min-w-16 flex-col items-center gap-0.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
                     understanding === value
-                      ? "border-indigo-600 bg-indigo-600 text-white"
-                      : "border-border bg-background text-foreground hover:border-indigo-300"
+                      ? "border-action-600 bg-action-600 text-action-foreground"
+                      : "border-border bg-background text-foreground hover:border-action-300"
                   }`}
                 >
                   <span className="font-semibold">{value}</span>
-                  <span className={`text-xs ${understanding === value ? "text-indigo-100" : "text-muted-foreground"}`}>
+                  <span className={`text-xs ${understanding === value ? "text-action-100" : "text-muted-foreground"}`}>
                     {understandingLabel(value)}
                   </span>
                 </button>
@@ -214,7 +214,7 @@ export function StudyNoteReview({ concepts, exitHref, onComplete, mode = "concep
               type="button"
               disabled={understanding === null}
               onClick={finish}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-action-600 px-4 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               확인하고 학습 기록 남기기
             </button>

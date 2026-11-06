@@ -55,7 +55,7 @@ export function SessionTimerCard() {
           <span
             className={`flex size-9 shrink-0 items-center justify-center rounded-full ${
               onBreak
-                ? "bg-emerald-100 text-emerald-700"
+                ? "bg-success-100 text-success-700"
                 : running
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground"
@@ -158,7 +158,7 @@ export function SessionTimerCard() {
       {pomodoro && (
         <div className="h-1 bg-muted" aria-hidden="true">
           <div
-            className={`h-full transition-[width] duration-1000 ease-linear ${onBreak ? "bg-emerald-500" : "bg-primary"}`}
+            className={`h-full transition-[width] duration-1000 ease-linear ${onBreak ? "bg-success-500" : "bg-primary"}`}
             style={{ width: `${Math.round(pomodoro.progress * 1000) / 10}%` }}
           />
         </div>
@@ -226,9 +226,9 @@ export function SessionIndicator({ floating = false }: { floating?: boolean }) {
     >
       <span className="relative flex size-2" aria-hidden="true">
         <span
-          className={`absolute inline-flex size-full rounded-full opacity-60 ${onBreak ? "bg-emerald-500" : "animate-ping bg-primary"}`}
+          className={`absolute inline-flex size-full rounded-full opacity-60 ${onBreak ? "bg-success-500" : "animate-ping bg-primary"}`}
         />
-        <span className={`relative inline-flex size-2 rounded-full ${onBreak ? "bg-emerald-500" : "bg-primary"}`} />
+        <span className={`relative inline-flex size-2 rounded-full ${onBreak ? "bg-success-500" : "bg-primary"}`} />
       </span>
       <span className="font-mono tabular-nums">{label}</span>
     </Link>

@@ -23,7 +23,7 @@ export function PageStarters({ onPick, onAi }: { onPick: (starterId: string) => 
             key={k.starterId}
             type="button"
             onClick={() => onPick(k.starterId)}
-            className="flex flex-col rounded-xl border border-border bg-card p-2.5 text-left transition-[border-color,transform] duration-150 hover:border-indigo-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 active:scale-[0.98] motion-reduce:active:scale-100"
+            className="flex flex-col rounded-xl border border-border bg-card p-2.5 text-left transition-[border-color,transform] duration-150 hover:border-action-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 active:scale-[0.98] motion-reduce:active:scale-100"
           >
             <Mini kind={k.starterId} />
             <span className="mt-2.5 text-sm font-semibold text-foreground">{k.name}</span>
@@ -37,7 +37,7 @@ export function PageStarters({ onPick, onAi }: { onPick: (starterId: string) => 
           type="button"
           onClick={onAi}
           title="제목을 주제로 AI가 정리 노트나 문제를 만들어 줘요"
-          className="inline-flex items-center gap-1.5 rounded-md font-semibold text-indigo-700 hover:underline"
+          className="inline-flex items-center gap-1.5 rounded-md font-semibold text-action-700 hover:underline"
         >
           <Sparkles className="size-4" aria-hidden="true" />
           AI로 채우기
@@ -56,7 +56,7 @@ function Mini({ kind }: { kind: string }) {
         <>
           <span className="absolute left-3 top-3 h-8 w-14 -rotate-3 rounded-sm border border-border bg-card" />
           <span className="absolute left-9 top-5 h-8 w-14 rotate-2 rounded-sm border border-border bg-card">
-            <span className="absolute inset-x-1.5 top-2.5 h-px bg-indigo-200" />
+            <span className="absolute inset-x-1.5 top-2.5 h-px bg-action-200" />
           </span>
         </>
       )}
@@ -84,7 +84,7 @@ function Mini({ kind }: { kind: string }) {
       )}
       {kind === "exam" && (
         <span className="absolute left-1/2 top-2.5 w-12 -translate-x-1/2 overflow-hidden rounded-sm border border-border bg-card text-center">
-          <span className="block h-2 bg-indigo-600" />
+          <span className="block h-2 bg-action-600" />
           <span className="block text-lg font-extrabold leading-7 text-foreground">12</span>
         </span>
       )}

@@ -27,6 +27,7 @@ Never commit to `main`.
 ```bash
 npx tsc --noEmit        # the build skips type errors (ignoreBuildErrors)
 pnpm run build          # catches server/client boundary errors tsc misses
+pnpm run check:colors   # role color tokens only, no palette classes (indigo-600 …)
 ```
 
 Also check by hand:

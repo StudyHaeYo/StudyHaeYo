@@ -39,8 +39,8 @@ export function WrongAnswersHead({
           `${problems.total}문제 모두 맞혔어요`
         ) : (
           <>
-            {problems.total}문제 중 <b className="font-semibold text-amber-700">{problems.wrong}문제</b> 아직 틀림
-            <Link href={retryHref} className="ml-2 font-semibold text-indigo-700 hover:underline">
+            {problems.total}문제 중 <b className="font-semibold text-attention-700">{problems.wrong}문제</b> 아직 틀림
+            <Link href={retryHref} className="ml-2 font-semibold text-action-700 hover:underline">
               다시 풀기
             </Link>
           </>
@@ -78,7 +78,7 @@ export function LectureHead({
           <select
             value={props.materialBlockId ?? ""}
             onChange={(e) => onChange({ materialBlockId: e.target.value || undefined })}
-            className="h-8 min-w-0 max-w-56 rounded-lg border border-border bg-background px-2 text-sm text-foreground outline-none focus:border-indigo-400"
+            className="h-8 min-w-0 max-w-56 rounded-lg border border-border bg-background px-2 text-sm text-foreground outline-none focus:border-action-400"
           >
             <option value="">고르지 않음</option>
             {pdfs.map((p) => (
@@ -91,7 +91,7 @@ export function LectureHead({
       ) : (
         // A button, not only drag and drop: phones have no dragging. The PDF opens beside the note once uploaded.
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-          <label className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-indigo-500">
+          <label className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-action-500">
             <Upload className="size-4" aria-hidden="true" />
             강의 PDF 올리기
             <input
@@ -115,7 +115,7 @@ export function LectureHead({
           onChange={(e) => onChange({ week: e.target.value })}
           placeholder="3주차…"
           autoComplete="off"
-          className="h-8 w-20 rounded-lg border border-border bg-background px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-indigo-400"
+          className="h-8 w-20 rounded-lg border border-border bg-background px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-action-400"
         />
       </label>
       {material && (
@@ -124,7 +124,7 @@ export function LectureHead({
           onClick={onToggleMaterial}
           aria-pressed={materialOpen}
           className={`ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition-colors ${
-            materialOpen ? "border-indigo-200 bg-indigo-50 text-indigo-700" : "border-border text-foreground hover:bg-accent"
+            materialOpen ? "border-action-200 bg-action-50 text-action-700" : "border-border text-foreground hover:bg-accent"
           }`}
         >
           <BookOpen className="size-4" aria-hidden="true" />

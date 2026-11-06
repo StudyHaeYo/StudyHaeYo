@@ -464,7 +464,7 @@ export function dueLabel(dueISO: string, today: string): { label: string; tone: 
 }
 
 export const dueToneClass: Record<DueTone, string> = {
-  overdue: "text-amber-700",
+  overdue: "text-attention-700",
   today: "text-foreground",
   soon: "text-muted-foreground",
   later: "text-muted-foreground",

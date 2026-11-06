@@ -32,7 +32,7 @@ export function SubjectPlans({ subjectId }: { subjectId: string }) {
       ) : (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-card/50 px-6 py-8 text-center">
           <p className="text-sm text-muted-foreground">이 과목을 대상으로 한 학습 계획이 없어요.</p>
-          <Link href="/plan" className="text-sm font-medium text-indigo-600 hover:underline">
+          <Link href="/plan" className="text-sm font-medium text-action-600 hover:underline">
             학습 계획 만들기
           </Link>
         </div>

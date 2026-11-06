@@ -160,7 +160,7 @@ export function PdfAnnotator({
             type="button"
             autoFocus
             onClick={onClose}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-action-600 px-3 py-1.5 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
           >
             <Check className="size-4" />
             완료
@@ -182,7 +182,7 @@ export function PdfAnnotator({
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-2 py-4 sm:px-6">
         {error ? (
-          <p role="alert" className="mx-auto mt-10 max-w-md text-center text-sm text-red-600">
+          <p role="alert" className="mx-auto mt-10 max-w-md text-center text-sm text-danger-600">
             {error}
           </p>
         ) : !doc || width === 0 ? (

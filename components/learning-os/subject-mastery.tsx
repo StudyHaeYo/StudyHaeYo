@@ -20,7 +20,7 @@ export function SubjectMastery({ title = "나의 학습 상태" }: { title?: str
                   {item.subject}
                   <span className="ml-1.5 text-xs text-muted-foreground">{`기록 ${item.recordCount}개`}</span>
                 </span>
-                <span className={`font-semibold tabular-nums ${item.progress < 50 ? "text-amber-700" : "text-indigo-600"}`}>
+                <span className={`font-semibold tabular-nums ${item.progress < 50 ? "text-attention-700" : "text-action-600"}`}>
                   {item.average.toFixed(1)}
                   <span className="font-normal text-muted-foreground"> / 5</span>
                 </span>
@@ -34,7 +34,7 @@ export function SubjectMastery({ title = "나의 학습 상태" }: { title?: str
                 aria-label={`${item.subject} 평균 이해도`}
               >
                 <div
-                  className={`h-full rounded-full ${item.progress < 50 ? "bg-amber-500" : "bg-indigo-600"}`}
+                  className={`h-full rounded-full ${item.progress < 50 ? "bg-attention-500" : "bg-action-600"}`}
                   style={{ width: `${item.progress}%` }}
                 />
               </div>

@@ -28,7 +28,7 @@ export default async function LoginPage({
       footer={
         <>
           계정이 없나요?{" "}
-          <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline">
+          <Link href="/signup" className="font-medium text-action-600 hover:text-action-700 hover:underline">
             회원가입
           </Link>
         </>

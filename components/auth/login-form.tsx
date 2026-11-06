@@ -55,7 +55,7 @@ export function LoginForm({
         <p
           role="status"
           className={`rounded-lg px-3 py-2 text-sm ${
-            noticeTone === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+            noticeTone === "success" ? "bg-success-50 text-success-700" : "bg-danger-50 text-danger-700"
           }`}
         >
           {notice}
@@ -85,7 +85,7 @@ export function LoginForm({
         disabled={pending}
       />
       {formError && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-600">
           {formError}
         </p>
       )}

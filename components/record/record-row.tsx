@@ -60,13 +60,13 @@ export function RecordRow({
       <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs text-muted-foreground">
         {showWhere && <WherePill entry={entry} />}
         {badge && (
-          <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">{badge}</span>
+          <span className="rounded-md bg-success-50 px-1.5 py-0.5 text-[11px] font-semibold text-success-700">{badge}</span>
         )}
         {suggest && subjectRecord && (
           <button
             type="button"
             onClick={() => setLinking(true)}
-            className="inline-flex h-6 items-center gap-1 rounded-md border border-dashed border-border px-2 font-semibold text-indigo-700 transition-colors hover:border-indigo-300 hover:bg-indigo-50"
+            className="inline-flex h-6 items-center gap-1 rounded-md border border-dashed border-border px-2 font-semibold text-action-700 transition-colors hover:border-action-300 hover:bg-action-50"
           >
             <FilePlus2 className="size-3.5" aria-hidden="true" />
             복습 노트 만들기
@@ -76,7 +76,7 @@ export function RecordRow({
       </div>
       {(record.difficulties || record.nextSteps) && (
         <div className="col-span-2 flex flex-col gap-0.5 text-[13px] leading-relaxed">
-          {record.difficulties && <p className="text-amber-700">어려웠던 점 · {record.difficulties}</p>}
+          {record.difficulties && <p className="text-attention-700">어려웠던 점 · {record.difficulties}</p>}
           {record.nextSteps && <p className="text-muted-foreground">다음에 할 일 · {record.nextSteps}</p>}
         </div>
       )}
@@ -190,7 +190,7 @@ export function UnderstandingBars({ value, size = "sm" }: { value: number; size?
     <span className="inline-flex items-center gap-1.5 text-xs tabular-nums text-muted-foreground" aria-label={`이해도 ${value}/5`}>
       <span className="inline-flex gap-0.5" aria-hidden="true">
         {[1, 2, 3, 4, 5].map((n) => (
-          <span key={n} className={`${bar} rounded-full ${n <= value ? "bg-indigo-600" : "bg-indigo-100"}`} />
+          <span key={n} className={`${bar} rounded-full ${n <= value ? "bg-action-600" : "bg-action-100"}`} />
         ))}
       </span>
       {value}/5
@@ -202,7 +202,7 @@ function WherePill({ entry }: { entry: RecordEntry }) {
   const pill = "inline-flex h-6 max-w-56 items-center gap-1 rounded-md px-2 text-xs"
   if (entry.pageId)
     return (
-      <Link href={`/record/${entry.pageId}`} className={`${pill} bg-indigo-50 font-semibold text-indigo-700 hover:bg-indigo-100`}>
+      <Link href={`/record/${entry.pageId}`} className={`${pill} bg-action-50 font-semibold text-action-700 hover:bg-action-100`}>
         <FileText className="size-3.5 shrink-0" aria-hidden="true" />
         <span className="truncate">{entry.pageTitle}</span>
       </Link>
@@ -295,11 +295,11 @@ function LinkToNote({ record, onClose }: { record: SubjectStudyRecord; onClose: 
       <div id={listId} className="mt-1 flex flex-col">
         {!query.trim() && (
           <>
-            <button type="button" onClick={() => makeNote("wrong-answers")} className={`${option} font-semibold text-indigo-700`}>
+            <button type="button" onClick={() => makeNote("wrong-answers")} className={`${option} font-semibold text-action-700`}>
               <FilePlus2 className="size-4" aria-hidden="true" />새 오답 노트로 만들기
               {subjectName && <span className="ml-auto text-xs font-normal text-muted-foreground">{subjectName}</span>}
             </button>
-            <button type="button" onClick={() => makeNote("study-note")} className={`${option} text-indigo-700`}>
+            <button type="button" onClick={() => makeNote("study-note")} className={`${option} text-action-700`}>
               <FilePlus2 className="size-4" aria-hidden="true" />새 학습 노트로 만들기
             </button>
           </>

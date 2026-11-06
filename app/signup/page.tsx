@@ -15,7 +15,7 @@ export default function SignupPage() {
       footer={
         <>
           이미 계정이 있나요?{" "}
-          <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-700 hover:underline">
+          <Link href="/login" className="font-medium text-action-600 hover:text-action-700 hover:underline">
             로그인
           </Link>
         </>
