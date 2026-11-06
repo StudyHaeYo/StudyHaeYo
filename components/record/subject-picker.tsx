@@ -70,7 +70,7 @@ export function SubjectPicker({
               setAdding(false)
             }
           }}
-          placeholder="새 과목 이름 (예: 운영체제)"
+          placeholder="새 과목 이름"
           aria-label="새 과목 이름"
           className={pickerFieldClass}
         />

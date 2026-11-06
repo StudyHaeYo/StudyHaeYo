@@ -28,7 +28,7 @@ export function WrongAnswersHead({
         id="wrong-source"
         value={source ?? ""}
         onChange={(e) => onChange({ source: e.target.value })}
-        placeholder="어디서 나온 문제인가요? (예: 2024 정보처리기사 실기 2회…)"
+        placeholder="어디서 나온 문제인가요?"
         autoComplete="off"
         className="min-w-0 flex-1 bg-transparent text-base font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground"
       />

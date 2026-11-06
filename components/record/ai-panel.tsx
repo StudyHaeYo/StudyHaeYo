@@ -195,7 +195,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
                 ? "이 페이지 내용으로 정리하거나 문제를 만들어요. 문제를 풀고 답을 보내면 채점해요."
                 : topic
                   ? "아직 본문이 없어서 노트 내용 대신 일반 지식으로 만들어요."
-                  : "공부할 주제나 궁금한 것을 아래 칸에 보내 보세요(예: 운영체제 교착상태). 노트 제목을 적으면 그 주제로 확인 문제도 만들 수 있어요."}
+                  : "공부할 주제나 궁금한 것을 보내 보세요. 노트 제목을 적으면 확인 문제도 만들어요."}
             </p>
             {(hasBody || picked.length > 0 || topic) && (
               <QuizStarter page={page} withPdf={picked.length > 0} hasBody={hasBody} onAsk={(prompt) => void send(prompt)} />
@@ -288,7 +288,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
             }}
             rows={1}
             maxLength={2000}
-            placeholder={messages.length > 0 ? "답이나 질문을 보내세요 (예: 1번 ②, 2번 스택)" : "무엇을 도와줄까요?"}
+            placeholder={messages.length > 0 ? "답이나 질문을 보내세요 (예: 1번 ②, 2번 ④)" : "무엇을 도와줄까요?"}
             aria-label="AI에게 질문"
             className="max-h-40 min-h-9 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 [field-sizing:content]"
           />
