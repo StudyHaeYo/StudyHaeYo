@@ -29,6 +29,7 @@ import {
   pagePdfs,
   formatLevelScore,
   ladderFeedback,
+  levelName,
   parseQuiz,
   parseScore,
   passedLevel,
@@ -348,11 +349,11 @@ function QuizStarter({
         className="flex items-center justify-between gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-left text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
       >
         <span>섞어서 풀기</span>
-        <span className="text-xs font-normal tabular-nums text-indigo-100">{`하 ${low} · 중 ${mid} · 상 ${high}`}</span>
+        <span className="text-xs font-normal tabular-nums text-indigo-100">{`기억 ${low} · 적용 ${mid} · 비교 ${high}`}</span>
       </button>
       <div role="group" aria-labelledby="quiz-practice-label" className="flex flex-wrap items-center gap-1.5">
         <span id="quiz-practice-label" className="text-xs text-muted-foreground">
-          한 난이도만 연습
+          한 단계만 연습
         </span>
         {quizLevels.map((level) => (
           <button
@@ -361,13 +362,13 @@ function QuizStarter({
             onClick={() => onAsk(quizPrompt(plan, level))}
             className="rounded-full border border-border px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
           >
-            {`${level}만`}
+            {`${levelName[level]}만`}
           </button>
         ))}
       </div>
       <p className="text-[11px] leading-relaxed text-muted-foreground">
-        섞어서 풀면 채점 결과로 이해도를 재요(하 → 중 → 상 순서로 통과). 한 난이도만 풀면 연습이라 이해도가 그 범위
-        안에서만 정해져요(하 1~3 · 중 2~4 · 상 3~5).
+        섞어서 풀면 채점 결과로 이해도를 재요(기억 → 적용 → 비교 순서로 통과). 한 단계만 풀면 연습이라 이해도가 그
+        범위 안에서만 정해져요(기억 1~3 · 적용 2~4 · 비교 3~5).
       </p>
     </section>
   )
@@ -383,7 +384,7 @@ function LevelResult({ levels, understanding }: { levels: LevelScore; understand
           .filter((l) => levels[l])
           .map((l) => (
             <span key={l} className="inline-flex items-center gap-1">
-              {`${l} ${levels[l]!.correct}/${levels[l]!.total}`}
+              {`${levelName[l]} ${levels[l]!.correct}/${levels[l]!.total}`}
               {passedLevel(levels[l]!) && <span className="text-xs font-medium text-emerald-700">통과</span>}
             </span>
           ))}
@@ -429,7 +430,7 @@ function AssistantMessage({
   const makeWrongNote = () => {
     const id = createWrongAnswerNote(
       page.id,
-      wrong.map((w) => ({ text: w.level ? `[${w.level}] ${w.text}` : w.text, answer: w.answer })),
+      wrong.map((w) => ({ text: w.level ? `[${levelName[w.level]}] ${w.text}` : w.text, answer: w.answer })),
       `AI 확인 문제 · ${page.title || "제목 없음"}`,
     )
     if (!id) {
