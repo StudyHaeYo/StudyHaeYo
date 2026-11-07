@@ -38,6 +38,9 @@ export interface TextBlock {
   // it went wrong (any number of reasons, or none). Both optional.
   myAnswer?: string
   reasons?: WrongReason[]
+  // 강의 노트 (코넬 노트, D-35): a question or keyword beside this block, in the left margin. One cue covers this one
+  // block in review. Optional; in another kind it stays in the data, out of sight.
+  cue?: string
 }
 
 export type WrongReason = "concept" | "careless" | "misread" | "time"
@@ -150,7 +153,7 @@ export function isPageLinkBlock(block: Block): block is PageLinkBlock {
 
 // All words in a text block, including a toggle's folded body (search, AI context).
 export function textBlockWords(block: TextBlock) {
-  return [block.text, block.myAnswer, block.body].filter((part) => part?.trim()).join("\n")
+  return [block.cue, block.text, block.myAnswer, block.body].filter((part) => part?.trim()).join("\n")
 }
 
 export function isDrawingBlock(block: Block): block is DrawingBlock {
