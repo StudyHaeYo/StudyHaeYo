@@ -48,7 +48,7 @@ export function examDeadlines(workspace: WorkspaceState, today: string) {
   return deadlines
 }
 
-export const reviewHref = (pageId: string) => `/record/${pageId}?mode=review`
+export { reviewHref } from "@/lib/review"
 
 function relativeDay(iso: string | null, today: string) {
   if (!iso) return "기록 없음"

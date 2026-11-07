@@ -5,6 +5,7 @@ import { X } from "lucide-react"
 import { computePageStats, formatDate, reviewActionLabel, type StudyPage } from "@/lib/study-pages"
 import { noteIcon } from "@/lib/templates"
 import { examCountdown } from "@/components/study-page/page-properties"
+import { reviewHref } from "@/lib/review"
 
 // 시험 정리 (D-27, D-30): the exam date and the notes in its scope, set right here at the top of the note instead
 // of in a 속성 window. Each note shows how well it is known and when it comes up for review — pulled to the day
@@ -74,7 +75,7 @@ export function ExamScope({
             return (
               <li key={page.id} className="flex items-center gap-1">
                 <Link
-                  href={due ? `/record/${page.id}?mode=review` : `/record/${page.id}`}
+                  href={due ? reviewHref(page.id) : `/record/${page.id}`}
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-2.5 text-sm transition-colors hover:bg-muted/60"
                 >
                   <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />

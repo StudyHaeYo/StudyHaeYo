@@ -4,17 +4,10 @@ import { Fragment, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { BookOpen, ChevronRight, FileQuestion, Paperclip, PenLine, Printer, Sparkles } from "lucide-react"
-import {
-  addConfusions,
-  computePageStats,
-  conceptBlocks,
-  newRecordId,
-  todayISO,
-  type PageStudyRecord,
-} from "@/lib/study-pages"
+import { addConfusions, computePageStats, conceptBlocks } from "@/lib/study-pages"
 import { useDataStatus } from "@/lib/db/sync"
 import { DataStatusView } from "@/components/data-status-notice"
-import { StudyNoteReview, type ReviewResult } from "@/components/study-page/study-note-review"
+import { reviewHref } from "@/lib/review"
 import {
   applyStarter,
   descendantPages,
@@ -53,12 +46,13 @@ let openPageId: string | null = null
 // (노트 종류) is the chip in the top bar; the values a kind needs sit at the top of the body.
 export function StudyPageView({
   pageId,
-  mode,
+  focusBlock,
   openAi = false,
   startTyping = false,
 }: {
   pageId: string
-  mode?: "review"
+  // ?block=<id> from the review screen's [노트에서 보기]: scroll to that block and mark it for a moment.
+  focusBlock?: string
   openAi?: boolean
   // Just made in the new-page flow (?new=1): put the caret in the first empty block so typing starts right away.
   startTyping?: boolean
@@ -121,6 +115,22 @@ export function StudyPageView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startTyping, pageId, router])
 
+  // [노트에서 보기] (복습 화면): the block that was missed, in the middle of the screen, outlined for 2 seconds.
+  const focusIndex = focusBlock && page ? page.blocks.findIndex((b) => b.id === focusBlock) : -1
+  useEffect(() => {
+    if (focusIndex < 0) return
+    const frame = requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLElement>(`main article [data-block-index="${focusIndex}"]`)
+      if (!el) return
+      el.scrollIntoView({ block: "center" })
+      el.classList.add("ring-2", "ring-attention-300", "ring-offset-4", "ring-offset-background", "rounded-md")
+      window.setTimeout(() => el.classList.remove("ring-2", "ring-attention-300", "ring-offset-4", "ring-offset-background", "rounded-md"), 2000)
+    })
+    return () => cancelAnimationFrame(frame)
+    // Once per arrival: later edits don't scroll the page back.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusIndex >= 0, focusBlock])
+
   if (!page) return dataStatus.phase === "ready" ? <MissingPage /> : <DataStatusView status={dataStatus} />
 
   // Nothing written yet: offer the kinds. Typing anything (or adding any block) hides the row.
@@ -129,59 +139,8 @@ export function StudyPageView({
   const subject = nearestSubject({ groups, pages }, page.parentId)
   const stats = computePageStats(page, today)
 
-  const handleAddRecord = (record: PageStudyRecord) => {
-    // A new record reflects the latest study session, so it takes over from manually picked values.
-    updatePage(page.id, ({ status: _s, understanding: _u, ...p }) => ({
-      ...p,
-      studyRecords: [...p.studyRecords, record],
-    }))
-  }
-
-  const pageHref = `/record/${page.id}`
-  const reviewing = mode === "review"
-  // Review cards come from 핵심 개념 blocks. Without any, the review panel only asks for 이해도 and the
-  // note stays readable below it.
-  // 오답 노트 reviews the problems still wrong instead (D-27).
-  const problemReview = propsReady && pageKind(page) === "wrong-answers"
-  const concepts = problemReview ? wrongProblems(page.blocks) : conceptBlocks(page.blocks)
-
-  const handleReviewComplete = (result: ReviewResult) => {
-    if (result.confusedTexts.length > 0)
-      updatePage(page.id, (p) => ({ ...p, blocks: addConfusions(p.blocks, result.confusedTexts) }))
-    if (result.rightIds.length + result.wrongIds.length > 0) {
-      const triedOn = today ?? todayISO()
-      updatePage(page.id, (p) => ({
-        ...p,
-        blocks: p.blocks.map((b) =>
-          !isTextBlock(b) || b.type !== "toggle"
-            ? b
-            : result.rightIds.includes(b.id)
-              ? { ...b, result: "right" as const, triedOn }
-              : result.wrongIds.includes(b.id)
-                ? { ...b, result: "wrong" as const, triedOn }
-                : b,
-        ),
-      }))
-    }
-    const now = Date.now()
-    handleAddRecord({
-      id: newRecordId(),
-      pageId: page.id,
-      date: today ?? todayISO(),
-      createdAt: now,
-      durationMinutes: result.durationMinutes,
-      understanding: result.understanding,
-      studyContent: problemReview
-        ? `오답 다시 풀기: ${result.remembered.length + result.confused.length}문제 중 ${result.remembered.length}개 맞힘`
-        : concepts.length > 0 ? `복습 모드: 핵심 개념 ${result.remembered.length + result.confused.length}개 확인` : "복습 모드: 노트 다시 읽기",
-      difficulties: problemReview
-        ? ""
-        : result.confused.length > 0 ? `헷갈린 개념: ${result.confused.join(", ")}` : "",
-      nextSteps: "",
-      tags: [],
-    })
-    router.replace(pageHref)
-  }
+  // 오답 노트 marks each problem right or wrong in the body (D-27); reviewing happens on the 복습 화면 (D-34).
+  const problemMode = propsReady && pageKind(page) === "wrong-answers"
 
   const kind = pageKind(page)
   const pdfs = page.blocks.filter(
@@ -205,14 +164,6 @@ export function StudyPageView({
           recorded: scopePages.filter((p) => computePageStats(p, today).understanding !== null).length,
         }
       : null
-  const review = reviewing && (
-    <StudyNoteReview
-      concepts={concepts}
-      exitHref={pageHref}
-      onComplete={handleReviewComplete}
-      mode={problemReview ? "problems" : "concepts"}
-    />
-  )
   const editor = (
     <div className="min-h-64">
       <BlockEditor
@@ -221,20 +172,9 @@ export function StudyPageView({
         allowAttachments
         attachRef={attachRef}
         onAttachmentStored={(blockId, path) => setAttachmentPath(page.id, blockId, path)}
-        problemMode={problemReview ? { today } : undefined}
+        problemMode={problemMode ? { today } : undefined}
         sectionHints={starterSectionHints}
       />
-    </div>
-  )
-  // With concept cards the review replaces the body (no peeking); without, the body is what gets reviewed.
-  const body = !review ? (
-    editor
-  ) : concepts.length > 0 ? (
-    review
-  ) : (
-    <div className="flex flex-col gap-8">
-      {review}
-      {editor}
     </div>
   )
 
@@ -270,18 +210,16 @@ export function StudyPageView({
             <span className="truncate font-medium text-foreground">{page.title.trim() || "제목 없음"}</span>
           </nav>
           <div className="flex shrink-0 items-center gap-1">
-          {!reviewing && (
-            <PageStatusChip
-              kind={kind}
-              stats={stats}
-              today={today}
-              reviewHref={`${pageHref}?mode=review`}
-              problems={problems}
-              exam={examInfo}
-              action={reviewActionLabel(page)}
-              canTryCards={!problemReview && concepts.length > 0}
-            />
-          )}
+          <PageStatusChip
+            kind={kind}
+            stats={stats}
+            today={today}
+            reviewHref={reviewHref(page.id)}
+            problems={problems}
+            exam={examInfo}
+            action={reviewActionLabel(page)}
+            canTryCards={!problemMode && conceptBlocks(page.blocks).length > 0}
+          />
           <KindChip pageId={page.id} kind={kind} propsReady={propsReady} />
           {material && (
             <button
@@ -313,10 +251,7 @@ export function StudyPageView({
           <PageActionsMenu
             pageId={page.id}
             title={page.title.trim() || "제목 없음"}
-            extraItems={
-              reviewing
-                ? undefined
-                : (close) => (
+            extraItems={(close) => (
                     <>
                       <button
                         role="menuitem"
@@ -392,7 +327,7 @@ export function StudyPageView({
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {bodyEmpty && mode !== "review" && (
+        {bodyEmpty && (
           <PageStarters
             kindsReady={propsReady}
             hasKind={kind !== null}
@@ -405,7 +340,7 @@ export function StudyPageView({
           />
         )}
         {/* The values a kind needs, where they are used (D-30) — not in a 속성 window. */}
-        {propsReady && !reviewing && kind === "exam" && (
+        {propsReady && kind === "exam" && (
           <div id="exam-scope" className="mt-8 scroll-mt-24 print:hidden">
             <ExamScope
               examDate={page.props?.examDate}
@@ -417,17 +352,17 @@ export function StudyPageView({
             />
           </div>
         )}
-        {propsReady && !reviewing && kind === "wrong-answers" && (
+        {propsReady && kind === "wrong-answers" && (
           <div className="mt-8 print:hidden">
             <WrongAnswersHead
               source={page.props?.source}
               onChange={(patch) => updatePageProps(page.id, patch)}
               problems={problems}
-              retryHref={`${pageHref}?mode=review`}
+              retryHref={reviewHref(page.id)}
             />
           </div>
         )}
-        {propsReady && !reviewing && kind === "lecture" && (
+        {propsReady && kind === "lecture" && (
           <div className="mt-8 print:hidden">
             <LectureHead
               props={page.props ?? {}}
@@ -448,7 +383,7 @@ export function StudyPageView({
             />
           </div>
         )}
-        <div className="mt-6">{body}</div>
+        <div className="mt-6">{editor}</div>
         <div className="mt-16 print:hidden">
           <PageRecords page={page} stats={stats} today={today} subject={subject ?? null} />
         </div>
