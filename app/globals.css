@@ -4,45 +4,46 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Role colors (색 PR1, 2026-11-06). Screen code names a role, never a palette color (indigo-600 …):
+/* Role colors. Screen code names a role, never a palette color (indigo-600 …):
    action = 주 버튼 · 링크 · 선택됨, attention = 다시 볼 것 · 헷갈린 점 · 경고, danger = 틀림 · 오류,
    success = 맞음 · 통과. Each role is a 50–900 scale plus a foreground for text on its solid fill.
-   The values are what the screens showed before: action = Design A navy #1E2B58 (2026-10-24, it used to
-   redefine Tailwind's indigo scale), attention · danger · success = Tailwind's amber · red · emerald.
-   PR2 changes only these values and adds dark ones. `pnpm run check:colors` keeps palette names out. */
+   Values: 디자인 A "종이와 펜" (색 PR2, 2026-11-07): action = 먹 #2A2925, attention = 형광펜 노랑 (bright stops
+   for highlight backgrounds, 500 and up darkened to ochre so dots reach 3:1 and text 4.5:1 on white),
+   danger = 빨간 펜 #B83A30, success = unchanged emerald. Dark values come later on the same tokens.
+   `pnpm run check:colors` keeps palette names out. */
 :root {
-  --action-50: #f3f5fa;
-  --action-100: #e4e8f2;
-  --action-200: #c9d0e3;
-  --action-300: #9ea9c9;
-  --action-400: #6f7ea8;
-  --action-500: #475887;
-  --action-600: #1e2b58;
-  --action-700: #18234a;
-  --action-800: #121b3a;
-  --action-900: #0d142b;
+  --action-50: #f4f3f0;
+  --action-100: #e9e7e2;
+  --action-200: #d3d0c8;
+  --action-300: #b5b1a7;
+  --action-400: #8e8a80;
+  --action-500: #5f5c55;
+  --action-600: #2a2925;
+  --action-700: #1f1e1b;
+  --action-800: #161513;
+  --action-900: #0e0e0c;
   --action-foreground: #ffffff;
-  --attention-50: oklch(98.7% 0.022 95.277);
-  --attention-100: oklch(96.2% 0.059 95.617);
-  --attention-200: oklch(92.4% 0.12 95.746);
-  --attention-300: oklch(87.9% 0.169 91.605);
-  --attention-400: oklch(82.8% 0.189 84.429);
-  --attention-500: oklch(76.9% 0.188 70.08);
-  --attention-600: oklch(66.6% 0.179 58.318);
-  --attention-700: oklch(55.5% 0.163 48.998);
-  --attention-800: oklch(47.3% 0.137 46.201);
-  --attention-900: oklch(41.4% 0.112 45.904);
+  --attention-50: #fff9db;
+  --attention-100: #fff1a6;
+  --attention-200: #ffe36e;
+  --attention-300: #fcd43c;
+  --attention-400: #e8bc1c;
+  --attention-500: #b08405;
+  --attention-600: #9c7406;
+  --attention-700: #7e5c05;
+  --attention-800: #634804;
+  --attention-900: #4a3603;
   --attention-foreground: #ffffff;
-  --danger-50: oklch(97.1% 0.013 17.38);
-  --danger-100: oklch(93.6% 0.032 17.717);
-  --danger-200: oklch(88.5% 0.062 18.334);
-  --danger-300: oklch(80.8% 0.114 19.571);
-  --danger-400: oklch(70.4% 0.191 22.216);
-  --danger-500: oklch(63.7% 0.237 25.331);
-  --danger-600: oklch(57.7% 0.245 27.325);
-  --danger-700: oklch(50.5% 0.213 27.518);
-  --danger-800: oklch(44.4% 0.177 26.899);
-  --danger-900: oklch(39.6% 0.141 25.723);
+  --danger-50: #fbedeb;
+  --danger-100: #f6d7d3;
+  --danger-200: #edb3ac;
+  --danger-300: #e08a80;
+  --danger-400: #d4665a;
+  --danger-500: #c8473c;
+  --danger-600: #b83a30;
+  --danger-700: #9c3028;
+  --danger-800: #7e2720;
+  --danger-900: #5f1e18;
   --success-50: oklch(97.9% 0.021 166.113);
   --success-100: oklch(95% 0.052 163.051);
   --success-200: oklch(90.5% 0.093 164.15);
@@ -146,37 +147,37 @@
 :root {
   color-scheme: light;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: #24231f; /* 먹 글자 (디자인 A) */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: #24231f;
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #1e2b58; /* brand navy (= --action-600) */
+  --popover-foreground: #24231f;
+  --primary: #2a2925; /* 먹 (= --action-600) */
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.5 0 0); /* darker for readable small text */
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: #f1efea;
+  --secondary-foreground: #24231f;
+  --muted: #f1efea;
+  --muted-foreground: #6b6862; /* 4.5:1 on white and on the paper sidebar */
+  --accent: #f1efea;
+  --accent-foreground: #24231f;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: #475887;
+  --border: #e6e4de;
+  --input: #8f8b83; /* control borders: 3:1 on white (the hairline above is only for dividers) */
+  --ring: #5f5c55;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #f5f4f0; /* 종이 */
+  --sidebar-foreground: #24231f;
+  --sidebar-primary: #2a2925;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eae7e0;
+  --sidebar-accent-foreground: #24231f;
+  --sidebar-border: #e6e4de;
+  --sidebar-ring: #8e8a80;
 }
 
 .dark {
