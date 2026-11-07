@@ -415,7 +415,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               onChange={(e) => setNextSteps(e.target.value)}
               rows={1}
               placeholder="다음에 할 일"
-              className="w-full resize-none rounded-xl border border-border px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-muted-foreground/70 focus:border-action-400"
+              className="w-full resize-none rounded-xl border border-input px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-muted-foreground/70 focus:border-action-400"
             />
           )}
           {confusion !== null && page && (
@@ -437,7 +437,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               value={todo}
               onChange={(e) => setTodo(e.target.value)}
               placeholder="내일 할 일. 체크리스트에 들어가요…"
-              className="h-10 w-full rounded-xl border border-border px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-action-400"
+              className="h-10 w-full rounded-xl border border-input px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-action-400"
             />
           )}
           {((confusion === null && page) || (todo === null && todosReady)) && (

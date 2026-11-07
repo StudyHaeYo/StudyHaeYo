@@ -5,7 +5,7 @@ import { daysBetween, formatDate, type PageKind, type PageStats } from "@/lib/st
 import { examCountdown } from "@/components/study-page/page-properties"
 
 // The one thing about this note's study that matters now, in the page's top bar (D-28). Same words and colors as
-// 홈의 복습할 노트 and 학습 분석의 복습 예정: amber "N일 지남" + navy [복습하기] (the same name as on
+// 홈의 복습할 노트 and 학습 분석의 복습 예정: amber "다시 볼 때예요" + navy [복습하기] (the same name as on
 // home, reviewActionLabel). Per template: 시험 D-day for 시험 정리, 틀린 문제 + [다시 풀기] for 오답 노트.
 export function PageStatusChip({
   kind,
@@ -78,7 +78,7 @@ export function PageStatusChip({
     const late = daysBetween(stats.nextReviewAt, today)
     return (
       <span className={due}>
-        <span className="hidden sm:inline">{late > 0 ? `복습 ${late}일 지남` : "오늘 복습"}</span>
+        <span className="hidden sm:inline">{late > 0 ? "다시 볼 때예요" : "오늘 복습"}</span>
         <Link href={reviewHref} className={button}>
           {action}
         </Link>

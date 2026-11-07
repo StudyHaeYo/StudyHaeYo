@@ -40,6 +40,7 @@ import {
   Trash2,
 } from "lucide-react"
 import { Cover, CoveredText, ReviewMarks, type ReviewView } from "@/components/study-page/review-marks"
+import { MyAnswer, ProblemFoldedLine, ProblemNumber, WrongReasons } from "@/components/study-page/problem-paper"
 import {
   isDividerBlock,
   isDrawingBlock,
@@ -142,6 +143,13 @@ function withType(block: TextBlock, type: BlockType, checked = false): TextBlock
   if (type === "toggle") {
     base.body = block.body ?? ""
     base.open = block.open ?? true
+    // A problem stays a problem with its marks when it was a toggle already (only the text type changes elsewhere).
+    if (block.type === "toggle") {
+      if (block.result) base.result = block.result
+      if (block.triedOn) base.triedOn = block.triedOn
+      if (block.myAnswer) base.myAnswer = block.myAnswer
+      if (block.reasons?.length) base.reasons = block.reasons
+    }
   }
   return base
 }
@@ -293,6 +301,10 @@ export function BlockEditor({
 }: BlockEditorProps) {
   // 오답 노트: [문제 추가] sits under the last problem.
   const lastToggleIndex = problemMode ? blocks.findLastIndex((b) => isTextBlock(b) && b.type === "toggle") : -1
+  // 오답 노트 (D-35): problems are numbered down the paper.
+  const problemNumbers = new Map(
+    problemMode ? blocks.filter((b) => isTextBlock(b) && b.type === "toggle").map((b, i) => [b.id, i + 1] as const) : [],
+  )
   const hintFor = (index: number) => {
     const block = blocks[index]
     const prev = blocks[index - 1]
@@ -814,6 +826,10 @@ export function BlockEditor({
           const reviewItem = reviewEntry ? review : undefined
           const reviewOpened = !!reviewItem?.opened[block.id]
           const toggleOpen = reviewItem && block.type === "toggle" ? reviewOpened : block.open !== false
+          // 오답 노트 problem: a number column and marks around the toggle, so its inner rows start further in.
+          const isProblem = !!problemMode && block.type === "toggle"
+          const inner = isProblem ? "ml-[4.5rem] w-[calc(100%-4.5rem)]" : "ml-7 w-[calc(100%-1.75rem)]"
+          const solved = isProblem && block.result === "right"
           // A 핵심 개념 or a paragraph under review shows its cue and covers the rest (no editing while covered).
           const coveredText = reviewItem && (reviewEntry?.type === "concept" || reviewEntry?.type === "paragraph")
           const slashOpen = slash?.blockId === block.id && block.text.startsWith("/")
@@ -821,7 +837,7 @@ export function BlockEditor({
           return wrap(
             <>
               <div
-                className={`flex items-start gap-2 ${
+                className={`flex items-start gap-2 ${isProblem && problemNumbers.get(block.id) !== 1 ? "mt-4" : ""} ${
                   block.type === "quote"
                     ? "border-l-[3px] border-foreground/70 pl-3"
                     : block.type === "callout"
@@ -883,6 +899,7 @@ export function BlockEditor({
                     {block.checked && <Check className="size-3" />}
                   </button>
                 )}
+                {isProblem && <ProblemNumber n={problemNumbers.get(block.id) ?? 0} result={block.result} marked={block.text.trim() !== ""} />}
                 {block.type === "toggle" && (
                   <button
                     type="button"
@@ -942,10 +959,10 @@ export function BlockEditor({
                   }
                   placeholder={
                     hint ??
-                    (isSoleEmptyBlock
-                      ? "/ 를 누르면 제목, 목록, 토글 같은 메뉴가 나와요"
-                      : problemMode && block.type === "toggle"
-                        ? "틀린 문제를 적어요"
+                    (isProblem
+                      ? "틀린 문제를 적어요"
+                      : isSoleEmptyBlock
+                        ? "/ 를 누르면 제목, 목록, 토글 같은 메뉴가 나와요"
                         : block.type === "p"
                           ? undefined
                           : placeholders[block.type])
@@ -954,7 +971,9 @@ export function BlockEditor({
                     hint || isSoleEmptyBlock || block.type === "concept" || block.type === "confusion" || (problemMode && block.type === "toggle")
                       ? "placeholder:text-muted-foreground/60"
                       : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
-                  } ${blockStyles[block.type]} ${(block.type === "todo" || block.type === "confusion") && block.checked ? "text-muted-foreground line-through" : ""}`}
+                  } ${blockStyles[block.type]} ${(block.type === "todo" || block.type === "confusion") && block.checked ? "text-muted-foreground line-through" : ""} ${
+                    isProblem ? (solved && !reviewItem ? "!text-muted-foreground" : "font-semibold") : ""
+                  }`}
                 />
                 )}
                 {reviewItem && reviewOpened && (HEADING_TYPES.has(block.type) || reviewEntry?.type === "toggle") && (
@@ -967,9 +986,8 @@ export function BlockEditor({
                 {problemMode && block.type === "toggle" && block.text.trim() !== "" && (!reviewItem || toggleOpen) && (
                   <span role="group" aria-label="이 문제 결과" className="mt-0.5 flex shrink-0 gap-0.5">
                     {(["right", "wrong"] as const).map((r) => {
-                      // In review the marks show this try only; outside review, the last saved result.
-                      const pressed = reviewItem ? reviewItem.marks[block.id] === r : block.result === r
-                      const on = reviewItem ? pressed : block.result === r || (r === "wrong" && block.result === undefined)
+                      // In review the marks show this try only; outside review, the last saved result (none = wrong, D-27).
+                      const pressed = reviewItem ? reviewItem.marks[block.id] === r : (block.result ?? "wrong") === r
                       return (
                         <button
                           key={r}
@@ -986,14 +1004,13 @@ export function BlockEditor({
                             )
                             reviewItem?.onMark(block.id, r)
                           }}
-                          className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
+                          // Small words, no fill (D-35): the number's mark already says it louder.
+                          className={`rounded px-1.5 py-0.5 text-xs transition-colors ${
                             pressed
                               ? r === "right"
-                                ? "bg-success-50 text-success-700"
-                                : "bg-danger-50 text-danger-700"
-                              : on
-                                ? "text-muted-foreground/80 hover:bg-muted"
-                                : "text-muted-foreground/50 hover:bg-muted hover:text-foreground"
+                                ? "font-semibold text-success-700"
+                                : "font-semibold text-danger-700"
+                              : "text-muted-foreground/70 hover:bg-muted hover:text-foreground"
                           }`}
                         >
                           {r === "right" ? "맞힘" : "틀림"}
@@ -1005,11 +1022,29 @@ export function BlockEditor({
               </div>
               {/* 복습: under a heading, the gray line stands in for its section; under a toggle, for what is inside. */}
               {reviewItem && !reviewOpened && (HEADING_TYPES.has(block.type) || block.type === "toggle") && (
-                <div className={block.type === "toggle" ? "ml-7 mt-1" : "mt-1.5"}>
+                <div className={block.type === "toggle" ? `${inner} mt-1 flex flex-col gap-1.5` : "mt-1.5"}>
+                  {/* 다시 풀기: my answer stays in sight, only the answer and 풀이 are covered (D-35). */}
+                  {isProblem && <MyAnswer value={block.myAnswer} problem={block.text} onChange={() => {}} readOnly />}
                   <Cover
-                    label={block.type === "toggle" ? "눌러서 펼치기" : "눌러서 보기"}
+                    label={isProblem ? "정답 · 풀이 · 떠올려 보고 눌러서 보기" : block.type === "toggle" ? "눌러서 펼치기" : "눌러서 보기"}
                     name={block.text.trim()}
                     onOpen={() => reviewItem.onOpen(block.id)}
+                  />
+                </div>
+              )}
+              {isProblem && !toggleOpen && !reviewItem && block.text.trim() !== "" && (
+                <div className={inner}>
+                  <ProblemFoldedLine block={block} />
+                </div>
+              )}
+              {isProblem && toggleOpen && (
+                <div className={`${inner} mt-1`}>
+                  <MyAnswer
+                    value={block.myAnswer}
+                    problem={block.text}
+                    onChange={(myAnswer) =>
+                      onChange(latest.current.blocks.map((b) => (b.id === block.id && isTextBlock(b) ? { ...b, myAnswer } : b)))
+                    }
                   />
                 </div>
               )}
@@ -1023,7 +1058,7 @@ export function BlockEditor({
                   rows={1}
                   spellCheck={false}
                   aria-label={`${block.text || "토글"} 내용`}
-                  placeholder={problemMode ? "정답 · 풀이 · 왜 틀렸는지" : "펼치면 보이는 내용 (예: 정답과 풀이)"}
+                  placeholder={isProblem ? "정답과 풀이…" : "펼치면 보이는 내용 (예: 정답과 풀이)"}
                   onChange={(e) => onChange(blocks.map((b) => (b.id === block.id ? { ...block, body: e.target.value } : b)))}
                   onKeyDown={(e) => {
                     if (e.nativeEvent.isComposing || e.keyCode === 229) return
@@ -1033,10 +1068,24 @@ export function BlockEditor({
                       setPendingFocus({ id: block.id, caret: block.text.length })
                     }
                   }}
-                  className={`ml-7 w-[calc(100%-1.75rem)] resize-none bg-transparent text-base leading-relaxed text-foreground outline-none [field-sizing:content] ${
+                  className={`${inner} resize-none bg-transparent text-base leading-relaxed text-foreground outline-none [field-sizing:content] ${
                     problemMode ? "placeholder:text-muted-foreground/60" : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
                   }`}
                 />
+              )}
+              {isProblem && toggleOpen && !solved && block.text.trim() !== "" && (
+                <div className={`${inner} mt-1.5`}>
+                  <WrongReasons
+                    value={block.reasons}
+                    onChange={(reasons) =>
+                      onChange(
+                        latest.current.blocks.map((b) =>
+                          b.id === block.id && isTextBlock(b) ? (reasons.length > 0 ? { ...b, reasons } : { ...b, reasons: undefined }) : b,
+                        ),
+                      )
+                    }
+                  />
+                </div>
               )}
               {linkPicker === block.id && (
                 <PageLinkPicker
@@ -1092,7 +1141,7 @@ export function BlockEditor({
                     onChange(insertBlocks(blocks, [added], block.id))
                     setPendingFocus({ id: added.id, caret: 0 })
                   }}
-                  className="ml-7 mt-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="ml-[4.5rem] mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 >
                   <Plus className="size-3.5" aria-hidden="true" />
                   문제 추가
