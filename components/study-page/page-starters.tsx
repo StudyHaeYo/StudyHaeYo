@@ -70,11 +70,16 @@ function Mini({ kind }: { kind: string }) {
     <span aria-hidden="true" className="relative block h-16 overflow-hidden rounded-lg bg-muted">
       {kind === "lecture" && (
         <>
-          {/* Three cards in a row on a phone too, so the drawing shrinks with the card instead of being cut off. */}
-          <span className="absolute left-3 top-3 h-10 w-[38%] max-w-12 rounded-sm border border-border bg-card" />
-          <span className={`${line} left-[calc(min(38%,3rem)+1.5rem)] top-4 w-[30%] max-w-10`} />
-          <span className={`${line} left-[calc(min(38%,3rem)+1.5rem)] top-7 w-[24%] max-w-8`} />
-          <span className={`${line} left-[calc(min(38%,3rem)+1.5rem)] top-10 w-[27%] max-w-9`} />
+          {/* 코넬 노트 (D-35): questions on the left, notes on the right, a summary under a line. Sizes in % so the
+              drawing shrinks with the card on a phone instead of being cut off. */}
+          <span className="absolute left-[10%] top-3 h-[3px] w-[18%] rounded-full bg-foreground/60" />
+          <span className="absolute left-[10%] top-7 h-[3px] w-[14%] rounded-full bg-foreground/60" />
+          <span className="absolute bottom-5 left-[33%] top-2.5 w-0.5 rounded-full bg-action-300" />
+          <span className={`${line} left-[38%] top-3 w-[44%]`} />
+          <span className={`${line} left-[38%] top-5 w-[36%]`} />
+          <span className={`${line} left-[38%] top-7 w-[40%]`} />
+          <span className="absolute inset-x-[10%] bottom-3.5 h-px bg-border" />
+          <span className={`${line} bottom-1.5 left-[10%] w-[52%]`} />
         </>
       )}
       {kind === "wrong-answers" && (

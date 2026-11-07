@@ -1,4 +1,4 @@
-import { isTextBlock, splitConcept, wrongProblems, type Block, type StudyPage } from "@/lib/study-pages"
+import { isTextBlock, pageKind, splitConcept, wrongProblems, type Block, type StudyPage } from "@/lib/study-pages"
 
 // 복습 (D-34): reviewing happens in the note itself, whatever shape it was written in. What gets covered comes from
 // how people already write notes (Notion habits), not from a format the app asks for:
@@ -6,10 +6,11 @@ import { isTextBlock, splitConcept, wrongProblems, type Block, type StudyPage } 
 //   - a toggle: what is inside it (a question as the title, the answer inside); in a 오답 노트, the problems still wrong
 //   - a 핵심 개념 block: its explanation
 //   - a note with none of these: each paragraph, behind its first words ("프로세스: …")
+//   - a 강의 노트 with cues (코넬 노트, D-35): only the blocks that carry a cue, each covered whole while its cue stays
 // The user recalls, opens, and marks each; the marks set 이해도 by the ladder (D-32) and leave one record.
 
 export type ReviewLevel = "하" | "중" | "상"
-export type ReviewItemType = "heading" | "toggle" | "problem" | "concept" | "paragraph"
+export type ReviewItemType = "heading" | "toggle" | "problem" | "concept" | "paragraph" | "cue"
 // right = 알았음 / 맞힘, unsure = 헷갈림, wrong = 몰랐음 / 틀림.
 export type Judgment = "wrong" | "unsure" | "right"
 
@@ -56,8 +57,15 @@ export function paragraphCue(text: string) {
 
 // In document order. `problems`: the note is a 오답 노트 (props column ready, D-27), so its toggles are problems and
 // only the ones still wrong come back.
-export function reviewItems(page: Pick<StudyPage, "blocks">, problems: boolean): ReviewItem[] {
+export function reviewItems(page: Pick<StudyPage, "blocks" | "props">, problems: boolean): ReviewItem[] {
   const blocks = page.blocks
+  // 코넬 노트: the cues decide. One cue, one block (a cue never reaches past its own block, so a long note can't cover
+  // lines that weren't meant). With no cue at all, the note is reviewed like any other.
+  if (pageKind(page) === "lecture") {
+    const cued = blocks.filter((b) => isTextBlock(b) && b.cue?.trim() && hasContent(b)).slice(0, MAX_ITEMS)
+    if (cued.length > 0)
+      return cued.map((b) => ({ blockId: b.id, type: "cue", level: "하", label: (b as { cue: string }).cue.trim(), hides: [] }))
+  }
   const wrong = new Set(problems ? wrongProblems(blocks).map((b) => b.id) : [])
   const items: ReviewItem[] = []
   const hasStructure = blocks.some((b) => isHeading(b) || (isTextBlock(b) && (b.type === "toggle" || b.type === "concept")))

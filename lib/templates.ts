@@ -46,17 +46,12 @@ export const pageStarters: PageStarter[] = [
     id: "lecture",
     kind: "lecture",
     name: "강의 노트",
-    tagline: "수업 들으면서 필기하고, 끝나고 핵심만 추리기",
+    tagline: "필기 옆 왼쪽 여백에 질문을 달고, 아래에 요약 (코넬 노트)",
     icon: Presentation,
     templateId: "study-note",
-    createBlocks: () => [
-      t("h2", "필기"),
-      t("li"),
-      t("h2", "핵심 개념"),
-      t("concept"),
-      t("h2", "질문할 것"),
-      t("confusion"),
-    ],
+    // 코넬 노트 (D-35): notes, then the 요약 under a line. The 요약 is an ordinary block with the cue "요약", so it is
+    // covered in review like any other cue.
+    createBlocks: () => [t("p"), { id: newBlockId(), type: "divider" }, { id: newBlockId(), type: "p", text: "", cue: "요약" }],
   },
   {
     id: "wrong-answers",
@@ -113,7 +108,7 @@ export interface NoteKindOption {
 }
 
 export const noteKinds: NoteKindOption[] = [
-  { kind: "lecture", starterId: "lecture", name: "강의 노트", does: "강의 PDF를 옆에 펴고 필기해요", icon: Presentation },
+  { kind: "lecture", starterId: "lecture", name: "강의 노트", does: "필기 옆에 질문을 달아 그 줄만 가려 복습해요", icon: Presentation },
   { kind: "wrong-answers", starterId: "wrong-answers", name: "오답 노트", does: "내 답은 두고 정답만 가려 다시 풀어요", icon: XCircle },
   { kind: "exam", starterId: "exam", name: "시험 정리", does: "시험일까지 범위를 챙겨요", icon: ClipboardCheck },
   { kind: null, starterId: "blank", name: "빈 노트", does: "모양 없이 자유롭게 써요", icon: FileText },

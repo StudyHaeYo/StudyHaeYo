@@ -38,9 +38,11 @@ import {
   Sigma,
   Table,
   Trash2,
+  MessageSquareText,
 } from "lucide-react"
 import { Cover, CoveredText, ReviewMarks, type ReviewView } from "@/components/study-page/review-marks"
 import { MyAnswer, ProblemFoldedLine, ProblemNumber, WrongReasons } from "@/components/study-page/problem-paper"
+import { CueLine, CueSlot, cueRow } from "@/components/study-page/cue-slot"
 import {
   isDividerBlock,
   isDrawingBlock,
@@ -139,6 +141,8 @@ const emptyParagraph = (): TextBlock => ({ id: newBlockId(), type: "p", text: ""
 // Changes a text block's type, keeping only the fields that type uses.
 function withType(block: TextBlock, type: BlockType, checked = false): TextBlock {
   const base: TextBlock = { id: block.id, type, text: block.text }
+  // A cue belongs to the line, whatever the line turns into (코넬 노트, D-35).
+  if (block.cue) base.cue = block.cue
   if (type === "todo" || type === "confusion") base.checked = block.checked ?? checked
   if (type === "toggle") {
     base.body = block.body ?? ""
@@ -278,6 +282,8 @@ interface BlockEditorProps {
   onAttachmentStored?: AttachmentStored
   // 오답 노트 (D-27): each toggle is a problem; show 맞힘/틀림 marks and save the result on the block.
   problemMode?: { today: string | null }
+  // 강의 노트 = 코넬 노트 (D-35): each text block can carry a cue in the left margin.
+  cues?: boolean
   // 복습 (D-34): answers covered in place, opened and marked one by one.
   review?: ReviewView
 }
@@ -297,6 +303,7 @@ export function BlockEditor({
   attachRef,
   onAttachmentStored,
   problemMode,
+  cues = false,
   review,
 }: BlockEditorProps) {
   // 오답 노트: [문제 추가] sits under the last problem.
@@ -334,6 +341,13 @@ export function BlockEditor({
   const [moving, setMoving] = useState<number | null>(null)
   const [dropAt, setDropAt] = useState<{ index: number; side: "before" | "after" } | null>(null)
   const [handleMenu, setHandleMenu] = useState<string | null>(null)
+  // 코넬 노트: the block whose cue is being written.
+  const [editingCue, setEditingCue] = useState<string | null>(null)
+  const setCue = (id: string, cue: string | undefined) =>
+    latest.current.onChange(
+      latest.current.blocks.map((b) => (b.id === id && isTextBlock(b) ? (cue?.trim() ? { ...b, cue } : { ...b, cue: undefined }) : b)),
+    )
+  const hasCues = cues && blocks.some((b) => isTextBlock(b) && b.cue?.trim())
   // "/페이지 링크": the empty block that will become a page link while its picker is open.
   const [linkPicker, setLinkPicker] = useState<string | null>(null)
   const pages = usePagesForLinks()
@@ -696,6 +710,11 @@ export function BlockEditor({
         }`}
         aria-label="페이지 본문"
       >
+        {hasCues && (
+          <p aria-hidden="true" className="pointer-events-none absolute -top-6 right-[calc(100%+1.75rem)] hidden w-40 text-right text-xs text-muted-foreground @min-[66.5rem]/page:block">
+            단서
+          </p>
+        )}
         {blocks.map((block, index) => {
           // 복습: what is under a heading being recalled stays out of sight until that heading is opened.
           if (review?.covered.has(block.id)) return null
@@ -703,7 +722,7 @@ export function BlockEditor({
             <div
               key={block.id}
               data-block-index={index}
-              className={`group/block relative ${isSelected(index) ? "rounded-md bg-action-100/70 ring-1 ring-action-200" : ""} ${
+              className={`group/block relative ${cues ? cueRow : ""} ${isSelected(index) ? "rounded-md bg-action-100/70 ring-1 ring-action-200" : ""} ${
                 moving === index ? "opacity-40" : ""
               }`}
               onDragOver={(e) => {
@@ -763,6 +782,11 @@ export function BlockEditor({
                   setHandleMenu(null)
                   removeBlock(block.id)
                 }}
+                cueLabel={cues && isTextBlock(block) && !review ? (block.cue?.trim() ? "단서 고치기" : "단서 달기") : undefined}
+                onCue={() => {
+                  setHandleMenu(null)
+                  setEditingCue(block.id)
+                }}
               />
               {content}
             </div>
@@ -821,7 +845,16 @@ export function BlockEditor({
               />,
             )
           }
-          const hint = hintFor(index)
+          // 코넬 노트's starting lines say what the margin is for (the first line) and what the 요약 is (D-35).
+          const hint =
+            hintFor(index) ??
+            (cues && block.type === "p" && block.text === ""
+              ? block.cue?.trim() === "요약"
+                ? "이 강의를 두세 줄로 요약해요"
+                : index === 0
+                  ? "필기를 적어요 · 줄 왼쪽에 질문(단서)을 달면 복습할 때 그 줄만 가려져요"
+                  : undefined
+              : undefined)
           const reviewEntry = review?.items.get(block.id)
           const reviewItem = reviewEntry ? review : undefined
           const reviewOpened = !!reviewItem?.opened[block.id]
@@ -834,8 +867,39 @@ export function BlockEditor({
           const coveredText = reviewItem && (reviewEntry?.type === "concept" || reviewEntry?.type === "paragraph")
           const slashOpen = slash?.blockId === block.id && block.text.startsWith("/")
           const slashMatches = slashOpen ? matchSlash(block.text.slice(1), allowAttachments) : []
+          const cueSlotAt = (at: BlockType | "cover") =>
+            cues && (
+              <>
+                <CueSlot
+                  cue={block.cue}
+                  type={at}
+                  editing={editingCue === block.id}
+                  readOnly={!!review}
+                  onEdit={() => setEditingCue(block.id)}
+                  onChange={(cue) =>
+                    latest.current.onChange(latest.current.blocks.map((b) => (b.id === block.id && isTextBlock(b) ? { ...b, cue } : b)))
+                  }
+                  onDone={() => {
+                    setEditingCue(null)
+                    const now = latest.current.blocks.find((b) => b.id === block.id)
+                    if (now && isTextBlock(now) && now.cue !== undefined && !now.cue.trim()) setCue(block.id, undefined)
+                  }}
+                />
+                {block.cue?.trim() && <CueLine />}
+              </>
+            )
+          // 복습 of a 코넬 노트: the cue stays, the whole block under it is covered until opened (D-35).
+          if (reviewItem && reviewEntry?.type === "cue" && !reviewOpened) {
+            return wrap(
+              <>
+                {cueSlotAt("cover")}
+                <Cover name={reviewEntry.label} onOpen={() => reviewItem.onOpen(block.id)} />
+              </>,
+            )
+          }
           return wrap(
             <>
+              {cueSlotAt(block.type)}
               <div
                 className={`flex items-start gap-2 ${isProblem && problemNumbers.get(block.id) !== 1 ? "mt-4" : ""} ${
                   block.type === "quote"
@@ -976,7 +1040,7 @@ export function BlockEditor({
                   }`}
                 />
                 )}
-                {reviewItem && reviewOpened && (HEADING_TYPES.has(block.type) || reviewEntry?.type === "toggle") && (
+                {reviewItem && reviewOpened && (HEADING_TYPES.has(block.type) || reviewEntry?.type === "toggle" || reviewEntry?.type === "cue") && (
                   <ReviewMarks
                     value={reviewItem.marks[block.id]}
                     onMark={(j) => reviewItem.onMark(block.id, j)}
@@ -1189,6 +1253,8 @@ function BlockHandle({
   onDuplicate,
   onDelete,
   textLine,
+  cueLabel,
+  onCue,
 }: {
   top: string
   // Text lines can take focus; a picture, file or drawing can't on every phone, so it keeps a faint grip.
@@ -1202,6 +1268,9 @@ function BlockHandle({
   onMove: (step: -1 | 1) => void
   onDuplicate: () => void
   onDelete: () => void
+  // 코넬 노트: "단서 달기" for screens without the margin (and for keyboards).
+  cueLabel?: string
+  onCue?: () => void
 }) {
   const item = "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm disabled:opacity-40"
   return (
@@ -1253,6 +1322,12 @@ function BlockHandle({
             <Copy className="size-4 text-muted-foreground" />
             복제
           </button>
+          {cueLabel && onCue && (
+            <button role="menuitem" type="button" onClick={onCue} className={`${item} hover:bg-accent`}>
+              <MessageSquareText className="size-4 text-muted-foreground" />
+              {cueLabel}
+            </button>
+          )}
           <div role="separator" className="my-1 border-t border-border" />
           <button role="menuitem" type="button" onClick={onDelete} className={`${item} text-destructive hover:bg-destructive/10`}>
             <Trash2 className="size-4" />

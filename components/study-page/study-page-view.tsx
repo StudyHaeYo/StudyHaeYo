@@ -170,6 +170,7 @@ export function StudyPageView({
         attachRef={attachRef}
         onAttachmentStored={(blockId, path) => setAttachmentPath(page.id, blockId, path)}
         problemMode={problemMode ? { today } : undefined}
+        cues={propsReady && pageKind(page) === "lecture"}
         review={review.view}
         sectionHints={starterSectionHints}
       />
@@ -181,7 +182,8 @@ export function StudyPageView({
     <PagesContext.Provider value={pages}>
     {/* With the AI panel open on a wide screen, the page moves aside instead of going under it. */}
     <div
-      className={`flex flex-col transition-[padding] ${aiOpen ? "md:pr-[420px]" : material && materialOpen ? "md:pr-[min(48vw,720px)]" : ""}`}
+      // `@container/page`: a 코넬 노트's cues go in the left margin only when the page has room for one (cue-slot.tsx).
+      className={`@container/page flex flex-col transition-[padding] ${aiOpen ? "md:pr-[420px]" : material && materialOpen ? "md:pr-[min(48vw,720px)]" : ""}`}
     >
       {/* Top bar (D-28, D-30): where the note is on the left; on the right its study state, its kind (종류 칩), tools
           and the running session — the same place on every note, so the page itself is only the title and the body. */}
