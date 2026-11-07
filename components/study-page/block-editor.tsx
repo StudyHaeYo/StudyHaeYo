@@ -721,8 +721,10 @@ export function BlockEditor({
           const wrap = (content: React.ReactNode) => (
             <div
               key={block.id}
+              // `#b-<id>` opens the note at this block (시험 정리's "시험 전에 다시 볼 것" links here).
+              id={`b-${block.id}`}
               data-block-index={index}
-              className={`group/block relative ${cues ? cueRow : ""} ${isSelected(index) ? "rounded-md bg-action-100/70 ring-1 ring-action-200" : ""} ${
+              className={`group/block relative scroll-mt-28 ${cues ? cueRow : ""} ${isSelected(index) ? "rounded-md bg-action-100/70 ring-1 ring-action-200" : ""} ${
                 moving === index ? "opacity-40" : ""
               }`}
               onDragOver={(e) => {

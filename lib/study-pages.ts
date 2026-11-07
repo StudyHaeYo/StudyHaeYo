@@ -373,7 +373,10 @@ export function computePageStats(page: StudyPage, today: string | null): PageSta
     !latest && pageKind(page) === "wrong-answers" && wrongProblems(page.blocks).length > 0 && ISO_DAY.test(page.createdAt)
       ? addDays(page.createdAt, 1)
       : null
-  const nextReviewAt = latest && !solved ? nextReviewDate(latest.date, understanding ?? latest.understanding) : firstRetry
+  // 시험 정리 is studied through its scope notes, not on its own: it gets no review day, so a record left on it (AI
+  // grading, the record window) never puts it on 홈's review list or the sidebar dot (D-36).
+  const ownReview = pageKind(page) !== "exam"
+  const nextReviewAt = !ownReview ? null : latest && !solved ? nextReviewDate(latest.date, understanding ?? latest.understanding) : firstRetry
 
   let derivedStatus: PageStatus = "시작 전"
   if (latest) {

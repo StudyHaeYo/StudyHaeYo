@@ -22,6 +22,7 @@ import {
   useWorkspace,
 } from "@/lib/workspace"
 import { ExamScope } from "@/components/study-page/exam-scope"
+import { ExamRecheck } from "@/components/study-page/exam-recheck"
 import { PageStarters } from "@/components/study-page/page-starters"
 import { isTextBlock, pageKind, problemBlocks, reasonSummary, reviewActionLabel, wrongProblems, type AttachmentBlock } from "@/lib/study-pages"
 import { PagesContext } from "@/components/study-page/pages-context"
@@ -32,7 +33,8 @@ import { useTodayISO } from "@/hooks/use-today"
 import { KindChip } from "@/components/study-page/kind-menu"
 import { LectureHead, WrongAnswersHead } from "@/components/study-page/kind-head"
 import { PageStatusChip } from "@/components/study-page/page-status-chip"
-import { PageRecords } from "@/components/study-page/page-records"
+import { PageFooter } from "@/components/study-page/page-footer"
+import { RecordsButton } from "@/components/study-page/records-window"
 import { SessionIndicator } from "@/components/study-session/session-timer"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { AiPanel } from "@/components/record/ai-panel"
@@ -96,6 +98,21 @@ export function StudyPageView({
     openQuickRecord({ pageId, minutes: prefill.minutes })
     clearRecordPrefill()
   }, [prefill, pageId])
+
+  // Opened at a block (`#b-<id>`, from 시험 정리's list): bring it into view once the body is there and mark it
+  // for a moment so the eye finds it.
+  const hasPage = !!page
+  useEffect(() => {
+    if (!hasPage || !window.location.hash.startsWith("#b-")) return
+    const frame = requestAnimationFrame(() => {
+      const el = document.getElementById(decodeURIComponent(window.location.hash.slice(1)))
+      if (!el) return
+      el.scrollIntoView({ block: "center" })
+      el.classList.add("rounded-md", "bg-attention-50")
+      window.setTimeout(() => el.classList.remove("rounded-md", "bg-attention-50"), 1600)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [pageId, hasPage])
 
   // Caret into the first empty body block (after a template fills the page, or Enter in the title).
   const focusBody = () =>
@@ -226,6 +243,7 @@ export function StudyPageView({
             canTryReview={!problemMode && reviewItems(page, false).length > 0}
           />
           )}
+          {!reviewing && <RecordsButton page={page} stats={stats} today={today} scope={propsReady && kind === "exam" ? scopePages : null} />}
           <KindChip pageId={page.id} kind={kind} propsReady={propsReady} />
           {material && (
             <button
@@ -366,6 +384,11 @@ export function StudyPageView({
               onChangeScope={(scope) => updatePageProps(page.id, { scope })}
               today={today}
             />
+            {scopePages.length > 0 && (
+              <div className="mt-10">
+                <ExamRecheck scope={scopePages} examDate={page.props?.examDate} today={today} />
+              </div>
+            )}
           </div>
         )}
         {propsReady && kind === "wrong-answers" && (
@@ -402,7 +425,7 @@ export function StudyPageView({
         )}
         <div className="mt-6">{editor}</div>
         <div className="mt-16 print:hidden">
-          <PageRecords page={page} stats={stats} today={today} subject={subject ?? null} />
+          <PageFooter page={page} today={today} />
         </div>
 
 

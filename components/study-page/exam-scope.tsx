@@ -30,6 +30,31 @@ function scopeState(understanding: number | null): ScopeState {
   return understanding <= 2 ? "again" : understanding === 3 ? "partly" : "checked"
 }
 
+// The day a scope note's review comes forward to: the day before the exam (the exam day itself when it is today).
+function examReviewBy(examDate: string | undefined, today: string | null) {
+  return examDate && today && examDate >= today ? (examDate > today ? addDays(examDate, -1) : today) : null
+}
+
+// The scope notes in the table's order: what needs checking first, then the nearest review. "시험 전에 다시 볼 것"
+// lists them in the same order.
+export function scopeRows(scope: StudyPage[], examDate: string | undefined, today: string | null) {
+  const reviewBy = examReviewBy(examDate, today)
+  return scope
+    .map((page) => {
+      const stats = computePageStats(page, today)
+      const pulled = reviewBy !== null && (stats.nextReviewAt === null || stats.nextReviewAt > reviewBy)
+      const next = pulled ? reviewBy : stats.nextReviewAt
+      const due = stats.status === "복습 필요" || (!!today && !!next && next <= today)
+      return { page, stats, next, pulled, due, state: scopeState(stats.understanding) }
+    })
+    .sort(
+      (a, b) =>
+        scopeStates[a.state].rank - scopeStates[b.state].rank ||
+        (a.next ?? "9999-12-31").localeCompare(b.next ?? "9999-12-31") ||
+        (a.page.title || "").localeCompare(b.page.title || "", "ko"),
+    )
+}
+
 export function ExamScope({
   examDate,
   onChangeDate,
@@ -48,21 +73,8 @@ export function ExamScope({
 }) {
   const countdown = examCountdown(examDate, today)
   const past = !!examDate && !!today && examDate < today
-  const reviewBy = examDate && today && examDate >= today ? (examDate > today ? addDays(examDate, -1) : today) : null
-  const rows = scope
-    .map((page) => {
-      const stats = computePageStats(page, today)
-      const pulled = reviewBy !== null && (stats.nextReviewAt === null || stats.nextReviewAt > reviewBy)
-      const next = pulled ? reviewBy : stats.nextReviewAt
-      const due = stats.status === "복습 필요" || (!!today && !!next && next <= today)
-      return { page, stats, next, pulled, due, state: scopeState(stats.understanding) }
-    })
-    .sort(
-      (a, b) =>
-        scopeStates[a.state].rank - scopeStates[b.state].rank ||
-        (a.next ?? "9999-12-31").localeCompare(b.next ?? "9999-12-31") ||
-        (a.page.title || "").localeCompare(b.page.title || "", "ko"),
-    )
+  const reviewBy = examReviewBy(examDate, today)
+  const rows = scopeRows(scope, examDate, today)
   const counts = summaryOrder
     .map((s) => ({ s, n: rows.filter((r) => r.state === s).length }))
     .filter((c) => c.n > 0)

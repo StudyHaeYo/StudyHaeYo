@@ -73,15 +73,9 @@ export const pageStarters: PageStarter[] = [
     tagline: "시험일과 범위 노트를 두고, 노트마다 얼마나 확인했는지 보기",
     icon: ClipboardCheck,
     templateId: "study-note",
-    // 시험일 · 범위는 props에 두고 본문 맨 위의 범위표에서 고친다(D-27, D-30, D-35). 본문은 자유: 시험 전날 다시 볼
-    // 개념 · 헷갈린 것(복습하면 가려진다)과 시험 당일 챙길 것.
-    createBlocks: () => [
-      t("h2", "시험 전날 다시 볼 것"),
-      t("concept"),
-      t("confusion"),
-      t("h2", "시험 당일 챙길 것"),
-      { id: newBlockId(), type: "todo", text: "", checked: false },
-    ],
+    // 시험일 · 범위는 props에 두고 본문 맨 위의 범위표에서 고친다(D-27, D-30, D-35). 다시 볼 것은 범위 노트에서 자동으로
+    // 모인다("시험 전에 다시 볼 것"). 본문은 자유: 시작 칸은 시험 당일 챙길 것 하나.
+    createBlocks: () => [t("h2", "시험 당일 챙길 것"), { id: newBlockId(), type: "todo", text: "", checked: false }],
   },
 ]
 
