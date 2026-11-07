@@ -39,6 +39,7 @@ import {
   Table,
   Trash2,
 } from "lucide-react"
+import { ConceptReview, ReviewMarks, type ReviewView } from "@/components/study-page/review-marks"
 import {
   isDividerBlock,
   isDrawingBlock,
@@ -79,6 +80,7 @@ const shortcuts: { prefix: string; type: BlockType; checked?: boolean }[] = [
 
 // Types that continue on Enter (a new line of the same list); an empty one turns back into a paragraph.
 const LIST_TYPES = new Set<BlockType>(["li", "ol", "todo", "concept", "confusion"])
+const HEADING_TYPES = new Set<BlockType>(["h1", "h2", "h3"])
 
 const blockStyles: Record<BlockType, string> = {
   h1: "text-2xl font-bold tracking-tight pt-4",
@@ -266,6 +268,8 @@ interface BlockEditorProps {
   onAttachmentStored?: AttachmentStored
   // 오답 노트 (D-27): each toggle is a problem; show 맞힘/틀림 marks and save the result on the block.
   problemMode?: { today: string | null }
+  // 복습 (D-34): answers covered in place, opened and marked one by one.
+  review?: ReviewView
 }
 
 export interface AttachmentHandle {
@@ -283,6 +287,7 @@ export function BlockEditor({
   attachRef,
   onAttachmentStored,
   problemMode,
+  review,
 }: BlockEditorProps) {
   // 오답 노트: [문제 추가] sits under the last problem.
   const lastToggleIndex = problemMode ? blocks.findLastIndex((b) => isTextBlock(b) && b.type === "toggle") : -1
@@ -678,6 +683,8 @@ export function BlockEditor({
         aria-label="페이지 본문"
       >
         {blocks.map((block, index) => {
+          // 복습: what is under a heading being recalled stays out of sight until that heading is opened.
+          if (review?.covered.has(block.id)) return null
           const wrap = (content: React.ReactNode) => (
             <div
               key={block.id}
@@ -801,6 +808,8 @@ export function BlockEditor({
             )
           }
           const hint = hintFor(index)
+          const reviewItem = review?.items.has(block.id) ? review : undefined
+          const toggleOpen = reviewItem && block.type === "toggle" ? !!reviewItem.opened[block.id] : block.open !== false
           const slashOpen = slash?.blockId === block.id && block.text.startsWith("/")
           const slashMatches = slashOpen ? matchSlash(block.text.slice(1), allowAttachments) : []
           return wrap(
@@ -880,15 +889,28 @@ export function BlockEditor({
                 {block.type === "toggle" && (
                   <button
                     type="button"
-                    aria-expanded={block.open !== false}
-                    aria-label={block.open !== false ? "접기" : "펼치기"}
+                    aria-expanded={toggleOpen}
+                    aria-label={toggleOpen ? "접기" : reviewItem ? "다시 풀어 보고 펼치기" : "펼치기"}
                     onMouseDown={(e) => e.stopPropagation()}
-                    onClick={() => onChange(blocks.map((b) => (b.id === block.id ? { ...block, open: block.open === false } : b)))}
+                    onClick={() =>
+                      reviewItem
+                        ? reviewItem.onOpen(block.id)
+                        : onChange(blocks.map((b) => (b.id === block.id ? { ...block, open: block.open === false } : b)))
+                    }
                     className="mt-1 flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
-                    <ChevronRight className={`size-4 transition-transform ${block.open !== false ? "rotate-90" : ""}`} />
+                    <ChevronRight className={`size-4 transition-transform ${toggleOpen ? "rotate-90" : ""}`} />
                   </button>
                 )}
+                {reviewItem && block.type === "concept" ? (
+                  <ConceptReview
+                    text={block.text}
+                    opened={!!reviewItem.opened[block.id]}
+                    mark={reviewItem.marks[block.id]}
+                    onOpen={() => reviewItem.onOpen(block.id)}
+                    onMark={(j) => reviewItem.onMark(block.id, j)}
+                  />
+                ) : (
                 <textarea
                   ref={(el) => {
                     if (el) refs.current.set(block.id, el)
@@ -935,17 +957,38 @@ export function BlockEditor({
                       : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
                   } ${blockStyles[block.type]} ${(block.type === "todo" || block.type === "confusion") && block.checked ? "text-muted-foreground line-through" : ""}`}
                 />
-                {problemMode && block.type === "toggle" && block.text.trim() !== "" && (
+                )}
+                {reviewItem && HEADING_TYPES.has(block.type) &&
+                  (reviewItem.opened[block.id] ? (
+                    <ReviewMarks
+                      value={reviewItem.marks[block.id]}
+                      onMark={(j) => reviewItem.onMark(block.id, j)}
+                      labels={{ right: "떠올림", unsure: "헷갈림", wrong: "못 떠올림" }}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      aria-expanded={false}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={() => reviewItem.onOpen(block.id)}
+                      className="mt-1 shrink-0 rounded-md bg-action-100/70 px-2.5 py-1 text-xs font-medium text-action-700 transition-colors hover:bg-action-100"
+                    >
+                      떠올려 보고 펼치기
+                    </button>
+                  ))}
+                {problemMode && block.type === "toggle" && block.text.trim() !== "" && (!reviewItem || toggleOpen) && (
                   <span role="group" aria-label="이 문제 결과" className="mt-0.5 flex shrink-0 gap-0.5">
                     {(["right", "wrong"] as const).map((r) => {
-                      const on = block.result === r || (r === "wrong" && block.result === undefined)
+                      // In review the marks show this try only; outside review, the last saved result.
+                      const pressed = reviewItem ? reviewItem.marks[block.id] === r : block.result === r
+                      const on = reviewItem ? pressed : block.result === r || (r === "wrong" && block.result === undefined)
                       return (
                         <button
                           key={r}
                           type="button"
-                          aria-pressed={block.result === r}
+                          aria-pressed={pressed}
                           onMouseDown={(e) => e.stopPropagation()}
-                          onClick={() =>
+                          onClick={() => {
                             onChange(
                               blocks.map((b) =>
                                 b.id === block.id
@@ -953,9 +996,10 @@ export function BlockEditor({
                                   : b,
                               ),
                             )
-                          }
+                            reviewItem?.onMark(block.id, r)
+                          }}
                           className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
-                            block.result === r
+                            pressed
                               ? r === "right"
                                 ? "bg-success-50 text-success-700"
                                 : "bg-danger-50 text-danger-700"
@@ -971,7 +1015,7 @@ export function BlockEditor({
                   </span>
                 )}
               </div>
-              {block.type === "toggle" && block.open !== false && (
+              {block.type === "toggle" && toggleOpen && (
                 <textarea
                   ref={(el) => {
                     if (el) refs.current.set(`${block.id}:body`, el)

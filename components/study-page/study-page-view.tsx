@@ -8,6 +8,7 @@ import { addConfusions, computePageStats, conceptBlocks } from "@/lib/study-page
 import { useDataStatus } from "@/lib/db/sync"
 import { DataStatusView } from "@/components/data-status-notice"
 import { reviewHref } from "@/lib/review"
+import { ReviewBar, ReviewGuide, ReviewResult, useNoteReview } from "@/components/study-page/note-review"
 import {
   applyStarter,
   descendantPages,
@@ -46,13 +47,13 @@ let openPageId: string | null = null
 // (노트 종류) is the chip in the top bar; the values a kind needs sit at the top of the body.
 export function StudyPageView({
   pageId,
-  focusBlock,
+  mode,
   openAi = false,
   startTyping = false,
 }: {
   pageId: string
-  // ?block=<id> from the review screen's [노트에서 보기]: scroll to that block and mark it for a moment.
-  focusBlock?: string
+  // ?mode=review: 복습 in the note itself, its answers covered in place (D-34).
+  mode?: "review"
   openAi?: boolean
   // Just made in the new-page flow (?new=1): put the caret in the first empty block so typing starts right away.
   startTyping?: boolean
@@ -115,21 +116,11 @@ export function StudyPageView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startTyping, pageId, router])
 
-  // [노트에서 보기] (복습 화면): the block that was missed, in the middle of the screen, outlined for 2 seconds.
-  const focusIndex = focusBlock && page ? page.blocks.findIndex((b) => b.id === focusBlock) : -1
-  useEffect(() => {
-    if (focusIndex < 0) return
-    const frame = requestAnimationFrame(() => {
-      const el = document.querySelector<HTMLElement>(`main article [data-block-index="${focusIndex}"]`)
-      if (!el) return
-      el.scrollIntoView({ block: "center" })
-      el.classList.add("ring-2", "ring-attention-300", "ring-offset-4", "ring-offset-background", "rounded-md")
-      window.setTimeout(() => el.classList.remove("ring-2", "ring-attention-300", "ring-offset-4", "ring-offset-background", "rounded-md"), 2000)
-    })
-    return () => cancelAnimationFrame(frame)
-    // Once per arrival: later edits don't scroll the page back.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusIndex >= 0, focusBlock])
+  // Finishing keeps the page mounted (a search-param navigation would remount it and lose the result): the review
+  // ends here and the address drops ?mode=review in place.
+  const [reviewEnded, setReviewEnded] = useState(false)
+  const reviewing = mode === "review" && !reviewEnded
+  const review = useNoteReview({ page, reviewing, problemsOn: propsReady, today })
 
   if (!page) return dataStatus.phase === "ready" ? <MissingPage /> : <DataStatusView status={dataStatus} />
 
@@ -139,8 +130,14 @@ export function StudyPageView({
   const subject = nearestSubject({ groups, pages }, page.parentId)
   const stats = computePageStats(page, today)
 
-  // 오답 노트 marks each problem right or wrong in the body (D-27); reviewing happens on the 복습 화면 (D-34).
+  const pageHref = `/record/${page.id}`
+  // 오답 노트 marks each problem right or wrong in the body (D-27).
   const problemMode = propsReady && pageKind(page) === "wrong-answers"
+  const finishReview = (picked?: number) => {
+    review.finish(picked)
+    setReviewEnded(true)
+    window.history.replaceState(null, "", pageHref)
+  }
 
   const kind = pageKind(page)
   const pdfs = page.blocks.filter(
@@ -173,6 +170,7 @@ export function StudyPageView({
         attachRef={attachRef}
         onAttachmentStored={(blockId, path) => setAttachmentPath(page.id, blockId, path)}
         problemMode={problemMode ? { today } : undefined}
+        review={review.view}
         sectionHints={starterSectionHints}
       />
     </div>
@@ -210,6 +208,17 @@ export function StudyPageView({
             <span className="truncate font-medium text-foreground">{page.title.trim() || "제목 없음"}</span>
           </nav>
           <div className="flex shrink-0 items-center gap-1">
+          {reviewing ? (
+            review.session && (
+              <ReviewBar
+                marked={review.marked}
+                total={review.total}
+                cue={review.session.cue}
+                onFinish={() => finishReview()}
+                exitHref={pageHref}
+              />
+            )
+          ) : (
           <PageStatusChip
             kind={kind}
             stats={stats}
@@ -220,6 +229,7 @@ export function StudyPageView({
             action={reviewActionLabel(page)}
             canTryCards={!problemMode && conceptBlocks(page.blocks).length > 0}
           />
+          )}
           <KindChip pageId={page.id} kind={kind} propsReady={propsReady} />
           {material && (
             <button
@@ -327,7 +337,17 @@ export function StudyPageView({
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
 
-        {bodyEmpty && (
+        {reviewing && review.session && (
+          <div className="mt-6">
+            <ReviewGuide cue={review.session.cue} items={review.session.items} onPick={(value) => finishReview(value)} />
+          </div>
+        )}
+        {!reviewing && review.outcome && today && (
+          <div className="mt-6">
+            <ReviewResult page={page} outcome={review.outcome} today={today} onUndo={review.undo} onDismiss={review.dismiss} />
+          </div>
+        )}
+        {bodyEmpty && !reviewing && !review.outcome && (
           <PageStarters
             kindsReady={propsReady}
             hasKind={kind !== null}
@@ -358,7 +378,7 @@ export function StudyPageView({
               source={page.props?.source}
               onChange={(patch) => updatePageProps(page.id, patch)}
               problems={problems}
-              retryHref={reviewHref(page.id)}
+              retryHref={reviewing ? undefined : reviewHref(page.id)}
             />
           </div>
         )}

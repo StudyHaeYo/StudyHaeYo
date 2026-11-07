@@ -12,9 +12,6 @@ export default async function StudyPageRoute({
   const { id } = await params
   const query = await searchParams
 
-  // The card review that used to open inside the note is the 복습 화면 now (D-34); old links still land there.
-  if (query.mode === "review") redirect(`/review?page=${encodeURIComponent(id)}`)
-
   if (id === "new") {
     const subject = typeof query.subject === "string" ? query.subject : ""
     redirect(subject ? `/new?subject=${encodeURIComponent(subject)}` : "/new")
@@ -27,7 +24,7 @@ export default async function StudyPageRoute({
         <StudyPageView
           key={id}
           pageId={id}
-          focusBlock={typeof query.block === "string" ? query.block : undefined}
+          mode={query.mode === "review" ? "review" : undefined}
           openAi={query.ai === "1"}
           startTyping={query.new === "1"}
         />

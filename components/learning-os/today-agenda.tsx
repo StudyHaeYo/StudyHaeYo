@@ -21,8 +21,6 @@ export function TodayAgenda() {
   const plans = usePlans()
   const today = useTodayISO()
   const reviews = today ? reviewCandidates(workspace, today) : null
-  // 오늘 복습 (D-34): every note due today, one after another on the review screen.
-  const dueToday = reviews?.filter((r) => r.dueTone === "overdue" || r.dueTone === "today").length ?? 0
   const running = today ? activePlans(workspace, plans, today) : null
   const checklistCount = useChecklistCount()
   // Before the todos table exists the checklist can't save anything, so it stays out of sight.
@@ -38,18 +36,7 @@ export function TodayAgenda() {
         <AgendaSection
           icon={RotateCcw}
           title="복습할 노트"
-          aside={
-            dueToday > 0 ? (
-              <Link
-                href="/review"
-                className="rounded-md px-1.5 py-0.5 text-xs font-semibold text-action-700 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
-              >
-                오늘 복습 시작 · {dueToday}개
-              </Link>
-            ) : reviews && reviews.length > 0 ? (
-              `${reviews.length}개`
-            ) : null
-          }
+          aside={reviews && reviews.length > 0 ? `${reviews.length}개` : null}
         >
           {reviews === null ? (
             <Skeleton />
@@ -97,7 +84,7 @@ function AgendaSection({
 }: {
   icon: typeof RotateCcw
   title: string
-  aside: React.ReactNode
+  aside: string | null
   children: React.ReactNode
 }) {
   return (
@@ -107,7 +94,7 @@ function AgendaSection({
           <Icon className="size-3.5" aria-hidden="true" />
           {title}
         </h3>
-        {typeof aside === "string" ? <span className="text-xs font-medium text-muted-foreground">{aside}</span> : aside}
+        {aside && <span className="text-xs font-medium text-muted-foreground">{aside}</span>}
       </div>
       {children}
     </div>
