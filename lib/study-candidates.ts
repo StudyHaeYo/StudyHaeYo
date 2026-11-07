@@ -26,7 +26,7 @@ export interface StudyCandidate {
   wrongProblems: number
   // In the scope of an upcoming exam (시험 정리): "D-3".
   exam: string | null
-  // 다시 풀기 · 카드 복습 · 복습하기 (reviewActionLabel, D-30).
+  // 다시 풀기 · 복습하기 (reviewActionLabel, D-30).
   action: string
 }
 

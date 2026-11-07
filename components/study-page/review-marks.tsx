@@ -1,14 +1,14 @@
 "use client"
 
 import { splitConcept } from "@/lib/study-pages"
-import type { Judgment } from "@/lib/review"
+import type { Judgment, ReviewItem } from "@/lib/review"
 
-// 복습 (D-34) inside the note: what a covered block shows, and the marks the user picks once it is opened.
+// 복습 (D-34) inside the note: a covered part reads as a quiet gray line, and the marks are small words at the end of
+// the line, so the note still looks like the note.
 
 export interface ReviewView {
-  // Blocks being reviewed: 핵심 개념, a 오답 노트's wrong problems, or headings when the note has neither.
-  items: Set<string>
-  // Blocks under a heading item that isn't opened yet (they stay out of sight until then).
+  items: Map<string, ReviewItem>
+  // Blocks under a heading that isn't opened yet; they stay out of sight until then.
   covered: Set<string>
   opened: Record<string, boolean>
   marks: Record<string, Judgment>
@@ -22,19 +22,21 @@ const markTone: Record<Judgment, string> = {
   wrong: "bg-danger-50 text-danger-700",
 }
 
-// Small text marks at the end of a block, like the 맞힘 · 틀림 of a 오답 노트 problem.
 export function ReviewMarks({
   value,
   onMark,
   labels = { right: "알았음", unsure: "헷갈림", wrong: "몰랐음" },
+  className = "mt-0.5",
 }: {
   value: Judgment | undefined
   onMark: (judgment: Judgment) => void
   labels?: Partial<Record<Judgment, string>>
+  // The top offset that centers the marks on the block's first line (a heading has padding above its text).
+  className?: string
 }) {
   const options = (["right", "unsure", "wrong"] as const).filter((j) => labels[j])
   return (
-    <span role="group" aria-label="떠올렸나요?" className="mt-0.5 flex shrink-0 gap-0.5">
+    <span role="group" aria-label="떠올렸나요?" className={`flex shrink-0 gap-0.5 print:hidden ${className}`}>
       {options.map((j) => (
         <button
           key={j}
@@ -53,42 +55,69 @@ export function ReviewMarks({
   )
 }
 
-// A 핵심 개념 during review: the term stays, the explanation is covered until the user has tried to recall it.
-export function ConceptReview({
+// The gray line standing in for what is covered. Pressing it opens the answer. The words stay short because the line
+// under the title already says to recall first; `name` tells a screen reader what opens.
+export function Cover({
+  label = "눌러서 보기",
+  name,
+  onOpen,
+  className = "py-1",
+}: {
+  label?: string
+  name: string
+  onOpen: () => void
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      aria-expanded={false}
+      aria-label={`${name} · ${label}`}
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={onOpen}
+      className={`block w-full rounded-md bg-muted px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${className}`}
+    >
+      {label}
+    </button>
+  )
+}
+
+// A 핵심 개념 or a paragraph during review: its cue stays (the term, or the first words), the rest is covered.
+export function CoveredText({
   text,
+  cue,
   opened,
   mark,
   onOpen,
   onMark,
+  className,
 }: {
   text: string
+  cue: string
   opened: boolean
   mark: Judgment | undefined
   onOpen: () => void
   onMark: (judgment: Judgment) => void
+  className: string
 }) {
-  const { term, detail } = splitConcept(text)
+  const { term } = splitConcept(text)
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-1.5 py-0.5">
-      <div className="flex items-start justify-between gap-3">
-        <p className="min-w-0 text-base font-semibold leading-relaxed text-foreground">{term ?? "이 핵심 개념"}</p>
-        {opened && <ReviewMarks value={mark} onMark={onMark} />}
+    // On a phone the marks go under the text so it keeps the full width.
+    <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+      <div className={`min-w-0 flex-1 ${className}`}>
+        {opened ? (
+          <p className="whitespace-pre-line break-words motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150">{text}</p>
+        ) : (
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <span className={term === cue ? "font-semibold" : ""}>
+              {cue}
+              {term === cue ? ":" : ""}
+            </span>
+            <Cover name={cue} onOpen={onOpen} className="!inline-block !w-auto flex-1 py-0.5" />
+          </div>
+        )}
       </div>
-      {opened ? (
-        <p className="whitespace-pre-line text-base leading-relaxed text-foreground motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150">
-          {detail}
-        </p>
-      ) : (
-        <button
-          type="button"
-          aria-expanded={false}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={onOpen}
-          className="self-stretch rounded-md bg-action-100/70 px-3 py-1.5 text-left text-sm text-action-700 transition-colors hover:bg-action-100"
-        >
-          {term ? "뜻을 떠올려 보고 눌러서 맞춰 보기" : "무슨 내용이었는지 떠올려 보고 눌러서 보기"}
-        </button>
-      )}
+      {opened && <ReviewMarks value={mark} onMark={onMark} />}
     </div>
   )
 }

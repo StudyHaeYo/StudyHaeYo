@@ -4,10 +4,10 @@ import { Fragment, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { BookOpen, ChevronRight, FileQuestion, Paperclip, PenLine, Printer, Sparkles } from "lucide-react"
-import { addConfusions, computePageStats, conceptBlocks } from "@/lib/study-pages"
+import { addConfusions, computePageStats } from "@/lib/study-pages"
 import { useDataStatus } from "@/lib/db/sync"
 import { DataStatusView } from "@/components/data-status-notice"
-import { reviewHref } from "@/lib/review"
+import { reviewHref, reviewItems } from "@/lib/review"
 import { ReviewBar, ReviewGuide, ReviewResult, useNoteReview } from "@/components/study-page/note-review"
 import {
   applyStarter,
@@ -210,13 +210,7 @@ export function StudyPageView({
           <div className="flex shrink-0 items-center gap-1">
           {reviewing ? (
             review.session && (
-              <ReviewBar
-                marked={review.marked}
-                total={review.total}
-                cue={review.session.cue}
-                onFinish={() => finishReview()}
-                exitHref={pageHref}
-              />
+              <ReviewBar marked={review.marked} total={review.total} onFinish={() => finishReview()} exitHref={pageHref} />
             )
           ) : (
           <PageStatusChip
@@ -227,7 +221,7 @@ export function StudyPageView({
             problems={problems}
             exam={examInfo}
             action={reviewActionLabel(page)}
-            canTryCards={!problemMode && conceptBlocks(page.blocks).length > 0}
+            canTryReview={!problemMode && reviewItems(page, false).length > 0}
           />
           )}
           <KindChip pageId={page.id} kind={kind} propsReady={propsReady} />
@@ -339,7 +333,7 @@ export function StudyPageView({
 
         {reviewing && review.session && (
           <div className="mt-6">
-            <ReviewGuide cue={review.session.cue} items={review.session.items} onPick={(value) => finishReview(value)} />
+            <ReviewGuide total={review.total} onPick={(value) => finishReview(value)} />
           </div>
         )}
         {!reviewing && review.outcome && today && (
