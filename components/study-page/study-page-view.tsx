@@ -23,7 +23,7 @@ import {
 } from "@/lib/workspace"
 import { ExamScope } from "@/components/study-page/exam-scope"
 import { PageStarters } from "@/components/study-page/page-starters"
-import { isTextBlock, pageKind, problemBlocks, reviewActionLabel, wrongProblems, type AttachmentBlock } from "@/lib/study-pages"
+import { isTextBlock, pageKind, problemBlocks, reasonSummary, reviewActionLabel, wrongProblems, type AttachmentBlock } from "@/lib/study-pages"
 import { PagesContext } from "@/components/study-page/pages-context"
 import { PageActionsMenu, menuItemClass } from "@/components/page-actions-menu"
 import { BlockEditor, type AttachmentHandle } from "@/components/study-page/block-editor"
@@ -372,6 +372,7 @@ export function StudyPageView({
               source={page.props?.source}
               onChange={(patch) => updatePageProps(page.id, patch)}
               problems={problems}
+              reasons={reasonSummary(page.blocks)}
               retryHref={reviewing ? undefined : reviewHref(page.id)}
             />
           </div>

@@ -34,7 +34,19 @@ export interface TextBlock {
   // toggle in a 오답 노트: the last try at this problem (D-27). Unset counts as wrong (it was added because it was missed).
   result?: "right" | "wrong"
   triedOn?: string
+  // 오답 노트 problem (D-35): what I answered (one line, stays in sight when the answer is covered in review), and why
+  // it went wrong (any number of reasons, or none). Both optional.
+  myAnswer?: string
+  reasons?: WrongReason[]
 }
+
+export type WrongReason = "concept" | "careless" | "misread" | "time"
+export const wrongReasons: { id: WrongReason; label: string; short: string }[] = [
+  { id: "concept", label: "개념 몰라서", short: "개념" },
+  { id: "careless", label: "실수", short: "실수" },
+  { id: "misread", label: "문제 잘못 읽음", short: "문제 해석" },
+  { id: "time", label: "시간 부족", short: "시간" },
+]
 
 // 구분선.
 export interface DividerBlock {
@@ -138,7 +150,7 @@ export function isPageLinkBlock(block: Block): block is PageLinkBlock {
 
 // All words in a text block, including a toggle's folded body (search, AI context).
 export function textBlockWords(block: TextBlock) {
-  return block.body ? `${block.text}\n${block.body}` : block.text
+  return [block.text, block.myAnswer, block.body].filter((part) => part?.trim()).join("\n")
 }
 
 export function isDrawingBlock(block: Block): block is DrawingBlock {
@@ -272,6 +284,17 @@ export function problemBlocks(blocks: Block[]) {
 
 export function wrongProblems(blocks: Block[]) {
   return problemBlocks(blocks).filter((b) => b.result !== "right")
+}
+
+// 오답 노트's head line (D-35): every reason picked on the note's problems, each counted once per problem, whatever
+// the problem's result now. "개념 1 · 실수 2"; empty when none was picked.
+export function reasonSummary(blocks: Block[]) {
+  const problems = problemBlocks(blocks)
+  return wrongReasons
+    .map((r) => ({ r, n: problems.filter((p) => p.reasons?.includes(r.id)).length }))
+    .filter(({ n }) => n > 0)
+    .map(({ r, n }) => `${r.short} ${n}`)
+    .join(" · ")
 }
 
 // 이해도 1–5 in words (D-31). Every screen that asks for it (기록 창, 복습, 학습 종료) shows these same words,
@@ -453,10 +476,11 @@ export function daysBetween(fromISO: string, toISO: string) {
 
 export type DueTone = "overdue" | "today" | "soon" | "later"
 
-// How a review date reads next to today: "3일 지남", "오늘", "내일", "5일 후".
+// How a review date reads next to today: "다시 볼 때예요" (overdue), "오늘", "내일", "5일 후".
 export function dueLabel(dueISO: string, today: string): { label: string; tone: DueTone } {
   const diff = daysBetween(today, dueISO)
-  if (diff < 0) return { label: `${-diff}일 지남`, tone: "overdue" }
+  // Overdue says it is time, not how late (원칙 8: a review that piled up should not read as a debt).
+  if (diff < 0) return { label: "다시 볼 때예요", tone: "overdue" }
   if (diff === 0) return { label: "오늘", tone: "today" }
   if (diff === 1) return { label: "내일", tone: "soon" }
   return { label: `${diff}일 후`, tone: "later" }

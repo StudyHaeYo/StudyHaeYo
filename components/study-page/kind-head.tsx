@@ -12,11 +12,14 @@ export function WrongAnswersHead({
   source,
   onChange,
   problems,
+  reasons,
   retryHref,
 }: {
   source: string | undefined
   onChange: (patch: Partial<PageProps>) => void
   problems: { total: number; wrong: number }
+  // Why the problems went wrong, counted (reasonSummary, D-35): "개념 1 · 실수 2". Empty when none was picked.
+  reasons?: string
   // Unset while the note is being reviewed: the retry is already happening in place.
   retryHref?: string
 }) {
@@ -33,7 +36,8 @@ export function WrongAnswersHead({
         autoComplete="off"
         className="min-w-0 flex-1 bg-transparent text-base font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground"
       />
-      <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
+      {/* Wraps on a phone: with the reasons it no longer fits one line there. */}
+      <p className="min-w-0 text-sm tabular-nums text-muted-foreground">
         {problems.total === 0 ? (
           "아래에 틀린 문제를 적어 보세요"
         ) : problems.wrong === 0 ? (
@@ -41,6 +45,7 @@ export function WrongAnswersHead({
         ) : (
           <>
             {problems.total}문제 중 <b className="font-semibold text-attention-700">{problems.wrong}문제</b> 아직 틀림
+            {reasons && <span className="ml-1">· {reasons}</span>}
             {retryHref && (
               <Link href={retryHref} className="ml-2 font-semibold text-action-700 hover:underline">
                 다시 풀기
@@ -81,7 +86,7 @@ export function LectureHead({
           <select
             value={props.materialBlockId ?? ""}
             onChange={(e) => onChange({ materialBlockId: e.target.value || undefined })}
-            className="h-8 min-w-0 max-w-56 rounded-lg border border-border bg-background px-2 text-sm text-foreground outline-none focus:border-action-400"
+            className="h-8 min-w-0 max-w-56 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-action-400"
           >
             <option value="">고르지 않음</option>
             {pdfs.map((p) => (
@@ -118,7 +123,7 @@ export function LectureHead({
           onChange={(e) => onChange({ week: e.target.value })}
           placeholder="3주차…"
           autoComplete="off"
-          className="h-8 w-20 rounded-lg border border-border bg-background px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-action-400"
+          className="h-8 w-20 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-action-400"
         />
       </label>
       {material && (

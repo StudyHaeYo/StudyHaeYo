@@ -62,18 +62,14 @@ export const pageStarters: PageStarter[] = [
     id: "wrong-answers",
     kind: "wrong-answers",
     name: "오답 노트",
-    tagline: "틀린 문제와 풀이를 접어 두고 다시 풀어보기",
+    tagline: "문제마다 내 답과 정답을 적고, 틀린 문제만 다시 풀기",
     icon: XCircle,
     templateId: "study-note",
     // The first problem starts empty with a hint, not the text "문제 1": people typed under it without deleting it,
     // so their problem landed in the 풀이 and "문제 1" counted as a wrong problem. Why it was wrong goes in each
     // problem's 풀이 (a separate "왜 틀렸나" section lost which problem it was about).
-    createBlocks: () => [
-      t("h2", "틀린 문제"),
-      { id: newBlockId(), type: "toggle", text: "", body: "", open: true },
-      t("h2", "핵심 개념"),
-      t("concept"),
-    ],
+    // 채점된 시험지 (D-35): problems only. The kind draws the numbers, the grading marks and 내 답.
+    createBlocks: () => [{ id: newBlockId(), type: "toggle", text: "", body: "", open: true }],
   },
   {
     id: "exam",
@@ -118,7 +114,7 @@ export interface NoteKindOption {
 
 export const noteKinds: NoteKindOption[] = [
   { kind: "lecture", starterId: "lecture", name: "강의 노트", does: "강의 PDF를 옆에 펴고 필기해요", icon: Presentation },
-  { kind: "wrong-answers", starterId: "wrong-answers", name: "오답 노트", does: "틀린 문제만 다시 풀어요", icon: XCircle },
+  { kind: "wrong-answers", starterId: "wrong-answers", name: "오답 노트", does: "내 답은 두고 정답만 가려 다시 풀어요", icon: XCircle },
   { kind: "exam", starterId: "exam", name: "시험 정리", does: "시험일까지 범위를 챙겨요", icon: ClipboardCheck },
   { kind: null, starterId: "blank", name: "빈 노트", does: "모양 없이 자유롭게 써요", icon: FileText },
 ]

@@ -215,7 +215,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
                         aria-label={`${r.title}에서 무엇을 했나요`}
                         autoComplete="off"
                         placeholder={r.pageId ? "무엇을 했나요? (비워 둬도 돼요)" : "무엇을 했나요? 예: 문제집 3장, 학교 수업…"}
-                        className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-action-400"
+                        className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-action-400"
                       />
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         {!r.pageId ? (

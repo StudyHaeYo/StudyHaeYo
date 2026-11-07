@@ -88,7 +88,7 @@ export function PageRecords({
                 다음 복습{" "}
                 <b className={`font-semibold ${stats.status === "복습 필요" ? "text-attention-700" : "text-foreground"}`}>
                   {formatDate(stats.nextReviewAt)}
-                  {overdue > 0 ? `, ${overdue}일 지남` : stats.status === "복습 필요" ? ", 오늘" : ""}
+                  {overdue > 0 ? " · 다시 볼 때예요" : stats.status === "복습 필요" ? ", 오늘" : ""}
                 </b>
               </span>
             )}

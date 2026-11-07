@@ -64,10 +64,11 @@ export function StudyHeatmap() {
         </div>
       )}
 
-      <div className="mt-2 flex items-center justify-end gap-1 text-[10px] text-muted-foreground" aria-hidden="true">
+      {/* Big enough to read at a glance (외부 검토 11/8): the shades are the only key to the calendar. */}
+      <div className="mt-2.5 flex items-center justify-end gap-1.5 text-xs text-muted-foreground" aria-hidden="true">
         적게
         {["bg-muted", "bg-action-100", "bg-action-200", "bg-action-400", "bg-action-600"].map((c) => (
-          <span key={c} className={`size-2.5 rounded-[2px] ${c}`} />
+          <span key={c} className={`size-3 rounded-[3px] ${c}`} />
         ))}
         많이
       </div>

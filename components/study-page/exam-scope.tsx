@@ -50,7 +50,7 @@ export function ExamScope({
           type="date"
           value={examDate ?? ""}
           onChange={(e) => onChangeDate(e.target.value || undefined)}
-          className="h-9 scroll-mt-24 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground outline-none focus:border-action-400 focus:ring-4 focus:ring-action-50"
+          className="h-9 scroll-mt-24 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:border-action-400 focus:ring-4 focus:ring-action-50"
         />
         {countdown && <span className="text-sm font-semibold tabular-nums text-attention-700">{countdown}</span>}
       </div>
@@ -107,7 +107,7 @@ export function ExamScope({
           <select
             value=""
             onChange={(e) => e.target.value && onChangeScope([...ids, e.target.value])}
-            className="h-8 rounded-lg border border-dashed border-border bg-background px-2 text-sm text-muted-foreground outline-none hover:text-foreground focus:border-action-400"
+            className="h-8 rounded-lg border border-dashed border-input bg-background px-2 text-sm text-muted-foreground outline-none hover:text-foreground focus:border-action-400"
           >
             <option value="">+ 노트 넣기</option>
             {rest.map((o) => (

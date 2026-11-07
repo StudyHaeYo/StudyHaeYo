@@ -94,7 +94,10 @@ export function UpcomingReviews() {
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
                   <span className="text-xs text-muted-foreground">{item.dateLabel}</span>
-                  <span className={`w-14 text-right text-xs font-medium ${dueToneClass[item.due.tone]}`}>{item.due.label}</span>
+                  <span className={`min-w-14 text-right text-xs font-medium ${dueToneClass[item.due.tone]}`}>
+                    {item.due.tone === "overdue" && <span aria-hidden="true" className="mr-1.5 inline-block size-1.5 rounded-full bg-attention-400 align-middle" />}
+                    {item.due.label}
+                  </span>
                 </span>
               </Link>
             </li>
