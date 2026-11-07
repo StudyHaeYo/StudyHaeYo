@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { X } from "lucide-react"
 import { addPageRecord, updatePage, useWorkspace } from "@/lib/workspace"
@@ -59,6 +59,8 @@ export function useNoteReview({
   const [marks, setMarks] = useState<Record<string, Judgment>>({})
   const [outcome, setOutcome] = useState<ReviewOutcome | null>(null)
   const ready = !!page && !!today
+  // The session that already left its record: a second press before the bar goes away must not record twice.
+  const recorded = useRef<Session | null>(null)
 
   // Fixed when the review starts: marking a problem 맞힘 must not take it out from under the user.
   useEffect(() => {
@@ -91,7 +93,8 @@ export function useNoteReview({
 
   // One record for the review. `picked`: the 이해도 chosen when there was nothing to cover (an empty note).
   const finish = (picked?: number) => {
-    if (!session || !page || !today) return
+    if (!session || !page || !today || recorded.current === session) return
+    recorded.current = session
     const rows: JudgedItem[] = session.items.map((item) => ({ item, judgment: marks[item.blockId] ?? "wrong", written: false }))
     const after = rows.length === 0 ? (picked ?? 3) : reviewUnderstanding(rows)
     const recordId = newRecordId()
