@@ -5,7 +5,7 @@ import { daysBetween, formatDate, type PageKind, type PageStats } from "@/lib/st
 import { examCountdown } from "@/components/study-page/page-properties"
 
 // The one thing about this note's study that matters now, in the page's top bar (D-28). Same words and colors as
-// 홈의 복습할 노트 and 학습 분석의 복습 예정: amber "N일 지남" + navy [카드 복습 · 복습하기] (the same name as on
+// 홈의 복습할 노트 and 학습 분석의 복습 예정: amber "N일 지남" + navy [복습하기] (the same name as on
 // home, reviewActionLabel). Per template: 시험 D-day for 시험 정리, 틀린 문제 + [다시 풀기] for 오답 노트.
 export function PageStatusChip({
   kind,
@@ -15,7 +15,7 @@ export function PageStatusChip({
   problems,
   exam,
   action,
-  canTryCards = false,
+  canTryReview = false,
 }: {
   kind: PageKind | null
   stats: PageStats
@@ -24,8 +24,8 @@ export function PageStatusChip({
   problems: { total: number; wrong: number }
   exam: { date: string | undefined; ready: number; total: number; recorded: number } | null
   action: string
-  // The note has concept cards but no review day yet (nothing recorded): offer a first try.
-  canTryCards?: boolean
+  // The note has something to cover but no review day yet (nothing recorded): offer a first try.
+  canTryReview?: boolean
 }) {
   if (!today) return null
   const due = "inline-flex h-8 items-center gap-2 rounded-lg border border-attention-200 bg-attention-50 pl-2.5 pr-[3px] text-[13px] font-semibold text-attention-800"
@@ -69,9 +69,9 @@ export function PageStatusChip({
   // A new card note has no review day until something is recorded, so there was no way in to the cards.
   // Finishing this first try records it and starts the review days.
   if (!stats.nextReviewAt)
-    return canTryCards ? (
+    return canTryReview ? (
       <Link href={reviewHref} className={`${calm} !inline-flex border border-border font-medium text-foreground`}>
-        카드로 복습해 보기
+        복습해 보기
       </Link>
     ) : null
   if (stats.status === "복습 필요") {

@@ -17,7 +17,8 @@ export function WrongAnswersHead({
   source: string | undefined
   onChange: (patch: Partial<PageProps>) => void
   problems: { total: number; wrong: number }
-  retryHref: string
+  // Unset while the note is being reviewed: the retry is already happening in place.
+  retryHref?: string
 }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1 border-b-[3px] border-double border-border pb-2.5">
@@ -40,9 +41,11 @@ export function WrongAnswersHead({
         ) : (
           <>
             {problems.total}문제 중 <b className="font-semibold text-attention-700">{problems.wrong}문제</b> 아직 틀림
-            <Link href={retryHref} className="ml-2 font-semibold text-action-700 hover:underline">
-              다시 풀기
-            </Link>
+            {retryHref && (
+              <Link href={retryHref} className="ml-2 font-semibold text-action-700 hover:underline">
+                다시 풀기
+              </Link>
+            )}
           </>
         )}
       </p>

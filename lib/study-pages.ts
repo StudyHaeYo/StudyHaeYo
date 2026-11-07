@@ -255,10 +255,9 @@ export function pageKind(page: Pick<StudyPage, "props">): PageKind | null {
 }
 
 // The review action, named the same everywhere (홈 · 상태 칩 · 노트 · 시험 범위, D-30): 오답 노트 → 다시 풀기,
-// a note with concept cards → 카드 복습, otherwise read it again → 복습하기.
-export function reviewActionLabel(page: Pick<StudyPage, "props" | "blocks">) {
-  if (pageKind(page) === "wrong-answers") return "다시 풀기"
-  return conceptBlocks(page.blocks).length > 0 ? "카드 복습" : "복습하기"
+// any other note → 복습하기 (every note is reviewed the same way, in place, D-34).
+export function reviewActionLabel(page: Pick<StudyPage, "props">) {
+  return pageKind(page) === "wrong-answers" ? "다시 풀기" : "복습하기"
 }
 
 // 오답 노트: a toggle is one problem. Problems still wrong are the ones that come back in review.

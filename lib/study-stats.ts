@@ -472,7 +472,8 @@ export function studyInsights(workspace: WorkspaceState, today: string): Insight
 
 // Records the app writes itself start with a fixed phrase; the row shows it as a badge instead.
 const AUTO_PREFIXES: { prefix: RegExp; badge: string }[] = [
-  { prefix: /^복습 모드:\s*/, badge: "복습" },
+  // 복습 화면 (D-34) writes "복습: …"; "복습 모드:" and "오답 다시 풀기:" are from the card review before it.
+  { prefix: /^복습(?: 모드)?:\s*/, badge: "복습" },
   { prefix: /^오답 다시 풀기:\s*/, badge: "오답 풀기" },
   { prefix: /^AI 문제 풀이\s*/, badge: "AI 채점" },
 ]
