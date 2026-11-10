@@ -1,5 +1,7 @@
 "use client"
 
+import { StudyTimeChart } from "@/components/records/study-time-chart"
+
 import { useState } from "react"
 import Link from "next/link"
 import { Plus, Search, X } from "lucide-react"
@@ -82,6 +84,8 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
           기록 남기기
         </button>
       </header>
+
+      <StudyTimeChart />
 
       <div className="mt-6 flex items-center gap-3">
         {byNote ? (

@@ -7,6 +7,7 @@ import { TodayAgenda } from "@/components/learning-os/today-agenda"
 import { TodayRecords } from "@/components/learning-os/today-records"
 import { WeeklyStats } from "@/components/learning-os/weekly-stats"
 import { StudyHeatmap } from "@/components/learning-os/study-heatmap"
+import { TodayTimetable } from "@/components/learning-os/today-timetable"
 import { useTodayLabel } from "@/hooks/use-today"
 import { DataStatusNotice } from "@/components/data-status-notice"
 
@@ -31,6 +32,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex min-w-0 flex-col gap-8">
+              <TodayTimetable />
               <StudyHeatmap />
               <WeeklyStats />
             </div>
