@@ -111,25 +111,20 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
             <span className="truncate text-sm font-medium text-foreground">{item.topic}</span>
-            <UnresolvedBadge count={item.unresolvedConfusions} />
+            <UnresolvedBadge count={item.unresolvedConfusions} quiet />
             {item.wrongProblems > 0 && (
-              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-                틀린 문제 {item.wrongProblems}
-              </span>
+              <span className="shrink-0 text-xs text-muted-foreground">틀린 문제 {item.wrongProblems}</span>
             )}
-            {item.exam && (
-              <span className="shrink-0 rounded bg-action-50 px-1.5 py-0.5 text-[11px] font-medium text-action-700">
-                시험 {item.exam}
-              </span>
-            )}
+            {item.exam && <span className="shrink-0 text-xs text-muted-foreground">시험 {item.exam}</span>}
           </span>
           <span className="block truncate text-xs text-muted-foreground">
             {item.subject} · 마지막 학습 {item.lastStudied}
             {item.understanding !== null ? ` · 이해도 ${item.understanding}/5` : ""}
           </span>
         </span>
-        <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>
-          {item.dueTone === "overdue" && <span aria-hidden="true" className="mr-1.5 inline-block size-1.5 rounded-full bg-attention-400 align-middle" />}
+        {/* PROTOTYPE (시안): the amber dot is the one signal; the words stay grey. */}
+        <span className={`shrink-0 text-xs font-medium ${item.dueTone === "overdue" ? "text-muted-foreground" : dueToneClass[item.dueTone]}`}>
+          {item.dueTone === "overdue" && <span aria-hidden="true" className="mr-1.5 inline-block size-1.5 rounded-full bg-attention-500 align-middle" />}
           {item.due}
         </span>
         {first ? (
