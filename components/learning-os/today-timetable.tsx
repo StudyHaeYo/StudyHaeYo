@@ -7,7 +7,7 @@ import { formatDuration } from "@/lib/study-pages"
 // (같은 체크 상자 as the checklist) and, on the right, how long was actually studied in that hour.
 // Values are made up for the mockup; nothing here reads or saves data yet.
 
-const START = 6
+const START = 7
 const END = 24
 
 type Plan = { hour: number; title: string; done?: boolean }
@@ -46,7 +46,7 @@ export function TodayTimetable() {
             <li
               key={h}
               aria-current={now ? "time" : undefined}
-              className={`flex min-h-8 items-start gap-2 border-b border-border/70 px-1.5 py-1.5 last:border-b-0 ${
+              className={`flex min-h-7 items-start gap-2 border-b border-border/70 px-1.5 py-1 last:border-b-0 ${
                 now ? "-mx-0.5 rounded-md border-transparent bg-background px-2 shadow-[0_0_0_1px_var(--border)]" : ""
               }`}
             >
