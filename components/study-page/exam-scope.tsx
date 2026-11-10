@@ -7,11 +7,13 @@ import { addDays, computePageStats, formatDate, reviewActionLabel, type StudyPag
 import { noteIcon } from "@/lib/templates"
 import { examCountdown } from "@/components/study-page/page-properties"
 import { reviewHref } from "@/lib/review"
+import { examDeadlines } from "@/lib/study-candidates"
+import { useWorkspace } from "@/lib/workspace"
 
 // 시험 정리 = 범위표 (D-27, D-30, D-35): the exam day as a calendar tile, then each note in its scope with one word
 // for how well it is known and, on the right, [복습하기] when it is due or the day it comes up. Review happens in
-// each note. A review planned after the exam (or none yet) comes forward to the day before it, the same rule as 홈's
-// review list (`examDeadlines`).
+// each note. A review planned after the exam (or none yet) comes forward to the day before the nearest exam that has
+// the note in its scope — this one or another — the same rule as 홈's review list (`examDeadlines`).
 
 // One word per note, from its 이해도. "확인됨" is the same line as 준비 n/m in the top bar (이해도 4 or more).
 type ScopeState = "again" | "unchecked" | "partly" | "checked"
@@ -35,17 +37,30 @@ function examReviewBy(examDate: string | undefined, today: string | null) {
   return examDate && today && examDate >= today ? (examDate > today ? addDays(examDate, -1) : today) : null
 }
 
+type Deadlines = ReturnType<typeof examDeadlines>
+
+// The day each scope note's review comes forward to: the eve of the nearest upcoming exam it is in (home's rule).
+// `byOther` names that exam when it is not this one, so the table can say whose eve it is.
+export function useScopeDeadlines(today: string | null): Deadlines | null {
+  const workspace = useWorkspace()
+  return today ? examDeadlines(workspace, today) : null
+}
+
 // The scope notes in the table's order: what needs checking first, then the nearest review. "시험 전에 다시 볼 것"
 // lists them in the same order.
-export function scopeRows(scope: StudyPage[], examDate: string | undefined, today: string | null) {
-  const reviewBy = examReviewBy(examDate, today)
+export function scopeRows(scope: StudyPage[], examDate: string | undefined, today: string | null, deadlines: Deadlines | null, examId: string) {
+  const own = examReviewBy(examDate, today)
   return scope
     .map((page) => {
       const stats = computePageStats(page, today)
+      const other = deadlines?.get(page.id)
+      // The nearest eve: another exam's when it comes first, else this exam's own.
+      const byOther = other && other.examId !== examId && (own === null || other.reviewBy < own) ? other.examTitle : null
+      const reviewBy = byOther ? other!.reviewBy : own
       const pulled = reviewBy !== null && (stats.nextReviewAt === null || stats.nextReviewAt > reviewBy)
       const next = pulled ? reviewBy : stats.nextReviewAt
       const due = stats.status === "복습 필요" || (!!today && !!next && next <= today)
-      return { page, stats, next, pulled, due, state: scopeState(stats.understanding) }
+      return { page, stats, next, pulled, pulledBy: pulled ? byOther : null, due, state: scopeState(stats.understanding) }
     })
     .sort(
       (a, b) =>
@@ -56,6 +71,7 @@ export function scopeRows(scope: StudyPage[], examDate: string | undefined, toda
 }
 
 export function ExamScope({
+  examId,
   examDate,
   onChangeDate,
   scope,
@@ -63,6 +79,7 @@ export function ExamScope({
   onChangeScope,
   today,
 }: {
+  examId: string
   examDate: string | undefined
   onChangeDate: (date: string | undefined) => void
   scope: StudyPage[]
@@ -74,7 +91,8 @@ export function ExamScope({
   const countdown = examCountdown(examDate, today)
   const past = !!examDate && !!today && examDate < today
   const reviewBy = examReviewBy(examDate, today)
-  const rows = scopeRows(scope, examDate, today)
+  const deadlines = useScopeDeadlines(today)
+  const rows = scopeRows(scope, examDate, today, deadlines, examId)
   const counts = summaryOrder
     .map((s) => ({ s, n: rows.filter((r) => r.state === s).length }))
     .filter((c) => c.n > 0)
@@ -160,7 +178,7 @@ export function ExamScope({
         <p className="text-sm text-muted-foreground">시험에 나오는 노트를 넣으면, 노트마다 얼마나 확인했는지 보이고 시험 전에 복습이 와요.</p>
       ) : (
         <ul className="flex flex-col divide-y divide-border border-y border-border">
-          {rows.map(({ page, stats, next, pulled, due, state }) => {
+          {rows.map(({ page, stats, next, pulled, pulledBy, due, state }) => {
             const Icon = noteIcon(page)
             const title = page.title || "제목 없음"
             const { word, dot } = scopeStates[state]
@@ -183,10 +201,10 @@ export function ExamScope({
                     {due ? (
                       <span className="font-semibold text-action-700">{reviewActionLabel(page)}</span>
                     ) : next ? (
-                      <span className="text-muted-foreground">
+                      <span className="text-muted-foreground" title={pulledBy ? `${pulledBy} 전날로 당겨졌어요` : undefined}>
                         <span className="hidden sm:inline">다음 복습 </span>
                         {formatDate(next)}
-                        {pulled && <span className="hidden sm:inline">(시험 전날)</span>}
+                        {pulled && <span className="hidden sm:inline">({pulledBy ? "앞 시험" : "시험"} 전날)</span>}
                       </span>
                     ) : (
                       <span className="text-muted-foreground">복습 일정 없음</span>

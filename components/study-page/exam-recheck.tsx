@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Check } from "lucide-react"
 import { confusionBlocks, pageKind, sortRecordsNewestFirst, wrongProblems, type StudyPage } from "@/lib/study-pages"
 import { updatePage } from "@/lib/workspace"
-import { scopeRows } from "@/components/study-page/exam-scope"
+import { scopeRows, useScopeDeadlines } from "@/components/study-page/exam-scope"
 
 // 시험 정리's "시험 전에 다시 볼 것" (D-35, D-36): gathered from the scope notes, nothing written here. Three sources,
 // each tied to where it lives:
@@ -43,13 +43,14 @@ function gather(page: StudyPage, justResolved: Set<string>): Item[] {
 const sourceLabel = (item: Item) =>
   item.kind === "confusion" ? "헷갈린 점" : item.kind === "problem" ? "틀린 문제" : item.review ? "지난 복습에서 놓친 곳" : "지난 기록의 어려웠던 점"
 
-export function ExamRecheck({ scope, examDate, today }: { scope: StudyPage[]; examDate: string | undefined; today: string | null }) {
+export function ExamRecheck({ examId, scope, examDate, today }: { examId: string; scope: StudyPage[]; examDate: string | undefined; today: string | null }) {
   // Resolved here this time: they stay in the list, crossed out, so a wrong press can be taken back.
   const [justResolved, setJustResolved] = useState<Set<string>>(() => new Set())
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
+  const deadlines = useScopeDeadlines(today)
   if (scope.length === 0) return null
 
-  const groups = scopeRows(scope, examDate, today)
+  const groups = scopeRows(scope, examDate, today, deadlines, examId)
     .map(({ page }) => ({ page, items: gather(page, justResolved) }))
     .filter((g) => g.items.length > 0)
   const open = groups.reduce((n, g) => n + g.items.filter((i) => !(i.kind === "confusion" && i.resolved)).length, 0)

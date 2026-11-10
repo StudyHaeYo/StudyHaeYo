@@ -33,7 +33,7 @@ export interface StudyCandidate {
 // 시험 정리 (D-27): for every page in the scope of an exam that hasn't happened yet, the latest day its review
 // should come (the day before the exam, or today when that has passed). Nothing is saved; it follows the exam date.
 export function examDeadlines(workspace: WorkspaceState, today: string) {
-  const deadlines = new Map<string, { reviewBy: string; countdown: string }>()
+  const deadlines = new Map<string, { reviewBy: string; countdown: string; examId: string; examTitle: string }>()
   for (const page of workspace.pages) {
     const examDate = page.props?.examDate
     if (pageKind(page) !== "exam" || !examDate || examDate < today) continue
@@ -42,7 +42,7 @@ export function examDeadlines(workspace: WorkspaceState, today: string) {
     const countdown = days === 0 ? "D-day" : `D-${days}`
     for (const id of page.props?.scope ?? []) {
       const known = deadlines.get(id)
-      if (!known || reviewBy < known.reviewBy) deadlines.set(id, { reviewBy, countdown })
+      if (!known || reviewBy < known.reviewBy) deadlines.set(id, { reviewBy, countdown, examId: page.id, examTitle: page.title || "제목 없음" })
     }
   }
   return deadlines

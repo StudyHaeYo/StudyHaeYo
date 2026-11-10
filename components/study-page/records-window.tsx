@@ -18,11 +18,12 @@ import {
 import { recordBadge, recordText } from "@/lib/study-stats"
 
 // 학습 기록 is a log of study, not part of the note (D-36): the note keeps its body, and its records open here from
-// the top bar. Records are left in the record window and fixed or removed on 학습 기록 (filtered to the note).
+// the top bar. The window is a glance — the summary and the last record in one line (D-37); the full list, and
+// fixing or removing a record, is on 학습 기록 (filtered to the note).
 // 시험 정리 has no study of its own: its window gathers the scope notes' records, read only, each with its note,
 // and never folds their 이해도 into one number.
 
-const RECENT = 3
+const RECENT = 1
 
 export function RecordsButton({
   page,
@@ -199,7 +200,7 @@ function RecordsWindow({
         )}
 
         {recent.length > 0 && (
-          <ul className="mt-3 flex flex-col border-t border-border">
+          <ul aria-label="마지막 기록" className="mt-3 flex flex-col border-t border-border">
             {recent.map((record) => {
               const note = noteOf.get(record.id) ?? page
               const badge = recordBadge(record.studyContent)

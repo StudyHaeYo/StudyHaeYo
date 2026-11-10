@@ -237,7 +237,8 @@ export interface StudyPage {
   note?: StudyNoteContent
   tags: string[]
   studyRecords: PageStudyRecord[]
-  // Values the user picked directly on the page. When unset, they are derived from the latest study record.
+  // Old hand-picked values (the removed 속성 window). Still loaded and saved as they are, but no longer read: status
+  // and 이해도 come only from the records (D-37), so a stale pick can't hide a review.
   status?: PageStatus
   understanding?: number
   // Set when the user turns on study features for a page whose template doesn't include them (e.g. 빈 페이지).
@@ -317,8 +318,6 @@ export interface PageStats {
   totalDurationMinutes: number
   lastStudiedAt: string | null
   nextReviewAt: string | null
-  statusIsManual: boolean
-  understandingIsManual: boolean
 }
 
 export function toISODate(date: Date) {
@@ -360,10 +359,12 @@ export function newRecordId() {
 }
 
 // `today` is null during SSR/hydration (see useTodayISO); the review check waits for the browser date.
+// Everything comes from the records (and, for 오답 노트, its problems), so fixing or deleting a record changes the
+// numbers at once. The page's old hand-picked status / 이해도 are not read (D-37).
 export function computePageStats(page: StudyPage, today: string | null): PageStats {
   const records = sortRecordsNewestFirst(page.studyRecords)
   const latest = records[0]
-  const understanding = page.understanding ?? latest?.understanding ?? null
+  const understanding = latest?.understanding ?? null
   // 오답 노트 with every problem answered right has nothing left to retry, so it gets no review day. Adding a
   // problem or marking one wrong brings the review back.
   const solved = pageKind(page) === "wrong-answers" && problemBlocks(page.blocks).length > 0 && wrongProblems(page.blocks).length === 0
@@ -376,7 +377,7 @@ export function computePageStats(page: StudyPage, today: string | null): PageSta
   // 시험 정리 is studied through its scope notes, not on its own: it gets no review day, so a record left on it (AI
   // grading, the record window) never puts it on 홈's review list or the sidebar dot (D-36).
   const ownReview = pageKind(page) !== "exam"
-  const nextReviewAt = !ownReview ? null : latest && !solved ? nextReviewDate(latest.date, understanding ?? latest.understanding) : firstRetry
+  const nextReviewAt = !ownReview ? null : latest && !solved ? nextReviewDate(latest.date, latest.understanding) : firstRetry
 
   let derivedStatus: PageStatus = "시작 전"
   if (latest) {
@@ -384,13 +385,11 @@ export function computePageStats(page: StudyPage, today: string | null): PageSta
   } else if (today && nextReviewAt && nextReviewAt <= today) derivedStatus = "복습 필요"
 
   return {
-    status: page.status ?? derivedStatus,
+    status: derivedStatus,
     understanding,
     totalDurationMinutes: records.reduce((sum, r) => sum + r.durationMinutes, 0),
     lastStudiedAt: latest?.date ?? null,
     nextReviewAt,
-    statusIsManual: page.status !== undefined,
-    understandingIsManual: page.understanding !== undefined,
   }
 }
 

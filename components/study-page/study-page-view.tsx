@@ -377,6 +377,7 @@ export function StudyPageView({
         {propsReady && kind === "exam" && (
           <div id="exam-scope" className="mt-8 scroll-mt-24 print:hidden">
             <ExamScope
+              examId={page.id}
               examDate={page.props?.examDate}
               onChangeDate={(examDate) => updatePageProps(page.id, { examDate })}
               scope={scopePages}
@@ -386,7 +387,7 @@ export function StudyPageView({
             />
             {scopePages.length > 0 && (
               <div className="mt-10">
-                <ExamRecheck scope={scopePages} examDate={page.props?.examDate} today={today} />
+                <ExamRecheck examId={page.id} scope={scopePages} examDate={page.props?.examDate} today={today} />
               </div>
             )}
           </div>
