@@ -25,8 +25,9 @@ Never commit to `main`.
 ## 2. Checks (all must pass)
 
 ```bash
-npx tsc --noEmit        # the build skips type errors (ignoreBuildErrors)
+npx tsc --noEmit        # fast type check (the build also stops on type errors now)
 pnpm run build          # catches server/client boundary errors tsc misses
+pnpm test               # review days, 이해도, AI 답 → 블록 (tests/)
 pnpm run check:colors   # role color tokens only, no palette classes (indigo-600 …)
 ```
 
