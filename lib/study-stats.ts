@@ -316,6 +316,20 @@ export function activePlans(workspace: WorkspaceState, plans: LearningPlan[], to
   return groupPlans(workspace, plans, today).active
 }
 
+// 계획 → 오늘 시간표 (D-38): what a running plan asks of today. With a time goal it is the remaining minutes spread
+// over the days left, today included (to the next 10 minutes, never more than what remains); without one it is just
+// the plan. null once the goal is met. Putting it on the timetable makes an ordinary to-do with that hour: no link is
+// stored, and the plan still counts progress from study records only.
+export function planToday(item: Pick<ActivePlan, "plan" | "studiedMinutes" | "daysLeft">): { title: string; minutes: number | null } | null {
+  const goal = item.plan.goalMinutes ?? 0
+  if (goal <= 0) return { title: item.plan.title, minutes: null }
+  const remaining = goal - item.studiedMinutes
+  if (remaining <= 0) return null
+  const up10 = (n: number) => Math.ceil(n / 10) * 10
+  const minutes = Math.min(up10(remaining), up10(remaining / (Math.max(0, item.daysLeft) + 1)))
+  return { title: `${item.plan.title} ${formatDuration(minutes)}`, minutes }
+}
+
 // Running plans end soonest first, upcoming ones start soonest first, ended ones most recent first.
 export function groupPlans(workspace: WorkspaceState, plans: LearningPlan[], today: string) {
   const all = plans.map((plan) => planProgress(workspace, plan, today))
