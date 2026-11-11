@@ -191,7 +191,6 @@ export function TodayTimetable() {
                     <span className="shrink-0 tabular-nums text-muted-foreground">{formatDuration(s.end - s.start)}</span>
                   </span>
                 ))}
-                {current && rowPlans.length === 0 && startsHere.length === 0 && <span className="text-xs text-muted-foreground">지금</span>}
               </span>
             </li>
           )
