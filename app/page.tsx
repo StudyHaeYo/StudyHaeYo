@@ -33,8 +33,8 @@ export default function DashboardPage() {
 
             <div className="flex min-w-0 flex-col gap-8">
               <TodayTimetable />
-              <StudyHeatmap />
               <WeeklyStats />
+              <StudyHeatmap />
             </div>
           </div>
         </div>
