@@ -1,12 +1,11 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { Check } from "lucide-react"
 import { useNowMinutes, useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
 import { useStudySession } from "@/lib/study-session"
 import { useTimeSlots } from "@/lib/time-slots"
-import { addTodo, todayChecklist, todoStartMin, toggleTodo, useTodos, useTodosStatus } from "@/lib/todos"
+import { addTodo, todayChecklist, todoStartMin, useTodos, useTodosStatus } from "@/lib/todos"
 import { usePlans } from "@/lib/plans"
 import { activePlans, planToday } from "@/lib/study-stats"
 import { HourPicker } from "@/components/hour-picker"
@@ -14,8 +13,8 @@ import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 
 // 오늘 시간표 (D-38): one row per hour on a navy-tinted panel. The text of a row is the plan — to-dos with a time
 // (todos.start_min). The rail beside the hour labels is what actually happened — records with a start time
-// (study_records.started_at) and the running timer session, filled to the minute. An hour that holds something is a
-// white block; empty hours are open space (no grid lines). The whole day is one list in a window about eight hours
+// (study_records.started_at) and the running timer session, filled to the minute. A hairline sits under every hour and
+// an hour that holds something is a white block; to-dos are ticked off in the checklist, not here. The whole day is one list in a window about eight hours
 // tall that scrolls, opened at the hour before now, so the panel is the same height at 7 in the morning and at 10 at
 // night. Hidden behind "준비 중" until the columns exist (lib/time-slots.ts).
 
@@ -166,39 +165,31 @@ export function TodayTimetable() {
                 )}
               </span>
 
-              {/* No grid lines: an hour that holds something is a white block on the tinted panel, an empty hour is
-                  just open space — so what is planned stands out and free time reads as one stretch. */}
-              <span
-                className={`my-0.5 flex min-w-0 flex-1 flex-col justify-center gap-1 rounded-md px-2 py-1 ${
-                  rowPlans.length > 0 || startsHere.length > 0 ? "bg-background ring-1 ring-action-100" : ""
-                }`}
-              >
-                {rowPlans.map(({ todo }) => {
-                  const done = todo.doneAt !== null
-                  return (
-                    <span key={todo.id} className="flex min-w-0 items-center gap-2">
-                      <button
-                        type="button"
-                        role="checkbox"
-                        aria-checked={done}
-                        aria-label={`${todo.title} ${done ? "완료 취소" : "완료"}`}
-                        onClick={() => toggleTodo(todo.id)}
-                        className={`relative flex size-4 shrink-0 items-center justify-center rounded-[5px] border transition-[colors,transform] before:absolute before:-inset-2 active:scale-90 motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 ${
-                          done ? "border-action-600 bg-action-600 text-action-foreground" : "border-input bg-background hover:border-action-400"
-                        }`}
-                      >
-                        {done && <Check className="size-3" aria-hidden="true" />}
-                      </button>
-                      <span className={`truncate text-sm ${done ? "text-muted-foreground line-through" : "text-foreground"}`}>{todo.title}</span>
-                    </span>
-                  )
-                })}
+              {/* A hairline under every hour; an hour that holds something is a white block on it. No checkbox here:
+                  the timetable shows when, the checklist is where a to-do is ticked off (a done one reads struck
+                  through). */}
+              <span className="flex min-w-0 flex-1 flex-col justify-center border-b border-action-100 py-[3px]">
+                <span
+                  className={`flex min-w-0 flex-col justify-center gap-0.5 rounded-md px-2 py-1 ${
+                    rowPlans.length > 0 || startsHere.length > 0 ? "bg-background ring-1 ring-action-100" : ""
+                  }`}
+                >
+                {rowPlans.map(({ todo }) => (
+                  <span
+                    key={todo.id}
+                    className={`truncate text-sm ${todo.doneAt !== null ? "text-muted-foreground line-through" : "text-foreground"}`}
+                  >
+                    {todo.title}
+                    {todo.doneAt !== null && <span className="sr-only"> (완료)</span>}
+                  </span>
+                ))}
                 {startsHere.map((s) => (
                   <span key={s.key} className="flex min-w-0 items-baseline justify-between gap-2 text-xs">
                     <span className="truncate font-medium text-action-700">{s.title}</span>
                     <span className="shrink-0 tabular-nums text-muted-foreground">{formatDuration(s.end - s.start)}</span>
                   </span>
                 ))}
+                </span>
               </span>
             </li>
           )
