@@ -24,6 +24,7 @@ import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 const DAY_START = 6 // the first hour drawn, unless something is earlier
 const HOUR = 40 // px per hour: half an hour still fits one line of text
 const WINDOW_HOURS = 7
+const EDGE = 8 // px above the first hour line
 
 // Minutes of today: [start, end)
 type Span = { key: string; start: number; end: number; title: string }
@@ -121,8 +122,9 @@ export function TodayTimetable() {
   const nowHour = Math.floor(now / 60)
   const firstHour = Math.min(DAY_START, nowHour, ...items.map((it) => Math.floor(it.start / 60)))
   const hours = Array.from({ length: 24 - firstHour }, (_, i) => firstHour + i)
-  const y = (minutes: number) => ((minutes - firstHour * 60) / 60) * HOUR
-  const openAt = y(Math.max(firstHour, nowHour - 1) * 60)
+  // EDGE keeps the first hour label (centred on its line) from being cut at the top of the window.
+  const y = (minutes: number) => EDGE + ((minutes - firstHour * 60) / 60) * HOUR
+  const openAt = y(Math.max(firstHour, nowHour - 1) * 60) - EDGE
   const empty = items.length === 0
 
   // Running plans not on today's checklist yet (a to-do made from a plan starts with the plan's title).
@@ -146,15 +148,15 @@ export function TodayTimetable() {
         className="overflow-y-auto overscroll-contain rounded-md [scrollbar-width:thin] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
         style={{ maxHeight: HOUR * WINDOW_HOURS }}
       >
-        <div className="relative" style={{ height: hours.length * HOUR }}>
-          {/* the hours: a label and a hairline each */}
+        <div className="relative" style={{ height: hours.length * HOUR + EDGE }}>
+          {/* the hours: a hairline each, its label centred on it (the label names the line, not the space under it) */}
           <div aria-hidden="true">
             {hours.map((h) => (
-              <div key={h} className="absolute inset-x-0 flex items-start gap-2" style={{ top: y(h * 60) }}>
+              <div key={h} className="absolute inset-x-0 flex h-3 -translate-y-1/2 items-center gap-2" style={{ top: y(h * 60) }}>
                 {/* The hour label steps aside while the "15:20" tag sits on it, instead of peeking out from under it. */}
                 <span
-                  className={`w-9 shrink-0 pt-1 pr-1 text-right text-xs leading-none tabular-nums text-muted-foreground ${
-                    now >= h * 60 - 8 && now < h * 60 + 38 ? "invisible" : ""
+                  className={`w-9 shrink-0 pr-1 text-right text-xs leading-none tabular-nums text-muted-foreground ${
+                    Math.abs(now - h * 60) < 22 ? "invisible" : ""
                   }`}
                 >
                   {h}시
