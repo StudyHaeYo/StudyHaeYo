@@ -122,9 +122,8 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
             {item.understanding !== null ? ` · 이해도 ${item.understanding}/5` : ""}
           </span>
         </span>
-        {/* PROTOTYPE (시안): the amber dot is the one signal; the words stay grey. */}
-        <span className={`shrink-0 text-xs font-medium ${item.dueTone === "overdue" ? "text-muted-foreground" : dueToneClass[item.dueTone]}`}>
-          {item.dueTone === "overdue" && <span aria-hidden="true" className="mr-1.5 inline-block size-1.5 rounded-full bg-attention-500 align-middle" />}
+        <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>
+          {item.dueTone === "overdue" && <span aria-hidden="true" className="mr-1.5 inline-block size-1.5 rounded-full bg-attention-400 align-middle" />}
           {item.due}
         </span>
         {first ? (

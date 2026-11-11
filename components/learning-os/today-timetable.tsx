@@ -1,33 +1,43 @@
 "use client"
 
-import { Check } from "lucide-react"
+import { useState } from "react"
+import { Check, ChevronDown } from "lucide-react"
 import { formatDuration } from "@/lib/study-pages"
 
-// PROTOTYPE (시안): 오늘 시간표 — a Notion-style list, one row per hour. A row holds the to-dos set for that hour
-// (같은 체크 상자 as the checklist) and, on the right, how long was actually studied in that hour.
-// Values are made up for the mockup; nothing here reads or saves data yet.
+// PROTOTYPE (시안): 오늘 시간표 — one row per hour on a navy-tinted panel. Plans (to-dos with an hour) are the text of
+// a row; the time actually studied is the rail beside the hour labels, filled to the minute. Hours before now fold
+// into one summary line so the panel stays short. Values are made up; nothing here reads or saves data yet.
 
 const START = 7
 const END = 24
+const ROW = 32 // px; the rail is drawn against this height
 
 type Plan = { hour: number; title: string; done?: boolean }
+type Span = { start: number; end: number; title: string }
 
 const PLANS: Plan[] = [
   { hour: 8, title: "영단어 30개", done: true },
   { hour: 13, title: "자료구조 4장 읽기" },
   { hour: 19, title: "정보처리기사 기출 1회" },
 ]
-// Minutes studied in each hour (from records' start time).
-const STUDIED: Record<number, number> = { 9: 50 }
-const NOW_HOUR = 16
+const STUDIES: Span[] = [{ start: 9 + 10 / 60, end: 10, title: "그래프 탐색" }]
+const NOW = 16 + 20 / 60
+
+const minutesOf = (s: Span) => Math.round((s.end - s.start) * 60)
 
 export function TodayTimetable() {
-  const hours = Array.from({ length: END - START }, (_, i) => START + i)
-  const studied = Object.values(STUDIED).reduce((a, b) => a + b, 0)
+  const [earlier, setEarlier] = useState(false)
+  const nowHour = Math.floor(NOW)
+  const from = earlier ? START : Math.max(START, nowHour - 1)
+  const hours = Array.from({ length: END - from }, (_, i) => from + i)
+  const studied = STUDIES.reduce((sum, s) => sum + minutesOf(s), 0)
+
+  const foldedPlans = PLANS.filter((p) => p.hour < nowHour - 1)
+  const foldedStudied = STUDIES.filter((s) => s.start < nowHour - 1).reduce((sum, s) => sum + minutesOf(s), 0)
 
   return (
-    <section aria-labelledby="today-timetable-title">
-      <div className="mb-3 flex items-baseline justify-between gap-3">
+    <section aria-labelledby="today-timetable-title" className="rounded-xl bg-action-50 p-3">
+      <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
         <h2 id="today-timetable-title" className="text-base font-semibold text-foreground">
           오늘 시간표
         </h2>
@@ -36,28 +46,50 @@ export function TodayTimetable() {
         </p>
       </div>
 
-      <ol className="rounded-lg bg-muted/70 px-1.5 py-1">
+      {nowHour - 1 > START && (
+        <button
+          type="button"
+          onClick={() => setEarlier((v) => !v)}
+          aria-expanded={earlier}
+          className="mb-1 flex w-full items-center justify-between gap-2 rounded-md px-1 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-action-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+        >
+          <span className="truncate">
+            {START}시~{nowHour - 1}시
+            {foldedPlans.length > 0 && ` · 계획 ${foldedPlans.length}개 중 ${foldedPlans.filter((p) => p.done).length}개 완료`}
+            {foldedStudied > 0 && ` · 공부 ${formatDuration(foldedStudied)}`}
+          </span>
+          <ChevronDown className={`size-3.5 shrink-0 transition-transform motion-reduce:transition-none ${earlier ? "rotate-180" : ""}`} aria-hidden="true" />
+        </button>
+      )}
+
+      <ol>
         {hours.map((h) => {
           const plans = PLANS.filter((p) => p.hour === h)
-          const minutes = STUDIED[h] ?? 0
-          const now = h === NOW_HOUR
-          const past = h < NOW_HOUR
+          const spans = STUDIES.filter((s) => s.start < h + 1 && s.end > h)
+          const startsHere = STUDIES.filter((s) => Math.floor(s.start) === h)
+          const now = h === nowHour
           return (
-            <li
-              key={h}
-              aria-current={now ? "time" : undefined}
-              className={`flex min-h-7 items-start gap-2 border-b border-border/70 px-1.5 py-1 last:border-b-0 ${
-                now ? "-mx-0.5 rounded-md border-transparent bg-background px-2 shadow-[0_0_0_1px_var(--border)]" : ""
-              }`}
-            >
-              <span
-                className={`w-8 shrink-0 pt-px text-xs tabular-nums ${
-                  now ? "font-semibold text-foreground" : past ? "text-muted-foreground/70" : "text-muted-foreground"
-                }`}
-              >
+            <li key={h} aria-current={now ? "time" : undefined} className="flex items-stretch gap-2" style={{ minHeight: ROW }}>
+              <span className={`w-7 shrink-0 pt-1.5 text-right text-xs tabular-nums ${now ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                 {h}시
               </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-1">
+
+              {/* the rail: studied minutes of this hour, and where now is */}
+              <span className="relative w-[3px] shrink-0 bg-action-200/70" aria-hidden="true">
+                {spans.map((s) => {
+                  const top = Math.max(0, s.start - h)
+                  const bottom = Math.min(1, s.end - h)
+                  return <span key={s.title} className="absolute inset-x-0 bg-action-600" style={{ top: `${top * 100}%`, height: `${(bottom - top) * 100}%` }} />
+                })}
+                {now && (
+                  <span
+                    className="absolute left-1/2 size-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-action-50 bg-foreground"
+                    style={{ top: `${(NOW - h) * 100}%` }}
+                  />
+                )}
+              </span>
+
+              <span className={`flex min-w-0 flex-1 flex-col justify-center gap-1 border-b border-action-100 py-1`}>
                 {plans.map((p) => (
                   <span key={p.title} className="flex min-w-0 items-center gap-2">
                     <span
@@ -68,24 +100,21 @@ export function TodayTimetable() {
                     >
                       {p.done && <Check className="size-3" />}
                     </span>
-                    <span className={`truncate text-sm ${p.done ? "text-muted-foreground line-through" : "text-foreground"}`}>
-                      {p.title}
-                    </span>
+                    <span className={`truncate text-sm ${p.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{p.title}</span>
                   </span>
                 ))}
+                {startsHere.map((s) => (
+                  <span key={s.title} className="flex min-w-0 items-baseline justify-between gap-2 text-xs">
+                    <span className="truncate font-medium text-action-700">{s.title}</span>
+                    <span className="shrink-0 tabular-nums text-muted-foreground">{formatDuration(minutesOf(s))}</span>
+                  </span>
+                ))}
+                {now && plans.length === 0 && startsHere.length === 0 && <span className="text-xs text-muted-foreground">지금</span>}
               </span>
-              {minutes > 0 && (
-                <span className="shrink-0 pt-px text-xs tabular-nums text-muted-foreground">
-                  <span className="mr-1 inline-block size-1.5 rounded-full bg-action-600 align-middle" aria-hidden="true" />
-                  공부 {formatDuration(minutes)}
-                </span>
-              )}
             </li>
           )
         })}
       </ol>
-
-      <p className="mt-2.5 text-xs text-muted-foreground">할 일에서 시각을 고르면 여기에 들어가요.</p>
     </section>
   )
 }
