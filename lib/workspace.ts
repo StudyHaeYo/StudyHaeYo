@@ -703,6 +703,18 @@ export async function importExampleData(): Promise<ImportResult> {
         parentId: p.parentId && idFor(p.parentId),
         createdAt: shift(p.createdAt),
         blocks: p.blocks.map(cloneBlock),
+        // Seed ids and seed dates inside the props follow the same mapping as everything else. Before the props
+        // column exists (D-27) they are left out, so the import still saves: those notes arrive as plain notes.
+        props: undefined,
+        ...(p.props && pagePropsReady()
+          ? {
+              props: {
+                ...p.props,
+                ...(p.props.examDate ? { examDate: shift(p.props.examDate) } : {}),
+                ...(p.props.scope ? { scope: p.props.scope.map(idFor) } : {}),
+              },
+            }
+          : {}),
         note: p.note && {
           learned: p.note.learned.map(cloneBlock),
           concepts: p.note.concepts.map((c) => ({ ...c })),
