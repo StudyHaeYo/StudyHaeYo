@@ -205,26 +205,29 @@ export function StudyPageView({
     >
       {/* Top bar (D-28, D-30): where the note is on the left; on the right its study state, its kind (종류 칩), tools
           and the running session — the same place on every note, so the page itself is only the title and the body. */}
-      <header className="sticky top-12 z-20 border-b border-border bg-background/90 backdrop-blur print:hidden md:top-0">
+      {/* The folders above the note show only while the bar itself is wide enough (a container query, not the
+          window: the AI 창 and the PDF pane narrow the bar without narrowing the window), so they never run under
+          the buttons on the right. */}
+      <header className="@container/bar sticky top-12 z-20 border-b border-border bg-background/90 backdrop-blur print:hidden md:top-0">
         <div className="flex h-14 items-center justify-between gap-3 px-4 md:px-6">
-          <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm">
-            <span className="hidden shrink-0 text-muted-foreground lg:inline">내 페이지</span>
+          <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 overflow-hidden text-sm">
+            <span className="hidden shrink-0 text-muted-foreground @min-[58rem]/bar:inline">내 페이지</span>
             {path.map((node, i) => (
               <Fragment key={node.id}>
-                <ChevronRight className={`size-3.5 shrink-0 text-muted-foreground ${i === 0 ? "hidden lg:block" : "hidden md:block"}`} />
+                <ChevronRight className={`size-3.5 shrink-0 text-muted-foreground ${i === 0 ? "hidden @min-[58rem]/bar:block" : "hidden @min-[48rem]/bar:block"}`} />
                 {node.kind === "folder" ? (
-                  <span className="hidden shrink-0 text-muted-foreground md:inline">{node.name}</span>
+                  <span className="hidden shrink-0 text-muted-foreground @min-[48rem]/bar:inline">{node.name}</span>
                 ) : (
                   <Link
                     href={node.kind === "subject" ? `/subject/${node.id}` : `/record/${node.id}`}
-                    className="hidden max-w-40 shrink-0 truncate text-muted-foreground transition-colors hover:text-foreground md:inline"
+                    className="hidden max-w-40 shrink-0 truncate text-muted-foreground transition-colors hover:text-foreground @min-[48rem]/bar:inline"
                   >
                     {node.name}
                   </Link>
                 )}
               </Fragment>
             ))}
-            <ChevronRight className={`size-3.5 shrink-0 text-muted-foreground ${path.length > 0 ? "hidden md:block" : "hidden lg:block"}`} />
+            <ChevronRight className={`size-3.5 shrink-0 text-muted-foreground ${path.length > 0 ? "hidden @min-[48rem]/bar:block" : "hidden @min-[58rem]/bar:block"}`} />
             <span className="truncate font-medium text-foreground">{page.title.trim() || "제목 없음"}</span>
           </nav>
           <div className="flex shrink-0 items-center gap-1">
