@@ -1,7 +1,16 @@
 import { HelpCircle } from "lucide-react"
 
-export function UnresolvedBadge({ count, long = false }: { count: number; long?: boolean }) {
+export function UnresolvedBadge({ count, long = false, quiet = false }: { count: number; long?: boolean; quiet?: boolean }) {
   if (count <= 0) return null
+  // In lists the count is plain grey text, so one row carries one colour signal at most (the amber due label).
+  if (quiet)
+    return (
+      <span title={`미해결 헷갈린 점 ${count}개`} className="inline-flex shrink-0 items-center gap-0.5 text-xs tabular-nums text-muted-foreground">
+        <HelpCircle className="size-3" aria-hidden="true" />
+        {count}
+        <span className="sr-only">{`미해결 헷갈린 점 ${count}개`}</span>
+      </span>
+    )
   return (
     <span
       title={`미해결 헷갈린 점 ${count}개`}

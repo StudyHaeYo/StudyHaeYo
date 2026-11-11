@@ -31,8 +31,9 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex min-w-0 flex-col gap-8">
-              <StudyHeatmap />
+              {/* Widening in time: this week, then the last five weeks. */}
               <WeeklyStats />
+              <StudyHeatmap />
             </div>
           </div>
         </div>

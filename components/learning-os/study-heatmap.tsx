@@ -12,10 +12,11 @@ const DAY_NAMES = ["월", "화", "수", "목", "금", "토", "일"]
 function shade(day: StudyDay) {
   if (day.future) return "bg-transparent text-muted-foreground/40"
   if (day.minutes === 0) return "bg-muted text-muted-foreground"
+  // One step lighter than the full scale, so the calendar doesn't outshine 오늘 할 일 (2026-11-11).
   if (day.minutes < 30) return "bg-action-100 text-action-900"
   if (day.minutes < 60) return "bg-action-200 text-action-900"
-  if (day.minutes < 120) return "bg-action-400 text-action-foreground"
-  return "bg-action-600 text-action-foreground"
+  if (day.minutes < 120) return "bg-action-300 text-action-900"
+  return "bg-action-500 text-action-foreground"
 }
 
 // 학습 달력: the last five weeks laid out like a calendar (월~일 across, a week per row), each day shaded by
@@ -54,7 +55,7 @@ export function StudyHeatmap() {
                 key={day.date}
                 title={day.future ? undefined : `${formatDate(day.date)} · ${day.minutes > 0 ? formatDuration(day.minutes) : "기록 없음"}`}
                 className={`flex aspect-square items-center justify-center rounded-md text-[11px] tabular-nums ${shade(day)} ${
-                  day.date === today ? "ring-2 ring-foreground/70 ring-offset-1 ring-offset-background" : ""
+                  day.date === today ? "font-semibold ring-1 ring-foreground ring-offset-1 ring-offset-background" : ""
                 }`}
               >
                 {Number(day.date.slice(8))}
@@ -67,7 +68,7 @@ export function StudyHeatmap() {
       {/* Big enough to read at a glance (외부 검토 11/8): the shades are the only key to the calendar. */}
       <div className="mt-2.5 flex items-center justify-end gap-1.5 text-xs text-muted-foreground" aria-hidden="true">
         적게
-        {["bg-muted", "bg-action-100", "bg-action-200", "bg-action-400", "bg-action-600"].map((c) => (
+        {["bg-muted", "bg-action-100", "bg-action-200", "bg-action-300", "bg-action-500"].map((c) => (
           <span key={c} className={`size-3 rounded-[3px] ${c}`} />
         ))}
         많이
