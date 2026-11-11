@@ -124,7 +124,10 @@ export function TodayTimetable() {
   const hours = Array.from({ length: 24 - firstHour }, (_, i) => firstHour + i)
   // EDGE keeps the first hour label (centred on its line) from being cut at the top of the window.
   const y = (minutes: number) => EDGE + ((minutes - firstHour * 60) / 60) * HOUR
-  const openAt = y(Math.max(firstHour, nowHour - 1) * 60) - EDGE
+  // Opens at the hour before now — or earlier, at the start of a block still running at that hour, so the window
+  // never opens on a block with its title cut off.
+  const openFrom = Math.min(Math.max(firstHour, nowHour - 1) * 60, ...items.filter((it, i) => it.start < (nowHour - 1) * 60 && drawn[i].end > (nowHour - 1) * 60).map((it) => it.start))
+  const openAt = Math.max(0, y(openFrom) - EDGE - 4)
   const empty = items.length === 0
 
   // Running plans not on today's checklist yet (a to-do made from a plan starts with the plan's title).
