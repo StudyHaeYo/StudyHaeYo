@@ -70,18 +70,12 @@ export const pageStarters: PageStarter[] = [
     id: "exam",
     kind: "exam",
     name: "시험 정리",
-    tagline: "범위를 체크하며 정리하고, 자주 틀리는 것 모아 두기",
+    tagline: "시험일과 범위 노트를 두고, 노트마다 얼마나 확인했는지 보기",
     icon: ClipboardCheck,
     templateId: "study-note",
-    // 시험일 · 범위는 props에 두고 본문 맨 위에서 고친다(D-27, D-30). 본문은 시험 직전에 볼 것만.
-    createBlocks: () => [
-      t("h2", "꼭 나오는 개념"),
-      t("concept"),
-      t("h2", "자주 틀리는 것"),
-      t("confusion"),
-      t("h2", "시험 직전 체크"),
-      { id: newBlockId(), type: "todo", text: "", checked: false },
-    ],
+    // 시험일 · 범위는 props에 두고 본문 맨 위의 범위표에서 고친다(D-27, D-30, D-35). 다시 볼 것은 범위 노트에서 자동으로
+    // 모인다("시험 전에 다시 볼 것"). 본문은 자유: 시작 칸은 시험 당일 챙길 것 하나.
+    createBlocks: () => [t("h2", "시험 당일 챙길 것"), { id: newBlockId(), type: "todo", text: "", checked: false }],
   },
 ]
 
@@ -90,6 +84,7 @@ export const pageStarters: PageStarter[] = [
 export const starterSectionHints: Record<string, string> = {
   필기: "수업을 들으며 적어요",
   "시험 직전 체크": "시험 전에 확인할 것",
+  "시험 당일 챙길 것": "신분증, 계산기처럼 챙길 것",
 }
 
 export function getStarter(id: string) {
@@ -110,7 +105,7 @@ export interface NoteKindOption {
 export const noteKinds: NoteKindOption[] = [
   { kind: "lecture", starterId: "lecture", name: "강의 노트", does: "필기 옆에 질문을 달아 그 줄만 가려 복습해요", icon: Presentation },
   { kind: "wrong-answers", starterId: "wrong-answers", name: "오답 노트", does: "내 답은 두고 정답만 가려 다시 풀어요", icon: XCircle },
-  { kind: "exam", starterId: "exam", name: "시험 정리", does: "시험일까지 범위를 챙겨요", icon: ClipboardCheck },
+  { kind: "exam", starterId: "exam", name: "시험 정리", does: "범위 노트마다 확인 상태를 보고 시험 전에 복습해요", icon: ClipboardCheck },
   { kind: null, starterId: "blank", name: "빈 노트", does: "모양 없이 자유롭게 써요", icon: FileText },
 ]
 

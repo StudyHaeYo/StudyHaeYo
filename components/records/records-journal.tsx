@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Search } from "lucide-react"
+import Link from "next/link"
+import { Plus, Search, X } from "lucide-react"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { RecordRow } from "@/components/record/record-row"
 import { addDays, formatDate, formatDuration } from "@/lib/study-pages"
@@ -15,8 +16,9 @@ const NONE = "none"
 
 // 학습 기록 (D-28): every record in one log — on notes, on subjects, and with neither (과목 없음, D-24) — grouped by
 // day with the day's total. Records without a note are normal here (수업, 문제집, 인강); only ones that look worth
-// reviewing get a quiet [복습 노트 만들기].
-export function RecordsJournal() {
+// reviewing get a quiet [복습 노트 만들기]. `noteIds`: only those notes' records (opened from a note's [기록] or a
+// 시험 정리's [범위 기록], D-36); fixing and removing a note's records happens here.
+export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
   const workspace = useWorkspace()
   const today = useTodayISO()
   const ready = useSubjectRecordsReady()
@@ -24,14 +26,17 @@ export function RecordsJournal() {
   const [query, setQuery] = useState("")
   const [days, setDays] = useState(PAGE_DAYS)
 
-  const entries = allRecordEntries(workspace)
+  const notes = new Set(noteIds)
+  const byNote = notes.size > 0
+  const entries = allRecordEntries(workspace).filter((e) => !byNote || (e.pageId !== null && notes.has(e.pageId)))
+  const onlyNote = noteIds.length === 1 ? workspace.pages.find((p) => p.id === noteIds[0]) : undefined
   const subjects = [...new Map(entries.filter((e) => e.subjectId).map((e) => [e.subjectId!, e.subject])).entries()]
     .map(([id, name]) => ({ id, name, count: entries.filter((e) => e.subjectId === id).length }))
     .sort((a, b) => b.count - a.count)
   const noneCount = entries.filter((e) => e.subjectId === null).length
   const q = query.trim().toLowerCase()
   const shown = sortEntriesNewestFirst(entries)
-    .filter((e) => filter === "all" || (filter === NONE ? e.subjectId === null : e.subjectId === filter))
+    .filter((e) => byNote || filter === "all" || (filter === NONE ? e.subjectId === null : e.subjectId === filter))
     .filter((e) => !q || [recordText(e), e.pageTitle ?? "", e.subject, e.record.difficulties].join(" ").toLowerCase().includes(q))
     .sort((a, b) => b.record.date.localeCompare(a.record.date))
 
@@ -79,6 +84,25 @@ export function RecordsJournal() {
       </header>
 
       <div className="mt-6 flex items-center gap-3">
+        {byNote ? (
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
+            <span className={`${chip(true)} max-w-full pr-1.5`}>
+              <span className="truncate">{onlyNote ? `${onlyNote.title || "제목 없음"}의 기록` : `노트 ${noteIds.length}개의 기록`}</span>
+              <Link
+                href="/records"
+                aria-label="거르기 풀고 모든 기록 보기"
+                className="ml-0.5 flex size-5 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-background/20"
+              >
+                <X className="size-3.5" aria-hidden="true" />
+              </Link>
+            </span>
+            {onlyNote && (
+              <Link href={`/record/${onlyNote.id}`} className="text-[13px] font-medium text-action-700 hover:underline">
+                노트로 돌아가기
+              </Link>
+            )}
+          </div>
+        ) : (
         <div role="group" aria-label="과목으로 거르기" className="-mx-1 flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
           <button type="button" aria-pressed={filter === "all"} onClick={() => setFilter("all")} className={chip(filter === "all")}>
             전체
@@ -95,6 +119,7 @@ export function RecordsJournal() {
             </button>
           )}
         </div>
+        )}
         <label className="hidden h-8 w-52 shrink-0 items-center gap-2 rounded-lg border border-border px-2.5 text-sm text-muted-foreground focus-within:border-action-400 sm:flex">
           <Search className="size-4 shrink-0" aria-hidden="true" />
           <span className="sr-only">기록 검색</span>
@@ -116,7 +141,9 @@ export function RecordsJournal() {
         </div>
       ) : dayList.length === 0 ? (
         <div className="mt-8 rounded-2xl border border-dashed border-border px-6 py-10 text-center">
-          <p className="text-sm font-medium text-foreground">{q || filter !== "all" ? "맞는 기록이 없어요" : "아직 학습 기록이 없어요"}</p>
+          <p className="text-sm font-medium text-foreground">
+            {byNote && !q ? "이 노트에는 아직 기록이 없어요" : q || filter !== "all" ? "맞는 기록이 없어요" : "아직 학습 기록이 없어요"}
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">
             공부를 마치면 [기록 남기기]로 남겨요. 노트에서 공부했다면 그 노트를 고르면 복습일이 잡혀요.
           </p>

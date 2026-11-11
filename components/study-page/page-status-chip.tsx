@@ -85,9 +85,6 @@ export function PageStatusChip({
       </span>
     )
   }
-  return (
-    <a href="#page-records" className={calm}>
-      다음 복습 {formatDate(stats.nextReviewAt)}
-    </a>
-  )
+  // Just the state: the note's records open from [기록] right beside it (D-36).
+  return <span className="hidden h-8 items-center px-1.5 text-[13px] text-muted-foreground sm:inline-flex">다음 복습 {formatDate(stats.nextReviewAt)}</span>
 }

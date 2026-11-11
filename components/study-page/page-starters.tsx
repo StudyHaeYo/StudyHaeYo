@@ -97,10 +97,19 @@ function Mini({ kind }: { kind: string }) {
         </>
       )}
       {kind === "exam" && (
-        <span className="absolute left-1/2 top-2.5 w-12 -translate-x-1/2 overflow-hidden rounded-sm border border-border bg-card text-center">
-          <span className="block h-2 bg-action-600" />
-          <span className="block text-lg font-extrabold leading-7 text-foreground">12</span>
-        </span>
+        <>
+          {/* 범위표 (D-35): the exam day as a calendar page, then the scope notes, each with its state dot. */}
+          <span className="absolute left-[10%] top-2.5 w-[22%] max-w-9 overflow-hidden rounded-sm border border-border bg-card">
+            <span className="block h-1.5 bg-action-600" />
+            <span className="block h-5" />
+          </span>
+          <span className="absolute left-[42%] top-3 size-1.5 rounded-full bg-danger-500" />
+          <span className={`${line} left-[calc(42%+0.6rem)] top-3 w-[34%]`} />
+          <span className="absolute left-[42%] top-[1.625rem] size-1.5 rounded-full bg-attention-500" />
+          <span className={`${line} left-[calc(42%+0.6rem)] top-[1.625rem] w-[28%]`} />
+          <span className="absolute left-[42%] top-10 size-1.5 rounded-full bg-success-600" />
+          <span className={`${line} left-[calc(42%+0.6rem)] top-10 w-[31%]`} />
+        </>
       )}
     </span>
   )
