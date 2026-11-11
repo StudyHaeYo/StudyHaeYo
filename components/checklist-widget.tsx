@@ -225,7 +225,7 @@ function TimePicker({ todo, today }: { todo: Todo; today: string }) {
                 type="button"
                 aria-pressed={h === hour}
                 onClick={() => pick(h)}
-                className={`h-7 rounded-md text-xs tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 ${
+                className={`h-8 rounded-md text-xs tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 ${
                   h === hour ? "bg-action-600 font-medium text-action-foreground" : "text-foreground hover:bg-accent"
                 }`}
               >
