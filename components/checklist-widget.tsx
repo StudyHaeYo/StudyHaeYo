@@ -139,7 +139,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
       )}
 
       {carried && !editing && (
-        <span className="shrink-0 text-xs text-attention-600" title="전날에 못 끝내서 넘어온 할 일">
+        <span className="shrink-0 text-xs text-muted-foreground" title="전날에 못 끝내서 넘어온 할 일">
           이월
         </span>
       )}

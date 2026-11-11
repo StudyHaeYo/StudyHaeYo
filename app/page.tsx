@@ -32,9 +32,12 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex min-w-0 flex-col gap-8">
+              {/* Widening in time: today, this week, then the last five weeks. */}
               <TodayTimetable />
+              <WeeklyStats />
               <StudyHeatmap />
               <WeeklyStats />
+              <StudyHeatmap />
             </div>
           </div>
         </div>
