@@ -203,6 +203,9 @@ export interface StudyRecordFields {
   date: string
   // Creation time (ms); lets analytics tell which timer session a record belongs to. Kept on edit.
   createdAt?: number
+  // When the studying began (ms), if known: the timer's first moment on the note, the start of a review, or the
+  // time picked in the record window. Drives 오늘 시간표; a record without it is not drawn there.
+  startedAt?: number
   durationMinutes: number
   understanding: number
   // What was actually done in this session (activity log), distinct from the page body's "오늘 배운 내용".

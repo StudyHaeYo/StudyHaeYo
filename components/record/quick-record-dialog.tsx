@@ -31,6 +31,7 @@ import {
 } from "@/lib/workspace"
 import { recordShortcuts } from "@/lib/study-stats"
 import { addTodo, useTodosStatus } from "@/lib/todos"
+import { useTimeSlots } from "@/lib/time-slots"
 import { useFocusTrap } from "@/hooks/use-focus-trap"
 
 // 학습 기록 창 (D-24, D-28, D-30). What was studied comes first, then date · time, then 이해도 in words. Where it goes
@@ -112,6 +113,13 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
   const [target, setTarget] = useState<Target | null>(() => initialTarget(request, ready))
   const [date, setDate] = useState(() => edit?.date ?? today)
   const [duration, setDuration] = useState(edit ? String(edit.durationMinutes) : request.minutes ? String(request.minutes) : "")
+  // Optional "HH:MM": when the studying began, so it shows on 오늘 시간표. Hidden until the column exists.
+  const timesReady = useTimeSlots().recordTimes
+  const [startTime, setStartTime] = useState(() => {
+    if (typeof edit?.startedAt !== "number") return ""
+    const d = new Date(edit.startedAt)
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+  })
   const [understanding, setUnderstanding] = useState<number | null>(edit?.understanding ?? request.understanding ?? null)
   const [studyContent, setStudyContent] = useState(edit?.studyContent ?? request.studyContent ?? "")
   // Records written before D-30 can still carry these; they stay editable there and are not asked for anymore.
@@ -184,6 +192,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
       id: edit?.id ?? newRecordId(),
       date,
       createdAt: edit ? edit.createdAt : Date.now(),
+      ...(/^\d{2}:\d{2}$/.test(startTime) ? { startedAt: new Date(`${date}T${startTime}:00`).getTime() } : {}),
       durationMinutes: minutes,
       understanding,
       studyContent: studyContent.trim(),
@@ -332,6 +341,18 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
             />
             분
           </label>
+          {timesReady && (
+            <label className={pill}>
+              <span className="text-muted-foreground">시작</span>
+              <input
+                type="time"
+                aria-label="공부를 시작한 시각 (선택)"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="bg-transparent tabular-nums outline-none"
+              />
+            </label>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-1.5 px-5 pt-2">
           {[...(request.minutes && !PRESETS.includes(request.minutes) ? [request.minutes] : []), ...PRESETS].map((m) => (

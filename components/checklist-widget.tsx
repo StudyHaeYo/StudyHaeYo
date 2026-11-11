@@ -1,9 +1,21 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
-import { Check, Plus, X } from "lucide-react"
+import { useEffect, useId, useRef, useState, type FormEvent } from "react"
+import { Check, Clock, Plus, X } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
-import { addTodo, removeTodo, renameTodo, todayChecklist, toggleTodo, useTodos, useTodosStatus, type Todo } from "@/lib/todos"
+import {
+  addTodo,
+  removeTodo,
+  renameTodo,
+  setTodoTime,
+  todayChecklist,
+  todoStartMin,
+  toggleTodo,
+  useTodos,
+  useTodosStatus,
+  type Todo,
+} from "@/lib/todos"
+import { useTimeSlots } from "@/lib/time-slots"
 
 function useChecklist() {
   const todos = useTodos()
@@ -72,6 +84,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
   const [draft, setDraft] = useState(todo.title)
   const done = todo.doneAt !== null
   const carried = !done && todo.dueOn < today
+  const timesReady = useTimeSlots().todoTimes
 
   const commit = () => {
     if (draft.trim() && draft.trim() !== todo.title) renameTodo(todo.id, draft)
@@ -80,7 +93,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
   }
 
   return (
-    <li className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-accent">
+    <li className="group relative flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-accent">
       <button
         type="button"
         role="checkbox"
@@ -126,10 +139,11 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
       )}
 
       {carried && !editing && (
-        <span className="shrink-0 text-xs text-attention-600" title="전날에 못 끝내서 넘어온 할 일">
+        <span className="shrink-0 text-xs text-muted-foreground" title="전날에 못 끝내서 넘어온 할 일">
           이월
         </span>
       )}
+      {!editing && timesReady && <TimePicker todo={todo} today={today} />}
       {!editing && (
         <button
           type="button"
@@ -141,5 +155,95 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
         </button>
       )}
     </li>
+  )
+}
+
+const PICK_HOURS = Array.from({ length: 18 }, (_, i) => i + 6) // 6시 ~ 23시
+
+// 몇 시에 할지 (오늘 시간표, D-38): a small button on the row that opens the hours as chips. Picking an hour puts the
+// to-do on that row of the timetable; picking it again, or 시각 지우기, takes it off.
+function TimePicker({ todo, today }: { todo: Todo; today: string }) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLSpanElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const panelId = useId()
+  const startMin = todoStartMin(todo, today)
+  const hour = startMin === null ? null : Math.floor(startMin / 60)
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return
+      setOpen(false)
+      buttonRef.current?.focus()
+    }
+    document.addEventListener("mousedown", onDown)
+    document.addEventListener("keydown", onKey)
+    return () => {
+      document.removeEventListener("mousedown", onDown)
+      document.removeEventListener("keydown", onKey)
+    }
+  }, [open])
+
+  const pick = (h: number | null) => {
+    setTodoTime(todo.id, h === null || h === hour ? null : h * 60, today)
+    setOpen(false)
+    buttonRef.current?.focus()
+  }
+
+  return (
+    <span ref={wrapRef} className="shrink-0">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={open ? panelId : undefined}
+        aria-label={hour === null ? `${todo.title} 시각 정하기` : `${todo.title} ${hour}시, 시각 바꾸기`}
+        className={`flex h-6 min-w-6 items-center justify-center rounded px-1 text-xs tabular-nums transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 ${
+          hour === null
+            ? `text-muted-foreground group-hover:opacity-100 [@media(hover:none)]:opacity-100 ${open ? "opacity-100" : "opacity-0"}`
+            : "font-medium text-action-700"
+        }`}
+      >
+        {hour === null ? <Clock className="size-3.5" aria-hidden="true" /> : `${hour}시`}
+      </button>
+      {open && (
+        <div
+          id={panelId}
+          role="group"
+          aria-label="몇 시에 할지"
+          className="absolute right-2 top-full z-20 mt-1 w-60 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-popover p-2 shadow-lg"
+        >
+          <div className="grid grid-cols-6 gap-1">
+            {PICK_HOURS.map((h) => (
+              <button
+                key={h}
+                type="button"
+                aria-pressed={h === hour}
+                onClick={() => pick(h)}
+                className={`h-8 rounded-md text-xs tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 ${
+                  h === hour ? "bg-action-600 font-medium text-action-foreground" : "text-foreground hover:bg-accent"
+                }`}
+              >
+                {h}시
+              </button>
+            ))}
+          </div>
+          {hour !== null && (
+            <button
+              type="button"
+              onClick={() => pick(null)}
+              className="mt-1.5 w-full rounded-md py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              시각 지우기
+            </button>
+          )}
+        </div>
+      )}
+    </span>
   )
 }

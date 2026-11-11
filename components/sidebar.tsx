@@ -178,7 +178,7 @@ export function Sidebar(_props: SidebarProps = {}) {
       onKeyDown={(e) => {
         if (e.key === "Escape") setMobileOpen(false)
       }}
-      className={`fixed inset-y-0 left-0 z-50 flex w-72 print:hidden max-w-[85vw] flex-col border-r border-border bg-sidebar shadow-xl transition-transform duration-200 md:visible md:sticky md:inset-auto md:top-0 md:z-auto md:h-screen md:w-60 md:max-w-none md:translate-x-0 md:shadow-none ${
+      className={`fixed inset-y-0 left-0 z-50 flex w-72 print:hidden max-w-[85vw] flex-col border-r border-border bg-sidebar [--accent:var(--action-100)] shadow-xl transition-transform duration-200 md:visible md:sticky md:inset-auto md:top-0 md:z-auto md:h-screen md:w-60 md:max-w-none md:translate-x-0 md:shadow-none ${
         mobileOpen ? "visible translate-x-0" : "invisible -translate-x-full"
       }`}
     >

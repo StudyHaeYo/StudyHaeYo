@@ -44,3 +44,13 @@ export function useTodayLabel() {
   const today = useToday()
   return today ? koreanDateFormatter.format(today) : ""
 }
+
+// Minutes since local midnight, refreshed once a minute (오늘 시간표의 지금 표시). Same pattern: null on the server.
+function getNowMinutes() {
+  const now = new Date()
+  return now.getHours() * 60 + now.getMinutes()
+}
+
+export function useNowMinutes(): number | null {
+  return useSyncExternalStore(subscribe, getNowMinutes, getServerSnapshot)
+}
