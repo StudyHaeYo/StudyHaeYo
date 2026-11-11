@@ -36,8 +36,6 @@ export default function DashboardPage() {
               <TodayTimetable />
               <WeeklyStats />
               <StudyHeatmap />
-              <WeeklyStats />
-              <StudyHeatmap />
             </div>
           </div>
         </div>
