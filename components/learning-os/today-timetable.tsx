@@ -1,24 +1,30 @@
 "use client"
 
-import { useState } from "react"
-import { Check, ChevronDown } from "lucide-react"
+import { useEffect, useRef } from "react"
+import { Check } from "lucide-react"
 import { useNowMinutes, useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
 import { useStudySession } from "@/lib/study-session"
 import { useTimeSlots } from "@/lib/time-slots"
-import { addTodo, todayChecklist, todoStartMin, toggleTodo, useTodos, useTodosStatus } from "@/lib/todos"
+import { addTodo, todayChecklist, todoStartMin, toggleTodo, useTodos, useTodosStatus, type Todo } from "@/lib/todos"
 import { usePlans } from "@/lib/plans"
 import { activePlans, planToday } from "@/lib/study-stats"
-import { HourPicker } from "@/components/hour-picker"
+import { clockLabel, layoutLanes, MIN_DRAWN_MINUTES, planRange, rangeLabel } from "@/lib/timetable"
+import { TimePicker } from "@/components/time-picker"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 
-// 오늘 시간표 (D-38): one row per hour on a navy-tinted panel. The text of a row is the plan — to-dos with a time
-// (todos.start_min). The rail beside the hour labels is what actually happened — records with a start time
-// (study_records.started_at) and the running timer session, filled to the minute. Hours before now fold into one
-// line so the panel stays short. Hidden behind "준비 중" until the columns exist (lib/time-slots.ts).
+// 오늘 시간표 (D-38): the day as a time grid on a navy-tinted panel. A to-do with a time (todos.start_min, and
+// duration_min for its length) is a white block from its start to its end — 13:30 to 15:00 is drawn from the middle
+// of the 13시 row to the 15시 line. What was actually studied (records with study_records.started_at, and the running
+// timer) is a tinted block over the same grid; when the two overlap they sit side by side. Now is a line across the
+// grid with the time to the minute ("15:20") where the hour labels are.
+// The whole day is one grid in a window about seven hours tall that scrolls, opened at the hour before now, so the
+// panel is the same height whenever it is opened. Hidden behind "준비 중" until the columns exist (lib/time-slots.ts).
 
-const DAY_START = 6 // the first row, unless something is earlier
-const ROW = 32 // px
+const DAY_START = 6 // the first hour drawn, unless something is earlier
+const HOUR = 40 // px per hour: half an hour still fits one line of text
+const WINDOW_HOURS = 7
+const EDGE = 8 // px above the first hour line
 
 // Minutes of today: [start, end)
 type Span = { key: string; start: number; end: number; title: string }
@@ -51,6 +57,8 @@ function studySpans(workspace: WorkspaceState, today: string): Span[] {
   return spans.sort((a, b) => a.start - b.start)
 }
 
+type GridItem = { key: string; start: number; end: number } & ({ kind: "plan"; todo: Todo } | { kind: "study"; title: string })
+
 export function TodayTimetable() {
   const today = useTodayISO()
   const now = useNowMinutes()
@@ -59,8 +67,16 @@ export function TodayTimetable() {
   const todosStatus = useTodosStatus()
   const session = useStudySession()
   const allPlans = usePlans()
-  const { todoTimes, recordTimes } = useTimeSlots()
-  const [earlier, setEarlier] = useState(false)
+  const { todoTimes, recordTimes, todoDurations } = useTimeSlots()
+
+  // Scrolled once, when the grid first shows — not every minute, or it would pull the grid back while someone is
+  // looking around.
+  const windowRef = useRef<HTMLDivElement>(null)
+  const gridReady = today !== null && now !== null && todosStatus !== "loading" && (todoTimes || recordTimes)
+  useEffect(() => {
+    const el = windowRef.current
+    if (gridReady && el) el.scrollTop = Number(el.dataset.open ?? 0)
+  }, [gridReady])
 
   const heading = (aside: string | null) => (
     <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
@@ -85,30 +101,35 @@ export function TodayTimetable() {
   }
 
   const checklist = todayChecklist(todos, today)
-  const plans = checklist.flatMap((todo) => {
+  const plans: GridItem[] = checklist.flatMap((todo) => {
     const startMin = todoStartMin(todo, today)
-    return startMin === null ? [] : [{ todo, hour: Math.floor(startMin / 60) }]
+    return startMin === null ? [] : [{ kind: "plan" as const, key: todo.id, todo, ...planRange(startMin, todo.durationMin) }]
   })
-  const untimed = checklist.filter((t) => t.doneAt === null && todoStartMin(t, today) === null).length
-
-  const studies = recordTimes ? studySpans(workspace, today) : []
-  const running: Span[] =
-    session.startedAt !== null && sameLocalDay(session.startedAt, today)
+  const studied: Span[] = [
+    ...(recordTimes ? studySpans(workspace, today) : []),
+    ...(session.startedAt !== null && sameLocalDay(session.startedAt, today)
       ? [{ key: "running", start: minutesOfDay(session.startedAt), end: Math.max(now, minutesOfDay(session.startedAt) + 1), title: "공부 중" }]
-      : []
-  const spans = [...studies, ...running]
-  const studied = spans.reduce((sum, s) => sum + (s.end - s.start), 0)
+      : []),
+  ]
+  const studiedMinutes = studied.reduce((sum, s) => sum + (s.end - s.start), 0)
+  const items: GridItem[] = [...plans, ...studied.map((s) => ({ kind: "study" as const, ...s }))].sort((a, b) => a.start - b.start)
+
+  // What is drawn: nothing shorter than a line of text. Lanes are worked out on the drawn size, so blocks never cover
+  // each other.
+  const drawn = items.map((it) => ({ start: it.start, end: Math.min(1440, Math.max(it.end, it.start + MIN_DRAWN_MINUTES)) }))
+  const lanes = layoutLanes(drawn)
 
   const nowHour = Math.floor(now / 60)
-  const firstHour = Math.min(DAY_START, nowHour, ...plans.map((p) => p.hour), ...spans.map((s) => Math.floor(s.start / 60)))
-  const foldUntil = nowHour - 1 // rows before this hour fold away
-  const canFold = foldUntil > firstHour
-  const from = earlier || !canFold ? firstHour : foldUntil
-  const hours = Array.from({ length: 24 - from }, (_, i) => from + i)
+  const firstHour = Math.min(DAY_START, nowHour, ...items.map((it) => Math.floor(it.start / 60)))
+  const hours = Array.from({ length: 24 - firstHour }, (_, i) => firstHour + i)
+  // EDGE keeps the first hour label (centred on its line) from being cut at the top of the window.
+  const y = (minutes: number) => EDGE + ((minutes - firstHour * 60) / 60) * HOUR
+  // Opens at the hour before now — or earlier, at the start of a block still running at that hour, so the window
+  // never opens on a block with its title cut off.
+  const openFrom = Math.min(Math.max(firstHour, nowHour - 1) * 60, ...items.filter((it, i) => it.start < (nowHour - 1) * 60 && drawn[i].end > (nowHour - 1) * 60).map((it) => it.start))
+  const openAt = Math.max(0, y(openFrom) - EDGE - 4)
+  const empty = items.length === 0
 
-  const foldedPlans = plans.filter((p) => p.hour < foldUntil)
-  const foldedStudied = spans.reduce((sum, s) => sum + Math.max(0, Math.min(s.end, foldUntil * 60) - s.start), 0)
-  const empty = plans.length === 0 && spans.length === 0
   // Running plans not on today's checklist yet (a to-do made from a plan starts with the plan's title).
   const fromPlans = todoTimes
     ? activePlans(workspace, allPlans, today).flatMap((item) => {
@@ -119,111 +140,137 @@ export function TodayTimetable() {
 
   return (
     <section aria-labelledby="today-timetable-title" className="rounded-xl bg-action-50 p-3">
-      {heading(empty ? null : `계획 ${plans.length}개 · 공부 ${formatDuration(studied)}`)}
+      {heading(empty ? null : `할 일 ${plans.length}개 · 공부 ${formatDuration(studiedMinutes)}`)}
 
-      {canFold && (
-        <button
-          type="button"
-          onClick={() => setEarlier((v) => !v)}
-          aria-expanded={earlier}
-          className="mb-1 flex w-full items-center justify-between gap-2 rounded-md px-1 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-action-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
-        >
-          <span className="truncate">
-            {firstHour}시~{foldUntil}시
-            {foldedPlans.length > 0 && ` · 계획 ${foldedPlans.length}개 중 ${foldedPlans.filter((p) => p.todo.doneAt !== null).length}개 완료`}
-            {foldedStudied > 0 && ` · 공부 ${formatDuration(foldedStudied)}`}
-          </span>
-          <ChevronDown className={`size-3.5 shrink-0 transition-transform motion-reduce:transition-none ${earlier ? "rotate-180" : ""}`} aria-hidden="true" />
-        </button>
-      )}
+      <div
+        ref={windowRef}
+        data-open={openAt}
+        tabIndex={0}
+        role="group"
+        aria-label="시간별 할 일과 공부한 시간"
+        className="overflow-y-auto overscroll-contain rounded-md [scrollbar-width:thin] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+        style={{ maxHeight: HOUR * WINDOW_HOURS }}
+      >
+        <div className="relative" style={{ height: hours.length * HOUR + EDGE }}>
+          {/* the hours: a hairline each, its label centred on it (the label names the line, not the space under it) */}
+          <div aria-hidden="true">
+            {hours.map((h) => (
+              <div key={h} className="absolute inset-x-0 flex h-3 -translate-y-1/2 items-center gap-2" style={{ top: y(h * 60) }}>
+                {/* The hour label steps aside while the "15:20" tag sits on it, instead of peeking out from under it. */}
+                <span
+                  className={`w-9 shrink-0 pr-1 text-right text-xs leading-none tabular-nums text-muted-foreground ${
+                    Math.abs(now - h * 60) < 22 ? "invisible" : ""
+                  }`}
+                >
+                  {h}시
+                </span>
+                <span className="h-px flex-1 bg-action-200/70" />
+              </div>
+            ))}
+          </div>
 
-      <ol>
-        {hours.map((h) => {
-          const rowPlans = plans.filter((p) => p.hour === h)
-          const inHour = spans.filter((s) => s.start < (h + 1) * 60 && s.end > h * 60)
-          const startsHere = spans.filter((s) => Math.floor(s.start / 60) === h)
-          const current = h === nowHour
-          return (
-            <li key={h} aria-current={current ? "time" : undefined} className="flex items-stretch gap-2" style={{ minHeight: ROW }}>
-              <span className={`w-7 shrink-0 pt-1.5 text-right text-xs tabular-nums ${current ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
-                {h}시
-              </span>
+          {/* now: the time to the minute in the label column, and a line across the grid at that minute */}
+          <div className="pointer-events-none absolute left-0 right-0 z-10 flex items-center" style={{ top: y(now) - 8 }}>
+            <span className="flex h-4 w-9 shrink-0 items-center justify-center rounded-full bg-foreground text-[10px] font-semibold leading-none tabular-nums text-background">
+              <span className="sr-only">지금 </span>
+              {clockLabel(now)}
+            </span>
+            <span className="h-px flex-1 bg-foreground/60" aria-hidden="true" />
+          </div>
 
-              {/* the rail: the studied minutes of this hour, and where now is */}
-              <span className="relative w-[3px] shrink-0 bg-action-200/70" aria-hidden="true">
-                {inHour.map((s) => {
-                  const top = Math.max(0, s.start / 60 - h)
-                  const bottom = Math.min(1, s.end / 60 - h)
-                  return <span key={s.key} className="absolute inset-x-0 bg-action-600" style={{ top: `${top * 100}%`, height: `${(bottom - top) * 100}%` }} />
-                })}
-                {current && (
-                  <span
-                    className="absolute left-1/2 size-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-action-50 bg-foreground"
-                    style={{ top: `${(now / 60 - h) * 100}%` }}
-                  />
-                )}
-              </span>
-
-              <span className="flex min-w-0 flex-1 flex-col justify-center gap-1 border-b border-action-100 py-1">
-                {rowPlans.map(({ todo }) => {
-                  const done = todo.doneAt !== null
-                  return (
-                    <span key={todo.id} className="flex min-w-0 items-center gap-2">
-                      <button
-                        type="button"
-                        role="checkbox"
-                        aria-checked={done}
-                        aria-label={`${todo.title} ${done ? "완료 취소" : "완료"}`}
-                        onClick={() => toggleTodo(todo.id)}
-                        className={`relative flex size-4 shrink-0 items-center justify-center rounded-[5px] border transition-[colors,transform] before:absolute before:-inset-2 active:scale-90 motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 ${
-                          done ? "border-action-600 bg-action-600 text-action-foreground" : "border-input bg-background hover:border-action-400"
-                        }`}
-                      >
-                        {done && <Check className="size-3" aria-hidden="true" />}
-                      </button>
-                      <span className={`truncate text-sm ${done ? "text-muted-foreground line-through" : "text-foreground"}`}>{todo.title}</span>
+          <ol className="absolute bottom-0 left-11 right-0 top-0">
+            {items.map((it, i) => {
+              const top = y(drawn[i].start)
+              const height = y(drawn[i].end) - top - 2
+              const { lane, lanes: count } = lanes[i]
+              const style = { top: top + 1, height, left: `calc(${(lane / count) * 100}% + ${lane > 0 ? 2 : 0}px)`, width: `calc(${100 / count}% - ${lane > 0 ? 2 : 0}px)` }
+              const range = rangeLabel(it.start, it.end)
+              const twoLines = height >= 36
+              // A tall block reads from its top (where it starts); a short one centres its single line.
+              const align = height >= 56 ? "justify-start pt-1.5" : "justify-center"
+              if (it.kind === "study") {
+                return (
+                  <li
+                    key={it.key}
+                    title={`${range} ${it.title}`}
+                    className={`absolute flex flex-col overflow-hidden rounded-md border-l-2 border-action-600 bg-action-100 px-1.5 text-action-900 ${align}`}
+                    style={style}
+                  >
+                    <span className="flex min-w-0 items-baseline justify-between gap-1.5 leading-none">
+                      <span className="truncate text-xs font-medium">{it.title}</span>
+                      <span className="shrink-0 text-[11px] tabular-nums text-action-700">{formatDuration(it.end - it.start)}</span>
                     </span>
-                  )
-                })}
-                {startsHere.map((s) => (
-                  <span key={s.key} className="flex min-w-0 items-baseline justify-between gap-2 text-xs">
-                    <span className="truncate font-medium text-action-700">{s.title}</span>
-                    <span className="shrink-0 tabular-nums text-muted-foreground">{formatDuration(s.end - s.start)}</span>
+                    {twoLines && <span className="mt-1 text-[11px] leading-none tabular-nums text-action-700">{range} 공부함</span>}
+                    {!twoLines && <span className="sr-only">{range} 공부함</span>}
+                  </li>
+                )
+              }
+              const done = it.todo.doneAt !== null
+              return (
+                <li
+                  key={it.key}
+                  title={`${range} ${it.todo.title}`}
+                  className={`absolute flex flex-col overflow-hidden rounded-md px-1.5 ring-1 ring-inset ${align} ${
+                    done ? "bg-background/60 ring-action-100" : "bg-background ring-action-200"
+                  }`}
+                  style={style}
+                >
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={done}
+                      aria-label={`${it.todo.title} ${done ? "완료 취소" : "완료"}`}
+                      onClick={() => toggleTodo(it.todo.id)}
+                      className={`relative flex size-3.5 shrink-0 items-center justify-center rounded-[4px] border transition-[colors,transform] before:absolute before:-inset-2 active:scale-90 motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 ${
+                        done ? "border-action-600 bg-action-600 text-action-foreground" : "border-input bg-background hover:border-action-400"
+                      }`}
+                    >
+                      {done && <Check className="size-2.5" aria-hidden="true" />}
+                    </button>
+                    <span className={`truncate text-[13px] leading-none ${done ? "text-muted-foreground line-through" : "text-foreground"}`}>{it.todo.title}</span>
                   </span>
-                ))}
-              </span>
-            </li>
-          )
-        })}
-      </ol>
+                  {twoLines ? (
+                    <span className="mt-1 pl-5 text-[11px] leading-none tabular-nums text-muted-foreground">{range}</span>
+                  ) : (
+                    <span className="sr-only">{range}</span>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+      </div>
 
       {fromPlans.length > 0 && (
         <div className="mt-3 border-t border-action-100 pt-2">
-          <p className="mb-1 px-1 text-xs text-muted-foreground">진행 중인 계획에서 오늘 할 만큼</p>
+          <p className="mb-1 px-1 text-xs text-muted-foreground">학습 계획 · 오늘 몫</p>
           <ul>
             {fromPlans.map((p) => (
               <li key={p.id} className="relative flex items-center justify-between gap-2 px-1 py-1">
                 <span className="min-w-0 truncate text-sm text-foreground">{p.title}</span>
-                <HourPicker
-                  hour={null}
-                  onPick={(h) => h !== null && addTodo(p.title, today, h * 60)}
+                <TimePicker
+                  startMin={null}
+                  durationMin={null}
+                  onChange={(start) => start !== null && addTodo(p.title, today, start, p.minutes === null ? null : Math.max(MIN_DRAWN_MINUTES, p.minutes))}
+                  withDuration={false}
+                  closeOnPick
                   label={`${p.title} 시간표에 넣기`}
                   className={() =>
                     "h-7 rounded-md px-2 text-xs font-medium text-action-700 transition-colors hover:bg-action-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
                   }
                 >
                   시간표에 넣기
-                </HourPicker>
+                </TimePicker>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      {(empty || untimed > 0) && todoTimes && (
+      {empty && todoTimes && (
         <p className="mt-2 px-1 text-xs leading-relaxed text-muted-foreground">
-          {untimed > 0 ? `시각을 정하지 않은 할 일 ${untimed}개 · ` : ""}
-          체크리스트에서 할 일의 시계를 누르면 시각을 정할 수 있어요.
+          체크리스트에서 할 일의 시계를 누르면 {todoDurations ? "시각과 길이를 정해" : "그 시각에"} 여기에 넣을 수 있어요.
         </p>
       )}
     </section>

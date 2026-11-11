@@ -16,7 +16,8 @@ import {
   type Todo,
 } from "@/lib/todos"
 import { useTimeSlots } from "@/lib/time-slots"
-import { HourPicker } from "@/components/hour-picker"
+import { TimePicker } from "@/components/time-picker"
+import { clockLabel } from "@/lib/timetable"
 
 function useChecklist() {
   const todos = useTodos()
@@ -144,7 +145,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
           이월
         </span>
       )}
-      {!editing && timesReady && <TimePicker todo={todo} today={today} />}
+      {!editing && timesReady && <TodoTime todo={todo} today={today} />}
       {!editing && (
         <button
           type="button"
@@ -159,24 +160,27 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
   )
 }
 
-// 몇 시에 할지 (오늘 시간표, D-38): picking an hour puts the to-do on that row of the timetable.
-function TimePicker({ todo, today }: { todo: Todo; today: string }) {
+// 몇 시부터 얼마 동안 (오늘 시간표, D-38): setting a time puts the to-do on the timetable, as long as its length.
+function TodoTime({ todo, today }: { todo: Todo; today: string }) {
   const startMin = todoStartMin(todo, today)
-  const hour = startMin === null ? null : Math.floor(startMin / 60)
+  const withDuration = useTimeSlots().todoDurations
+  const shown = startMin === null ? null : startMin % 60 === 0 ? `${startMin / 60}시` : clockLabel(startMin)
   return (
-    <HourPicker
-      hour={hour}
-      onPick={(h) => setTodoTime(todo.id, h === null ? null : h * 60, today)}
-      label={hour === null ? `${todo.title} 시각 정하기` : `${todo.title} ${hour}시, 시각 바꾸기`}
+    <TimePicker
+      startMin={startMin}
+      durationMin={startMin === null ? null : todo.durationMin}
+      onChange={(start, length) => setTodoTime(todo.id, start, today, length)}
+      withDuration={withDuration}
+      label={shown === null ? `${todo.title} 시각 정하기` : `${todo.title} ${shown}, 시각 바꾸기`}
       className={(open) =>
         `flex h-6 min-w-6 items-center justify-center rounded px-1 text-xs tabular-nums transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 ${
-          hour === null
+          shown === null
             ? `text-muted-foreground group-hover:opacity-100 [@media(hover:none)]:opacity-100 ${open ? "opacity-100" : "opacity-0"}`
             : "font-medium text-action-700"
         }`
       }
     >
-      {hour === null ? <Clock className="size-3.5" aria-hidden="true" /> : `${hour}시`}
-    </HourPicker>
+      {shown ?? <Clock className="size-3.5" aria-hidden="true" />}
+    </TimePicker>
   )
 }
