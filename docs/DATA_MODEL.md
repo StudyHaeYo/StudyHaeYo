@@ -116,7 +116,7 @@
 - `dueOn`은 할 날짜(로컬 날짜 문자열), `doneAt`은 완료 시각(ms, 안 했으면 null)
 - `startMin`(DB `start_min`, 0~1439 또는 null): 몇 시에 할지, `dueOn` 날 0시부터 센 분(D-38). 화면은 한 시간 단위로만 고른다. `dueOn` 날에만 뜻이 있다: 전날에서 넘어온 할 일은 시각 없이 보이고(`todoStartMin`), 넘어온 할 일에 시각을 정하면 `dueOn`도 오늘로 옮긴다(`setTodoTime`)
 - `start_min` · `started_at` 칸은 `supabase/migrations/20261112_time_slots.sql`. 실행 전에는 `lib/time-slots.ts`의 두 값이 false라 시간표는 "준비 중", 시각 고르기와 기록 창의 "시작"은 숨고, 쓰기에도 이 칸을 보내지 않는다
-- 페이지나 계획과 연결하지 않는다
+- 페이지나 계획과 연결하지 않는다. 시간표의 [시간표에 넣기]는 계획 이름으로 할 일을 만들 뿐이다(D-38, `planToday`)
 - 테이블 정의와 RLS는 `supabase/migrations/20261021_todos.sql`
 
 ### 세션 (브라우저 전용, localStorage `studyhaeyo:study-session`)

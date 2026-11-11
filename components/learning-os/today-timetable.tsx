@@ -6,7 +6,10 @@ import { useNowMinutes, useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
 import { useStudySession } from "@/lib/study-session"
 import { useTimeSlots } from "@/lib/time-slots"
-import { todayChecklist, todoStartMin, toggleTodo, useTodos, useTodosStatus } from "@/lib/todos"
+import { addTodo, todayChecklist, todoStartMin, toggleTodo, useTodos, useTodosStatus } from "@/lib/todos"
+import { usePlans } from "@/lib/plans"
+import { activePlans, planToday } from "@/lib/study-stats"
+import { HourPicker } from "@/components/hour-picker"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 
 // 오늘 시간표 (D-38): one row per hour on a navy-tinted panel. The text of a row is the plan — to-dos with a time
@@ -55,6 +58,7 @@ export function TodayTimetable() {
   const todos = useTodos()
   const todosStatus = useTodosStatus()
   const session = useStudySession()
+  const allPlans = usePlans()
   const { todoTimes, recordTimes } = useTimeSlots()
   const [earlier, setEarlier] = useState(false)
 
@@ -105,6 +109,13 @@ export function TodayTimetable() {
   const foldedPlans = plans.filter((p) => p.hour < foldUntil)
   const foldedStudied = spans.reduce((sum, s) => sum + Math.max(0, Math.min(s.end, foldUntil * 60) - s.start), 0)
   const empty = plans.length === 0 && spans.length === 0
+  // Running plans not on today's checklist yet (a to-do made from a plan starts with the plan's title).
+  const fromPlans = todoTimes
+    ? activePlans(workspace, allPlans, today).flatMap((item) => {
+        const ask = planToday(item)
+        return ask && !checklist.some((t) => t.title.startsWith(item.plan.title)) ? [{ id: item.plan.id, ...ask }] : []
+      })
+    : []
 
   return (
     <section aria-labelledby="today-timetable-title" className="rounded-xl bg-action-50 p-3">
@@ -186,6 +197,29 @@ export function TodayTimetable() {
           )
         })}
       </ol>
+
+      {fromPlans.length > 0 && (
+        <div className="mt-3 border-t border-action-100 pt-2">
+          <p className="mb-1 px-1 text-xs text-muted-foreground">진행 중인 계획에서 오늘 할 만큼</p>
+          <ul>
+            {fromPlans.map((p) => (
+              <li key={p.id} className="relative flex items-center justify-between gap-2 px-1 py-1">
+                <span className="min-w-0 truncate text-sm text-foreground">{p.title}</span>
+                <HourPicker
+                  hour={null}
+                  onPick={(h) => h !== null && addTodo(p.title, today, h * 60)}
+                  label={`${p.title} 시간표에 넣기`}
+                  className={() =>
+                    "h-7 rounded-md px-2 text-xs font-medium text-action-700 transition-colors hover:bg-action-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+                  }
+                >
+                  시간표에 넣기
+                </HourPicker>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {(empty || untimed > 0) && todoTimes && (
         <p className="mt-2 px-1 text-xs leading-relaxed text-muted-foreground">
