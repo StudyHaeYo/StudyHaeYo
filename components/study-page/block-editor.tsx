@@ -712,7 +712,7 @@ export function BlockEditor({
       >
         {hasCues && (
           <p aria-hidden="true" className="pointer-events-none absolute -top-6 right-[calc(100%+1.75rem)] hidden w-40 text-right text-xs text-muted-foreground @min-[66.5rem]/page:block">
-            단서
+            질문
           </p>
         )}
         {blocks.map((block, index) => {
@@ -784,7 +784,7 @@ export function BlockEditor({
                   setHandleMenu(null)
                   removeBlock(block.id)
                 }}
-                cueLabel={cues && isTextBlock(block) && !review ? (block.cue?.trim() ? "단서 고치기" : "단서 달기") : undefined}
+                cueLabel={cues && isTextBlock(block) && !review ? (block.cue?.trim() ? "질문 고치기" : "질문 달기") : undefined}
                 onCue={() => {
                   setHandleMenu(null)
                   setEditingCue(block.id)
@@ -854,7 +854,7 @@ export function BlockEditor({
               ? block.cue?.trim() === "요약"
                 ? "이 강의를 두세 줄로 요약해요"
                 : index === 0
-                  ? "필기를 적어요 · 줄 왼쪽에 질문(단서)을 달면 복습할 때 그 줄만 가려져요"
+                  ? "필기를 적어요 · 줄 왼쪽에 질문을 달면 복습할 때 그 줄만 가려져요"
                   : undefined
               : undefined)
           const reviewEntry = review?.items.get(block.id)
@@ -1124,7 +1124,7 @@ export function BlockEditor({
                   rows={1}
                   spellCheck={false}
                   aria-label={`${block.text || "토글"} 내용`}
-                  placeholder={isProblem ? "정답과 풀이…" : "펼치면 보이는 내용 (예: 정답과 풀이)"}
+                  placeholder={isProblem ? "정답, 풀이, 왜 틀렸는지…" : "펼치면 보이는 내용 (예: 정답과 풀이)"}
                   onChange={(e) => onChange(blocks.map((b) => (b.id === block.id ? { ...block, body: e.target.value } : b)))}
                   onKeyDown={(e) => {
                     if (e.nativeEvent.isComposing || e.keyCode === 229) return
@@ -1270,7 +1270,7 @@ function BlockHandle({
   onMove: (step: -1 | 1) => void
   onDuplicate: () => void
   onDelete: () => void
-  // 코넬 노트: "단서 달기" for screens without the margin (and for keyboards).
+  // 코넬 노트: "질문 달기" (the cue; the screen calls it 질문) for screens without the margin (and for keyboards).
   cueLabel?: string
   onCue?: () => void
 }) {

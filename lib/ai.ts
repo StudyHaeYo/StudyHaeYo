@@ -3,6 +3,7 @@ import {
   conceptBlocks,
   isTextBlock,
   newBlockId,
+  splitConcept,
   structuredBlockLines,
   textBlockWords,
   unresolvedConfusionCount,
@@ -295,4 +296,14 @@ export function wrongFromGrading(quiz: string, grading: string) {
     wrong.push({ level: problem.level, text: problem.text, answer: answers.get(Number(m[1])) ?? clean(m[2]) })
   }
   return wrong
+}
+
+// AI answers going into a 강의 노트 (코넬 노트): each 핵심 개념 "용어: 설명" becomes a line of notes with the term as
+// its 질문 in the margin, so what the AI wrote is covered in review like the notes the user took (D-35).
+export function withCues(blocks: TextBlock[]): TextBlock[] {
+  return blocks.map((b) => {
+    if (b.type !== "concept") return b
+    const { term, detail } = splitConcept(b.text)
+    return term && detail.trim() ? { ...b, type: "p", text: detail.trim(), cue: term.slice(0, 80) } : b
+  })
 }
