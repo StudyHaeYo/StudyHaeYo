@@ -62,7 +62,7 @@ export function CueSlot({
         rows={1}
         maxLength={80}
         spellCheck={false}
-        aria-label="단서 (질문이나 키워드)"
+        aria-label="질문 (키워드도 돼요)"
         placeholder="질문이나 키워드…"
         onMouseDown={(e) => e.stopPropagation()}
         onChange={(e) => onChange(e.target.value.replace(/\n/g, " "))}
@@ -87,7 +87,7 @@ export function CueSlot({
       <button
         type="button"
         title={text}
-        aria-label={`단서 고치기: ${text}`}
+        aria-label={`질문 고치기: ${text}`}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={onEdit}
         className={`mb-0.5 line-clamp-3 break-words rounded text-left text-sm font-semibold leading-snug text-foreground hover:bg-accent ${place} ${top}`}
@@ -96,16 +96,16 @@ export function CueSlot({
       </button>
     )
   if (readOnly) return null
-  // No cue yet: a quiet "+ 단서" in the margin while the pointer is on the line (phones use the block menu instead).
+  // No cue yet: a quiet "+ 질문" in the margin while the pointer is on the line (phones use the block menu instead).
   return (
     <button
       type="button"
-      aria-label="단서 달기"
+      aria-label="질문 달기"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={onEdit}
       className={`hidden rounded text-sm text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover/block:opacity-100 @min-[66.5rem]/page:block ${place} ${top}`}
     >
-      + 단서
+      + 질문
     </button>
   )
 }

@@ -121,9 +121,9 @@ export function LectureHead({
         <input
           value={props.week ?? ""}
           onChange={(e) => onChange({ week: e.target.value })}
-          placeholder="3주차…"
+          placeholder="3주차"
           autoComplete="off"
-          className="h-8 w-20 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-action-400"
+          className="h-8 w-24 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-action-400"
         />
       </label>
       {material && (

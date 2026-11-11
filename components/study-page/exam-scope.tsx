@@ -76,6 +76,7 @@ export function ExamScope({
   onChangeDate,
   scope,
   options,
+  subjectName,
   onChangeScope,
   today,
 }: {
@@ -85,6 +86,8 @@ export function ExamScope({
   scope: StudyPage[]
   // Notes that can go in the scope (same subject first).
   options: { id: string; title: string }[]
+  // The subject the options come from, when there is one: then they can all go in at once.
+  subjectName?: string
   onChangeScope: (ids: string[]) => void
   today: string | null
 }) {
@@ -225,7 +228,8 @@ export function ExamScope({
         </ul>
       )}
       {rest.length > 0 && (
-        <label className="self-start">
+        <div className="flex flex-wrap items-center gap-2 self-start">
+        <label>
           <span className="sr-only">범위에 노트 넣기</span>
           <select
             value=""
@@ -240,6 +244,16 @@ export function ExamScope({
             ))}
           </select>
         </label>
+          {subjectName && rest.length > 1 && (
+            <button
+              type="button"
+              onClick={() => onChangeScope([...ids, ...rest.map((o) => o.id)])}
+              className="h-8 rounded-lg px-2 text-sm font-medium text-action-700 transition-colors hover:bg-action-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+            >
+              {subjectName} 노트 {rest.length}개 모두 넣기
+            </button>
+          )}
+        </div>
       )}
     </section>
   )

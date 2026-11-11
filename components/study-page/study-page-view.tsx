@@ -40,6 +40,7 @@ import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { AiPanel } from "@/components/record/ai-panel"
 import { LectureMaterialPane } from "@/components/study-page/lecture-material-pane"
 import { starterSectionHints } from "@/lib/templates"
+import { withCues } from "@/lib/ai"
 
 // The page on screen, so leaving and coming straight back (or a remount) isn't taken as leaving.
 let openPageId: string | null = null
@@ -382,6 +383,7 @@ export function StudyPageView({
               onChangeDate={(examDate) => updatePageProps(page.id, { examDate })}
               scope={scopePages}
               options={scopeOptions}
+              subjectName={subject?.name}
               onChangeScope={(scope) => updatePageProps(page.id, { scope })}
               today={today}
             />
@@ -453,7 +455,9 @@ export function StudyPageView({
       request={aiRequest}
       open={aiOpen}
       onClose={() => setAiOpen(false)}
-      onInsert={(blocks) => updatePage(page.id, (p) => ({ ...p, blocks: [...p.blocks, ...blocks] }))}
+      onInsert={(blocks) =>
+        updatePage(page.id, (p) => ({ ...p, blocks: [...p.blocks, ...(propsReady && pageKind(p) === "lecture" ? withCues(blocks) : blocks)] }))
+      }
       onAddConfusions={(texts) => updatePage(page.id, (p) => ({ ...p, blocks: addConfusions(p.blocks, texts) }))}
     />
     </PagesContext.Provider>

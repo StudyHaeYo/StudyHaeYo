@@ -34,12 +34,8 @@ export function PageStatusChip({
 
   if (kind === "exam" && exam) {
     const countdown = examCountdown(exam.date, today)
-    if (!exam.date)
-      return (
-        <a href="#exam-date" className={`${calm} !inline-flex border border-dashed border-border`}>
-          시험일 정하기
-        </a>
-      )
+    // No date yet: the body starts with the 시험일 field, so the bar does not ask a second time.
+    if (!exam.date) return null
     if (!countdown) return null
     const near = daysBetween(today, exam.date) <= 7
     return (
