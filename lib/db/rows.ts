@@ -312,11 +312,14 @@ export interface TodoRow {
   position: number
   created_at: string
   start_min?: number | null
+  duration_min?: number | null
 }
 
 // Before 20261112_time_slots.sql the table has no start_min column (오늘 시간표).
 export const LEGACY_TODO_COLUMNS = "id, user_id, title, due_on, done_at, position, created_at"
-export const TODO_COLUMNS = `${LEGACY_TODO_COLUMNS}, start_min`
+export const TODO_COLUMNS_NO_DURATION = `${LEGACY_TODO_COLUMNS}, start_min`
+// Before 20261113_todo_duration.sql the table has no duration_min column.
+export const TODO_COLUMNS = `${TODO_COLUMNS_NO_DURATION}, duration_min`
 
 export function toTodo(row: TodoRow): Todo {
   return {
@@ -326,6 +329,7 @@ export function toTodo(row: TodoRow): Todo {
     doneAt: row.done_at ? new Date(row.done_at).getTime() : null,
     position: row.position,
     startMin: typeof row.start_min === "number" ? row.start_min : null,
+    durationMin: typeof row.duration_min === "number" ? row.duration_min : null,
   }
 }
 
@@ -339,5 +343,6 @@ export function todoInsertRow(todo: Todo, userId: string) {
     position: todo.position,
     // Only sent when set (it can only be set once the column exists).
     ...(todo.startMin !== null ? { start_min: todo.startMin } : {}),
+    ...(todo.durationMin !== null ? { duration_min: todo.durationMin } : {}),
   }
 }

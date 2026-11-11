@@ -10,6 +10,7 @@ import {
   LEGACY_NODE_COLUMNS,
   LEGACY_RECORD_COLUMNS,
   LEGACY_TODO_COLUMNS,
+  TODO_COLUMNS_NO_DURATION,
   RECORD_COLUMNS_NO_TIMES,
   NODE_COLUMNS,
   PLAN_COLUMNS,
@@ -135,20 +136,27 @@ export async function loadUserData() {
 // Todos load separately so a missing todos table (not created yet) only turns the checklist off, not the app.
 async function loadTodos(userId: string, seq: number) {
   const order = ["position", "created_at", "id"]
+  const missingColumn = (error: unknown) => (error as { code?: string } | null)?.code === "42703"
+  // Newest columns first; each missing one (its SQL not run yet) turns off only what needs it.
+  const attempts = [
+    { columns: TODO_COLUMNS, times: true, durations: true },
+    { columns: TODO_COLUMNS_NO_DURATION, times: true, durations: false },
+    { columns: LEGACY_TODO_COLUMNS, times: false, durations: false },
+  ]
   try {
-    let rows: TodoRow[]
-    let times = true
-    try {
-      rows = await selectAll<TodoRow>("todos", TODO_COLUMNS, userId, order)
-    } catch (error) {
-      // No start_min column yet (20261112_time_slots.sql): the checklist works, times stay off.
-      if ((error as { code?: string } | null)?.code !== "42703") throw error
-      rows = await selectAll<TodoRow>("todos", LEGACY_TODO_COLUMNS, userId, order)
-      times = false
+    for (const attempt of attempts) {
+      let rows: TodoRow[]
+      try {
+        rows = await selectAll<TodoRow>("todos", attempt.columns, userId, order)
+      } catch (error) {
+        if (missingColumn(error) && attempt !== attempts[attempts.length - 1]) continue
+        throw error
+      }
+      if (seq !== loadSeq) return
+      setTimeSlots({ todoTimes: attempt.times, todoDurations: attempt.durations })
+      replaceTodos(rows.map(toTodo), "ready")
+      return
     }
-    if (seq !== loadSeq) return
-    setTimeSlots({ todoTimes: times })
-    replaceTodos(rows.map(toTodo), "ready")
   } catch {
     if (seq === loadSeq) replaceTodos([], "unavailable")
   }
@@ -162,7 +170,7 @@ function clearUserData() {
   replaceWorkspace(null)
   replacePlans([])
   replaceTodos([], "loading")
-  setTimeSlots({ todoTimes: false, recordTimes: false })
+  setTimeSlots({ todoTimes: false, recordTimes: false, todoDurations: false })
   statusStore.set(() => ({ phase: "loading" }))
 }
 

@@ -112,12 +112,12 @@
 - `goal`은 자유 메모("목표 메모")다
 
 ### Todo (오늘의 체크리스트, `lib/todos.ts`, 테이블 `todos`)
-`{id, title, dueOn, doneAt, position, startMin}`
+`{id, title, dueOn, doneAt, position, startMin, durationMin}`
 - `dueOn`은 할 날짜(로컬 날짜 문자열), `doneAt`은 완료 시각(ms, 안 했으면 null)
-- `startMin`(DB `start_min`, 0~1439 또는 null): 몇 시에 할지, `dueOn` 날 0시부터 센 분(D-38). 화면은 한 시간 단위로만 고른다. `dueOn` 날에만 뜻이 있다: 전날에서 넘어온 할 일은 시각 없이 보이고(`todoStartMin`), 넘어온 할 일에 시각을 정하면 `dueOn`도 오늘로 옮긴다(`setTodoTime`)
-- `start_min` · `started_at` 칸은 `supabase/migrations/20261112_time_slots.sql`. 실행 전에는 `lib/time-slots.ts`의 두 값이 false라 시간표는 "준비 중", 시각 고르기와 기록 창의 "시작"은 숨고, 쓰기에도 이 칸을 보내지 않는다
-- 페이지나 계획과 연결하지 않는다. 시간표의 [시간표에 넣기]는 계획 이름으로 할 일을 만들 뿐이다(D-38, `planToday`)
-- 테이블 정의와 RLS는 `supabase/migrations/20261021_todos.sql`
+- `startMin`(DB `start_min`, 0~1439 또는 null): 몇 시에 할지, `dueOn` 날 0시부터 센 분(D-38). 화면은 30분 단위로 고른다. `dueOn` 날에만 뜻이 있다: 전날에서 넘어온 할 일은 시각 없이 보이고(`todoStartMin`), 넘어온 할 일에 시각을 정하면 `dueOn`도 오늘로 옮긴다(`setTodoTime`)
+- `durationMin`(DB `duration_min`, 10~720 또는 null): 길이(분). `startMin`이 있을 때만 뜻이 있고, 시각을 지우면 같이 지운다. null이면 시간표는 한 시간으로 그린다(`planRange`). 끝 시각은 저장하지 않는다
+- 페이지나 계획과 연결하지 않는다. 시간표의 [시간표에 넣기]는 계획 이름과 오늘 몫 길이로 할 일을 만들 뿐이다(D-38, `planToday`)
+- 테이블 정의와 RLS는 `supabase/migrations/20261021_todos.sql`. `start_min` · `started_at`은 `20261112_time_slots.sql`, `duration_min`은 `20261113_todo_duration.sql`. 실행 전에는 `lib/time-slots.ts`의 값이 false라 그 칸을 쓰지 않는다: `start_min`이 없으면 시간표는 "준비 중"이고 시각 고르기가 숨는다. `duration_min`만 없으면 길이 고르기가 숨고 블록은 한 시간으로 그려진다
 
 ### 세션 (브라우저 전용, localStorage `studyhaeyo:study-session`)
 - `startedAt`, `segments[{pageId,start,end}]`, `openSegment`, `lastActiveAt`, `log: FinishedSession[]`

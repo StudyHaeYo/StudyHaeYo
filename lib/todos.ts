@@ -2,7 +2,7 @@ import { createStore } from "@/lib/create-store"
 import { check, db, enqueueWrite } from "@/lib/db/queue"
 import { newId, todoInsertRow } from "@/lib/db/rows"
 import { toISODate } from "@/lib/study-pages"
-import { todoTimesReady } from "@/lib/time-slots"
+import { todoDurationsReady, todoTimesReady } from "@/lib/time-slots"
 
 // 오늘의 체크리스트. The signed-in user's todos live in Supabase (todos); this store is the screen cache, filled by
 // lib/db/sync.ts after sign-in. Components call these functions, never the DB.
@@ -15,6 +15,9 @@ export interface Todo {
   // When to do it: minutes from 00:00 of dueOn (0–1439), or null for no set time. The screen picks whole hours.
   // It belongs to dueOn only: a todo carried over from an earlier day shows without a time.
   startMin: number | null
+  // How long, in minutes (10–720), from startMin. null = not set: the timetable draws one hour. Kept when only the
+  // start moves; cleared with the time.
+  durationMin: number | null
 }
 
 // "unavailable": the todos table could not be read (not created yet). The rest of the app still works.
@@ -40,7 +43,7 @@ export function todayChecklist(todos: Todo[], today: string) {
 }
 
 // dueOn is usually today; a later date (e.g. a review day) makes it show up from that day.
-export function addTodo(title: string, dueOn: string, startMin: number | null = null) {
+export function addTodo(title: string, dueOn: string, startMin: number | null = null, durationMin: number | null = null) {
   const text = title.trim().slice(0, 200)
   if (!text) return
   const todos = store.get()
@@ -50,6 +53,7 @@ export function addTodo(title: string, dueOn: string, startMin: number | null = 
     dueOn,
     doneAt: null,
     startMin: todoTimesReady() ? startMin : null,
+    durationMin: todoTimesReady() && todoDurationsReady() && startMin !== null ? durationMin : null,
     position: todos.reduce((max, t) => Math.max(max, t.position), -1) + 1,
   }
   store.set((list) => [...list, todo])
@@ -80,12 +84,18 @@ export function renameTodo(id: string, title: string) {
 }
 
 // Sets or clears (null) the time. Setting a time on a carried-over todo moves it to today, where the time applies.
-export function setTodoTime(id: string, startMin: number | null, today: string) {
+// `durationMin` undefined keeps the length it had; clearing the time clears the length too.
+export function setTodoTime(id: string, startMin: number | null, today: string, durationMin?: number | null) {
   if (!todoTimesReady()) return
   const todo = store.get().find((t) => t.id === id)
   if (!todo) return
   const dueOn = startMin !== null && todo.dueOn < today ? today : todo.dueOn
-  patchTodo(id, { startMin, dueOn }, { start_min: startMin, due_on: dueOn })
+  if (!todoDurationsReady()) {
+    patchTodo(id, { startMin, dueOn }, { start_min: startMin, due_on: dueOn })
+    return
+  }
+  const length = startMin === null ? null : durationMin === undefined ? todo.durationMin : durationMin
+  patchTodo(id, { startMin, dueOn, durationMin: length }, { start_min: startMin, due_on: dueOn, duration_min: length })
 }
 
 // The time a todo has on `today`'s timetable, or null (no time, or a time set for an earlier day).
