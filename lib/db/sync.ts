@@ -3,11 +3,14 @@ import { createStore } from "@/lib/create-store"
 import { replacePlans, setPlanGoalsReady } from "@/lib/plans"
 import { replaceWorkspace, setPagePropsReady, setSubjectRecordsReady } from "@/lib/workspace"
 import { replaceTodos } from "@/lib/todos"
+import { setTimeSlots } from "@/lib/time-slots"
 import { db, resetWrites, setCurrentUserId, setWriteFailureHandler } from "@/lib/db/queue"
 import {
   LEGACY_PLAN_COLUMNS,
   LEGACY_NODE_COLUMNS,
   LEGACY_RECORD_COLUMNS,
+  LEGACY_TODO_COLUMNS,
+  RECORD_COLUMNS_NO_TIMES,
   NODE_COLUMNS,
   PLAN_COLUMNS,
   RECORD_COLUMNS,
@@ -73,17 +76,26 @@ async function selectPlans(userId: string) {
   }
 }
 
-// study_records without the subject_id column (migration not applied yet): load page records only and turn off
-// subject records, instead of failing the whole load.
+// study_records may lack started_at (20261112_time_slots.sql) or subject_id (20261024_subject_records.sql) while a
+// migration is not applied yet: load with the columns that exist and turn off what needs the missing one, instead
+// of failing the whole load.
 async function selectRecords(userId: string) {
+  const order = ["study_date", "created_at", "id"]
+  const missingColumn = (error: unknown) => (error as { code?: string } | null)?.code === "42703"
   try {
-    const rows = await selectAll<RecordRow>("study_records", RECORD_COLUMNS, userId, ["study_date", "created_at", "id"])
-    return { rows, subjectRecords: true }
+    const rows = await selectAll<RecordRow>("study_records", RECORD_COLUMNS, userId, order)
+    return { rows, subjectRecords: true, times: true }
   } catch (error) {
-    if ((error as { code?: string } | null)?.code !== "42703") throw error
-    const rows = await selectAll<RecordRow>("study_records", LEGACY_RECORD_COLUMNS, userId, ["study_date", "created_at", "id"])
-    return { rows, subjectRecords: false }
+    if (!missingColumn(error)) throw error
   }
+  try {
+    const rows = await selectAll<RecordRow>("study_records", RECORD_COLUMNS_NO_TIMES, userId, order)
+    return { rows, subjectRecords: true, times: false }
+  } catch (error) {
+    if (!missingColumn(error)) throw error
+  }
+  const rows = await selectAll<RecordRow>("study_records", LEGACY_RECORD_COLUMNS, userId, order)
+  return { rows, subjectRecords: false, times: false }
 }
 
 // Loads the signed-in user's workspace and plans. The user id comes from getUser(), which the auth server verifies.
@@ -104,6 +116,7 @@ export async function loadUserData() {
     ])
     if (seq !== loadSeq) return
     setSubjectRecordsReady(records.subjectRecords)
+    setTimeSlots({ recordTimes: records.times })
     setPagePropsReady(props)
     replaceWorkspace(
       toWorkspaceState(nodes, records.rows),
@@ -121,9 +134,21 @@ export async function loadUserData() {
 
 // Todos load separately so a missing todos table (not created yet) only turns the checklist off, not the app.
 async function loadTodos(userId: string, seq: number) {
+  const order = ["position", "created_at", "id"]
   try {
-    const rows = await selectAll<TodoRow>("todos", TODO_COLUMNS, userId, ["position", "created_at", "id"])
-    if (seq === loadSeq) replaceTodos(rows.map(toTodo), "ready")
+    let rows: TodoRow[]
+    let times = true
+    try {
+      rows = await selectAll<TodoRow>("todos", TODO_COLUMNS, userId, order)
+    } catch (error) {
+      // No start_min column yet (20261112_time_slots.sql): the checklist works, times stay off.
+      if ((error as { code?: string } | null)?.code !== "42703") throw error
+      rows = await selectAll<TodoRow>("todos", LEGACY_TODO_COLUMNS, userId, order)
+      times = false
+    }
+    if (seq !== loadSeq) return
+    setTimeSlots({ todoTimes: times })
+    replaceTodos(rows.map(toTodo), "ready")
   } catch {
     if (seq === loadSeq) replaceTodos([], "unavailable")
   }
@@ -137,6 +162,7 @@ function clearUserData() {
   replaceWorkspace(null)
   replacePlans([])
   replaceTodos([], "loading")
+  setTimeSlots({ todoTimes: false, recordTimes: false })
   statusStore.set(() => ({ phase: "loading" }))
 }
 

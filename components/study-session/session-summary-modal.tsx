@@ -115,6 +115,8 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
         id: newRecordId(),
         date,
         createdAt: session.endedAt,
+        // The first moment on that note; time outside notes has no segments, so it starts with the session.
+        startedAt: Math.min(session.endedAt, ...session.segments.filter((s) => s.pageId === r.pageId).map((s) => s.start), ...(r.pageId ? [] : [session.startedAt])),
         durationMinutes: minutesOf(r),
         understanding: r.understanding!,
         studyContent: r.content.trim(),

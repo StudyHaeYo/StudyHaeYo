@@ -103,6 +103,7 @@ export function useNoteReview({
       pageId: page.id,
       date: today,
       createdAt: Date.now(),
+      startedAt: session.startedAt,
       durationMinutes: Math.max(1, Math.round((Date.now() - session.startedAt) / 60_000)),
       understanding: after,
       ...reviewRecordText(rows),

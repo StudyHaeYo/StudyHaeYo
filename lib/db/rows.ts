@@ -15,6 +15,7 @@ import { templateRegistry, type TemplateId } from "@/lib/templates"
 import type { StudyType } from "@/lib/types"
 import type { GroupKind, WorkspaceGroup, WorkspaceState } from "@/lib/workspace"
 import type { Todo } from "@/lib/todos"
+import { recordTimesReady } from "@/lib/time-slots"
 
 // Row shapes of the Supabase tables, column for column. The app types stay as they are;
 // these mappers are the only place that knows both sides.
@@ -48,6 +49,7 @@ export interface RecordRow {
   subject_id?: string | null
   study_date: string
   created_at: string | null
+  started_at?: string | null
   duration_minutes: number
   understanding: number | null
   study_content: string | null
@@ -75,7 +77,9 @@ export const LEGACY_NODE_COLUMNS =
 export const NODE_COLUMNS = `${LEGACY_NODE_COLUMNS}, props`
 const RECORD_BASE_COLUMNS =
   "id, user_id, page_id, study_date, created_at, duration_minutes, understanding, study_content, difficulties, next_steps, tags"
-export const RECORD_COLUMNS = `${RECORD_BASE_COLUMNS}, subject_id`
+// Before 20261112_time_slots.sql the table has no started_at column (오늘 시간표).
+export const RECORD_COLUMNS_NO_TIMES = `${RECORD_BASE_COLUMNS}, subject_id`
+export const RECORD_COLUMNS = `${RECORD_COLUMNS_NO_TIMES}, started_at`
 // Before supabase/migrations/20261024_subject_records.sql is applied the table has no subject_id column.
 export const LEGACY_RECORD_COLUMNS = RECORD_BASE_COLUMNS
 export const LEGACY_PLAN_COLUMNS = "id, user_id, title, start_date, end_date, goal, target_scope, target_node_id, created_at"
@@ -116,6 +120,7 @@ function recordFields(row: RecordRow): StudyRecordFields {
     id: row.id,
     date: row.study_date,
     createdAt: row.created_at ? new Date(row.created_at).getTime() : undefined,
+    ...(row.started_at ? { startedAt: new Date(row.started_at).getTime() } : {}),
     durationMinutes: Math.max(0, row.duration_minutes ?? 0),
     // The column is nullable but the app always writes 1–5; a missing value reads as the middle score.
     understanding: understandingOf(row.understanding) ?? 3,
@@ -251,6 +256,8 @@ function recordColumns(record: StudyRecordFields) {
     difficulties: record.difficulties,
     next_steps: record.nextSteps,
     tags: record.tags,
+    // Only sent once the column exists, so records still save before the SQL is run.
+    ...(recordTimesReady() ? { started_at: typeof record.startedAt === "number" ? new Date(record.startedAt).toISOString() : null } : {}),
   }
 }
 
@@ -304,9 +311,12 @@ export interface TodoRow {
   done_at: string | null
   position: number
   created_at: string
+  start_min?: number | null
 }
 
-export const TODO_COLUMNS = "id, user_id, title, due_on, done_at, position, created_at"
+// Before 20261112_time_slots.sql the table has no start_min column (오늘 시간표).
+export const LEGACY_TODO_COLUMNS = "id, user_id, title, due_on, done_at, position, created_at"
+export const TODO_COLUMNS = `${LEGACY_TODO_COLUMNS}, start_min`
 
 export function toTodo(row: TodoRow): Todo {
   return {
@@ -315,6 +325,7 @@ export function toTodo(row: TodoRow): Todo {
     dueOn: row.due_on,
     doneAt: row.done_at ? new Date(row.done_at).getTime() : null,
     position: row.position,
+    startMin: typeof row.start_min === "number" ? row.start_min : null,
   }
 }
 
@@ -326,5 +337,7 @@ export function todoInsertRow(todo: Todo, userId: string) {
     due_on: todo.dueOn,
     done_at: todo.doneAt === null ? null : new Date(todo.doneAt).toISOString(),
     position: todo.position,
+    // Only sent when set (it can only be set once the column exists).
+    ...(todo.startMin !== null ? { start_min: todo.startMin } : {}),
   }
 }
