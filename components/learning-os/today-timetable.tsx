@@ -9,14 +9,15 @@ import { useTimeSlots } from "@/lib/time-slots"
 import { addTodo, todayChecklist, todoStartMin, toggleTodo, useTodos, useTodosStatus, type Todo } from "@/lib/todos"
 import { usePlans } from "@/lib/plans"
 import { activePlans, planToday } from "@/lib/study-stats"
-import { layoutLanes, MIN_DRAWN_MINUTES, planRange, rangeLabel } from "@/lib/timetable"
+import { clockLabel, layoutLanes, MIN_DRAWN_MINUTES, planRange, rangeLabel } from "@/lib/timetable"
 import { TimePicker } from "@/components/time-picker"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 
 // 오늘 시간표 (D-38): the day as a time grid on a navy-tinted panel. A to-do with a time (todos.start_min, and
 // duration_min for its length) is a white block from its start to its end — 13:30 to 15:00 is drawn from the middle
 // of the 13시 row to the 15시 line. What was actually studied (records with study_records.started_at, and the running
-// timer) is a tinted block over the same grid; when the two overlap they sit side by side. A thin line marks now.
+// timer) is a tinted block over the same grid; when the two overlap they sit side by side. Now is a line across the
+// grid with the time to the minute ("15:20") where the hour labels are.
 // The whole day is one grid in a window about seven hours tall that scrolls, opened at the hour before now, so the
 // panel is the same height whenever it is opened. Hidden behind "준비 중" until the columns exist (lib/time-slots.ts).
 
@@ -150,7 +151,12 @@ export function TodayTimetable() {
           <div aria-hidden="true">
             {hours.map((h) => (
               <div key={h} className="absolute inset-x-0 flex items-start gap-2" style={{ top: y(h * 60) }}>
-                <span className={`w-7 shrink-0 pt-1 text-right text-xs leading-none tabular-nums ${h === nowHour ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                {/* The hour label steps aside while the "15:20" tag sits on it, instead of peeking out from under it. */}
+                <span
+                  className={`w-9 shrink-0 pt-1 pr-1 text-right text-xs leading-none tabular-nums text-muted-foreground ${
+                    now >= h * 60 - 8 && now < h * 60 + 38 ? "invisible" : ""
+                  }`}
+                >
                   {h}시
                 </span>
                 <span className="h-px flex-1 bg-action-200/70" />
@@ -158,13 +164,16 @@ export function TodayTimetable() {
             ))}
           </div>
 
-          {/* now: a line across the grid at this minute */}
-          <div aria-hidden="true" className="pointer-events-none absolute left-8 right-0 z-10 flex items-center" style={{ top: y(now) - 3 }}>
-            <span className="size-[7px] shrink-0 rounded-full bg-foreground" />
-            <span className="h-px flex-1 bg-foreground/60" />
+          {/* now: the time to the minute in the label column, and a line across the grid at that minute */}
+          <div className="pointer-events-none absolute left-0 right-0 z-10 flex items-center" style={{ top: y(now) - 8 }}>
+            <span className="flex h-4 w-9 shrink-0 items-center justify-center rounded-full bg-foreground text-[10px] font-semibold leading-none tabular-nums text-background">
+              <span className="sr-only">지금 </span>
+              {clockLabel(now)}
+            </span>
+            <span className="h-px flex-1 bg-foreground/60" aria-hidden="true" />
           </div>
 
-          <ol className="absolute bottom-0 left-9 right-0 top-0">
+          <ol className="absolute bottom-0 left-11 right-0 top-0">
             {items.map((it, i) => {
               const top = y(drawn[i].start)
               const height = y(drawn[i].end) - top - 2
