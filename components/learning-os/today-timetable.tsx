@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Check, ChevronDown } from "lucide-react"
+import { useEffect, useRef } from "react"
+import { Check } from "lucide-react"
 import { useNowMinutes, useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
 import { useStudySession } from "@/lib/study-session"
@@ -14,11 +14,14 @@ import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 
 // 오늘 시간표 (D-38): one row per hour on a navy-tinted panel. The text of a row is the plan — to-dos with a time
 // (todos.start_min). The rail beside the hour labels is what actually happened — records with a start time
-// (study_records.started_at) and the running timer session, filled to the minute. Hours before now fold into one
-// line so the panel stays short. Hidden behind "준비 중" until the columns exist (lib/time-slots.ts).
+// (study_records.started_at) and the running timer session, filled to the minute. An hour that holds something is a
+// white block; empty hours are open space (no grid lines). The whole day is one list in a window about eight hours
+// tall that scrolls, opened at the hour before now, so the panel is the same height at 7 in the morning and at 10 at
+// night. Hidden behind "준비 중" until the columns exist (lib/time-slots.ts).
 
 const DAY_START = 6 // the first row, unless something is earlier
-const ROW = 32 // px
+const ROW = 34 // px
+const VISIBLE_ROWS = 8 // the window shows about this many hours; the rest scrolls
 
 // Minutes of today: [start, end)
 type Span = { key: string; start: number; end: number; title: string }
@@ -60,7 +63,16 @@ export function TodayTimetable() {
   const session = useStudySession()
   const allPlans = usePlans()
   const { todoTimes, recordTimes } = useTimeSlots()
-  const [earlier, setEarlier] = useState(false)
+  // The day is one list in a short window that scrolls; it opens with the hour before now at the top. Scrolled once,
+  // when the list first shows — not every minute, or it would pull the list back while someone is looking around.
+  const listRef = useRef<HTMLOListElement>(null)
+  const listReady = today !== null && now !== null && todosStatus !== "loading" && (todoTimes || recordTimes)
+  useEffect(() => {
+    const list = listRef.current
+    if (!listReady || !list) return
+    const row = list.querySelector<HTMLElement>("[data-start]")
+    if (row) list.scrollTop = row.offsetTop
+  }, [listReady])
 
   const heading = (aside: string | null) => (
     <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
@@ -89,7 +101,6 @@ export function TodayTimetable() {
     const startMin = todoStartMin(todo, today)
     return startMin === null ? [] : [{ todo, hour: Math.floor(startMin / 60) }]
   })
-  const untimed = checklist.filter((t) => t.doneAt === null && todoStartMin(t, today) === null).length
 
   const studies = recordTimes ? studySpans(workspace, today) : []
   const running: Span[] =
@@ -101,13 +112,8 @@ export function TodayTimetable() {
 
   const nowHour = Math.floor(now / 60)
   const firstHour = Math.min(DAY_START, nowHour, ...plans.map((p) => p.hour), ...spans.map((s) => Math.floor(s.start / 60)))
-  const foldUntil = nowHour - 1 // rows before this hour fold away
-  const canFold = foldUntil > firstHour
-  const from = earlier || !canFold ? firstHour : foldUntil
-  const hours = Array.from({ length: 24 - from }, (_, i) => from + i)
-
-  const foldedPlans = plans.filter((p) => p.hour < foldUntil)
-  const foldedStudied = spans.reduce((sum, s) => sum + Math.max(0, Math.min(s.end, foldUntil * 60) - s.start), 0)
+  const hours = Array.from({ length: 24 - firstHour }, (_, i) => firstHour + i)
+  const startHour = Math.max(firstHour, nowHour - 1)
   const empty = plans.length === 0 && spans.length === 0
   // Running plans not on today's checklist yet (a to-do made from a plan starts with the plan's title).
   const fromPlans = todoTimes
@@ -119,32 +125,28 @@ export function TodayTimetable() {
 
   return (
     <section aria-labelledby="today-timetable-title" className="rounded-xl bg-action-50 p-3">
-      {heading(empty ? null : `계획 ${plans.length}개 · 공부 ${formatDuration(studied)}`)}
+      {heading(empty ? null : `할 일 ${plans.length}개 · 공부 ${formatDuration(studied)}`)}
 
-      {canFold && (
-        <button
-          type="button"
-          onClick={() => setEarlier((v) => !v)}
-          aria-expanded={earlier}
-          className="mb-1 flex w-full items-center justify-between gap-2 rounded-md px-1 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-action-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
-        >
-          <span className="truncate">
-            {firstHour}시~{foldUntil}시
-            {foldedPlans.length > 0 && ` · 계획 ${foldedPlans.length}개 중 ${foldedPlans.filter((p) => p.todo.doneAt !== null).length}개 완료`}
-            {foldedStudied > 0 && ` · 공부 ${formatDuration(foldedStudied)}`}
-          </span>
-          <ChevronDown className={`size-3.5 shrink-0 transition-transform motion-reduce:transition-none ${earlier ? "rotate-180" : ""}`} aria-hidden="true" />
-        </button>
-      )}
-
-      <ol>
+      <ol
+        ref={listRef}
+        tabIndex={0}
+        aria-label="시간별 할 일과 공부한 시간"
+        className="relative overflow-y-auto overscroll-contain rounded-md [scrollbar-width:thin] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+        style={{ maxHeight: ROW * VISIBLE_ROWS }}
+      >
         {hours.map((h) => {
           const rowPlans = plans.filter((p) => p.hour === h)
           const inHour = spans.filter((s) => s.start < (h + 1) * 60 && s.end > h * 60)
           const startsHere = spans.filter((s) => Math.floor(s.start / 60) === h)
           const current = h === nowHour
           return (
-            <li key={h} aria-current={current ? "time" : undefined} className="flex items-stretch gap-2" style={{ minHeight: ROW }}>
+            <li
+              key={h}
+              data-start={h === startHour ? "" : undefined}
+              aria-current={current ? "time" : undefined}
+              className="flex items-stretch gap-2"
+              style={{ minHeight: ROW }}
+            >
               <span className={`w-7 shrink-0 pt-1.5 text-right text-xs tabular-nums ${current ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                 {h}시
               </span>
@@ -164,7 +166,13 @@ export function TodayTimetable() {
                 )}
               </span>
 
-              <span className="flex min-w-0 flex-1 flex-col justify-center gap-1 border-b border-action-100 py-1">
+              {/* No grid lines: an hour that holds something is a white block on the tinted panel, an empty hour is
+                  just open space — so what is planned stands out and free time reads as one stretch. */}
+              <span
+                className={`my-0.5 flex min-w-0 flex-1 flex-col justify-center gap-1 rounded-md px-2 py-1 ${
+                  rowPlans.length > 0 || startsHere.length > 0 ? "bg-background ring-1 ring-action-100" : ""
+                }`}
+              >
                 {rowPlans.map(({ todo }) => {
                   const done = todo.doneAt !== null
                   return (
@@ -199,7 +207,7 @@ export function TodayTimetable() {
 
       {fromPlans.length > 0 && (
         <div className="mt-3 border-t border-action-100 pt-2">
-          <p className="mb-1 px-1 text-xs text-muted-foreground">진행 중인 계획에서 오늘 할 만큼</p>
+          <p className="mb-1 px-1 text-xs text-muted-foreground">학습 계획 · 오늘 몫</p>
           <ul>
             {fromPlans.map((p) => (
               <li key={p.id} className="relative flex items-center justify-between gap-2 px-1 py-1">
@@ -220,11 +228,8 @@ export function TodayTimetable() {
         </div>
       )}
 
-      {(empty || untimed > 0) && todoTimes && (
-        <p className="mt-2 px-1 text-xs leading-relaxed text-muted-foreground">
-          {untimed > 0 ? `시각을 정하지 않은 할 일 ${untimed}개 · ` : ""}
-          체크리스트에서 할 일의 시계를 누르면 시각을 정할 수 있어요.
-        </p>
+      {empty && todoTimes && (
+        <p className="mt-2 px-1 text-xs leading-relaxed text-muted-foreground">체크리스트에서 할 일의 시계를 누르면 그 시각에 들어가요.</p>
       )}
     </section>
   )
