@@ -152,13 +152,13 @@ export function TodayTimetable() {
               </span>
 
               {/* The rail is the state of each hour, done and not done alike: a planned hour is navy once its to-dos
-                  are ticked off, pale while it is still ahead, amber when it has passed undone. Studied minutes are
-                  navy too, to the minute. The dot is now. */}
+                  are ticked off and pale until then — passed or still ahead, the same (no colour for "missed":
+                  the app does not nag). Studied minutes are navy too, to the minute. The dot is now. */}
               <span className="relative w-[3px] shrink-0 bg-action-200/70" aria-hidden="true">
                 {rowPlans.length > 0 && (
                   <span
                     className={`absolute inset-0 ${
-                      rowPlans.every((p) => p.todo.doneAt !== null) ? "bg-action-600" : h < nowHour ? "bg-attention-400" : "bg-action-300"
+                      rowPlans.every((p) => p.todo.doneAt !== null) ? "bg-action-600" : "bg-action-300"
                     }`}
                   />
                 )}
