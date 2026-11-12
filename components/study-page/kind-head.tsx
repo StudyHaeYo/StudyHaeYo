@@ -58,7 +58,8 @@ export function WrongAnswersHead({
   )
 }
 
-// 강의 노트: which PDF is the lecture material (opened beside the note), and the week.
+// 강의 노트: the week and which PDF is the lecture material (opened beside the note). One quiet line of text, not
+// form boxes (2026-11-13): the controls look like words until pointed at, so the note still reads as a page.
 export function LectureHead({
   props,
   onChange,
@@ -75,18 +76,30 @@ export function LectureHead({
   onToggleMaterial: () => void
 }) {
   const material = pdfs.find((p) => p.id === props.materialBlockId)
+  const quiet =
+    "rounded px-1 py-0.5 text-sm outline-none transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500"
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border pb-4">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground">
-        <FileText className="size-4" aria-hidden="true" />
-      </span>
-      {pdfs.length > 0 ? (
-        <label className="flex min-w-0 items-center gap-2 text-sm">
-          <span className="shrink-0 text-muted-foreground">강의 자료</span>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-border pb-3 text-sm">
+      <label className="flex items-center gap-1">
+        <span className="shrink-0 text-muted-foreground">주차</span>
+        <input
+          value={props.week ?? ""}
+          onChange={(e) => onChange({ week: e.target.value })}
+          placeholder="비어 있음"
+          autoComplete="off"
+          size={Math.max(4, (props.week ?? "").length + 1)}
+          className={`${quiet} text-foreground placeholder:text-muted-foreground/60`}
+        />
+      </label>
+      <span className="flex min-w-0 items-center gap-1">
+        <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <span className="shrink-0 text-muted-foreground">강의 자료</span>
+        {pdfs.length > 0 ? (
           <select
+            aria-label="강의 자료"
             value={props.materialBlockId ?? ""}
             onChange={(e) => onChange({ materialBlockId: e.target.value || undefined })}
-            className="h-8 min-w-0 max-w-56 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-action-400"
+            className={`${quiet} min-w-0 max-w-56 cursor-pointer bg-transparent text-foreground`}
           >
             <option value="">고르지 않음</option>
             {pdfs.map((p) => (
@@ -95,13 +108,11 @@ export function LectureHead({
               </option>
             ))}
           </select>
-        </label>
-      ) : (
-        // A button, not only drag and drop: phones have no dragging. The PDF opens beside the note once uploaded.
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-          <label className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-action-500">
-            <Upload className="size-4" aria-hidden="true" />
-            강의 PDF 올리기
+        ) : (
+          // A button, not only drag and drop: phones have no dragging. The PDF opens beside the note once uploaded.
+          <label className={`${quiet} inline-flex cursor-pointer items-center gap-1 font-medium text-action-700 has-[:focus-visible]:bg-accent has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-action-500`}>
+            <Upload className="size-3.5" aria-hidden="true" />
+            PDF 올리기
             <input
               type="file"
               accept="application/pdf"
@@ -113,26 +124,15 @@ export function LectureHead({
               }}
             />
           </label>
-          <p className="min-w-0 text-sm text-muted-foreground">옆에 펴 두고 필기할 수 있어요</p>
-        </div>
-      )}
-      <label className="flex items-center gap-2 text-sm">
-        <span className="shrink-0 text-muted-foreground">주차</span>
-        <input
-          value={props.week ?? ""}
-          onChange={(e) => onChange({ week: e.target.value })}
-          placeholder="3주차"
-          autoComplete="off"
-          className="h-8 w-24 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-action-400"
-        />
-      </label>
+        )}
+      </span>
       {material && (
         <button
           type="button"
           onClick={onToggleMaterial}
           aria-pressed={materialOpen}
-          className={`ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition-colors ${
-            materialOpen ? "border-action-200 bg-action-50 text-action-700" : "border-border text-foreground hover:bg-accent"
+          className={`ml-auto inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-sm font-medium transition-colors ${
+            materialOpen ? "bg-action-50 text-action-700" : "text-foreground hover:bg-accent"
           }`}
         >
           <BookOpen className="size-4" aria-hidden="true" />
