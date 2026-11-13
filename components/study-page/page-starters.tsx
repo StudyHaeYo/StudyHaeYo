@@ -37,7 +37,7 @@ export function PageStarters({
                 <k.icon className="size-4" aria-hidden="true" />
               </span>
               <span className="w-20 shrink-0 text-sm font-medium text-foreground">{k.name}</span>
-              <span className="min-w-0 truncate text-sm text-muted-foreground">{k.does}</span>
+              <span className="min-w-0 text-pretty text-sm text-muted-foreground sm:truncate">{k.does}</span>
             </button>
           </li>
         ))}
@@ -47,7 +47,7 @@ export function PageStarters({
               <Sparkles className="size-4" aria-hidden="true" />
             </span>
             <span className="w-20 shrink-0 text-sm font-medium text-action-700">AI로 채우기</span>
-            <span className="min-w-0 truncate text-sm text-muted-foreground">제목을 주제로 정리 노트를 만들어요</span>
+            <span className="min-w-0 text-pretty text-sm text-muted-foreground sm:truncate">제목을 주제로 정리 노트를 만들어요</span>
           </button>
         </li>
       </ul>

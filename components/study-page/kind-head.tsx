@@ -44,10 +44,18 @@ export function WrongAnswersHead({
           `${problems.total}문제 모두 맞혔어요`
         ) : (
           <>
-            {problems.total}문제 중 <b className="font-semibold text-attention-700">{problems.wrong}문제</b> 아직 틀림
-            {reasons && <span className="ml-1">· {reasons}</span>}
+            <span className="whitespace-nowrap">
+              {problems.total}문제 중 <b className="font-semibold text-attention-700">{problems.wrong}문제</b> 아직 틀림
+            </span>
+            {/* Each "이유 n" and the link stay whole when the line wraps on a phone. */}
+            {reasons?.split(" · ").map((r) => (
+              <span key={r} className="whitespace-nowrap">
+                {" · "}
+                {r}
+              </span>
+            ))}
             {retryHref && (
-              <Link href={retryHref} className="ml-2 font-semibold text-action-700 hover:underline">
+              <Link href={retryHref} className="ml-2 whitespace-nowrap font-semibold text-action-700 hover:underline">
                 다시 풀기
               </Link>
             )}
