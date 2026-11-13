@@ -24,7 +24,7 @@ export function WrongAnswersHead({
   retryHref?: string
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1 border-b-[3px] border-double border-border pb-2.5">
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
       <label htmlFor="wrong-source" className="sr-only">
         문제 출처
       </label>
@@ -32,9 +32,9 @@ export function WrongAnswersHead({
         id="wrong-source"
         value={source ?? ""}
         onChange={(e) => onChange({ source: e.target.value })}
-        placeholder="어디서 나온 문제인가요?"
+        placeholder="어디서 나온 문제인가요? (예: 2025년 실기 2회)…"
         autoComplete="off"
-        className="min-w-0 flex-1 bg-transparent text-base font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground"
+        className="-mx-1 min-w-0 flex-1 rounded bg-transparent px-1 text-base font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground focus-visible:bg-background focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500"
       />
       {/* Wraps on a phone: with the reasons it no longer fits one line there. */}
       <p className="min-w-0 text-sm tabular-nums text-muted-foreground">
@@ -85,7 +85,7 @@ export function LectureHead({
         <input
           value={props.week ?? ""}
           onChange={(e) => onChange({ week: e.target.value })}
-          placeholder="비어 있음"
+          placeholder="예: 5주차…"
           autoComplete="off"
           size={Math.max(4, (props.week ?? "").length + 1)}
           className={`${quiet} text-foreground placeholder:text-muted-foreground/60`}
