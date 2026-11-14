@@ -62,6 +62,15 @@ export function addTodo(title: string, dueOn: string, startMin: number | null = 
   })
 }
 
+// 되돌리기 after a delete: the same to-do back where it was (same id, order, time and done state).
+export function restoreTodo(todo: Todo) {
+  if (store.get().some((t) => t.id === todo.id)) return
+  store.set((list) => [...list, todo].sort((a, b) => a.position - b.position))
+  enqueueWrite(async (userId) => {
+    check(await db().from("todos").insert(todoInsertRow(todo, userId)).select("id"), 1)
+  })
+}
+
 function patchTodo(id: string, patch: Partial<Todo>, row: Record<string, unknown>) {
   if (!store.get().some((t) => t.id === id)) return
   store.set((list) => list.map((t) => (t.id === id ? { ...t, ...patch } : t)))
