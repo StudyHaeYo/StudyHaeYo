@@ -39,7 +39,7 @@ export default function AnalyticsPage() {
 
   return (
     <PageShell width="wide">
-      <PageHeader title="학습 분석" description="학습 상태를 바탕으로 취약한 영역과 다음 복습 일정을 확인해보세요." />
+      <PageHeader title="학습 분석" />
       <div className="flex flex-col gap-6">
         <StatStrip label="전체 요약" items={summaryCards} />
 

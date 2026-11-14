@@ -121,10 +121,11 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
             {item.understanding !== null ? ` · 이해도 ${item.understanding}/5` : ""}
           </span>
         </span>
-        <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>
-          {item.dueTone === "overdue" && <span aria-hidden="true" className="mr-1.5 inline-block size-1.5 rounded-full bg-attention-400 align-middle" />}
-          {item.due}
-        </span>
+        {/* Every row here is due now, so "다시 볼 때예요" / "오늘" would repeat the section's name on each line. Only a
+            row that is not yet due (tomorrow's) says when. */}
+        {item.dueTone !== "overdue" && item.dueTone !== "today" && (
+          <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>{item.due}</span>
+        )}
         {first ? (
           <span className="inline-flex shrink-0 items-center rounded-md bg-action-600 px-2.5 py-1 text-xs font-medium text-action-foreground transition-colors group-hover:bg-action-700">
             {item.action}

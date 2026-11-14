@@ -109,7 +109,6 @@ export function TodayTimetable() {
       ? [{ key: "running", start: minutesOfDay(session.startedAt), end: Math.max(now, minutesOfDay(session.startedAt) + 1), title: "공부 중" }]
       : []),
   ]
-  const studiedMinutes = studied.reduce((sum, s) => sum + (s.end - s.start), 0)
   const items: GridItem[] = [...plans, ...studied.map((s) => ({ kind: "study" as const, ...s }))].sort((a, b) => a.start - b.start)
 
   // What is drawn: nothing shorter than a line of text. Lanes are worked out on the drawn size, so blocks never cover
@@ -138,7 +137,8 @@ export function TodayTimetable() {
 
   return (
     <section aria-labelledby="today-timetable-title">
-      {heading(empty ? null : `할 일 ${plans.length}개 · 공부 ${formatDuration(studiedMinutes)}`)}
+      {/* Today's study minutes are on the timer card just left of this; the header says only what this grid adds. */}
+      {heading(plans.length > 0 ? `할 일 ${plans.length}개` : null)}
 
       <div
         ref={windowRef}
