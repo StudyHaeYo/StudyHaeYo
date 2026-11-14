@@ -110,13 +110,13 @@ export function CueSlot({
   )
 }
 
-// The thin line that ties a block to its cue: from the block's first line to its last. In the margin it sits right
-// beside the cue (clear of the block handle); with the cue above the block it runs down the left edge of both.
+// The thin line that ties a block to its cue when the cue sits above the block (narrow page): it runs down the left
+// edge of both. In the wide margin the 질문 band already lines the cue up with its block, so the line is hidden there.
 export function CueLine() {
   return (
     <span
       aria-hidden="true"
-      className="pointer-events-none absolute -left-2 bottom-1 top-1 w-0.5 rounded-full bg-action-300 @min-[66.5rem]/page:-left-6"
+      className="pointer-events-none absolute -left-2 bottom-1 top-1 w-0.5 rounded-full bg-action-300 @min-[66.5rem]/page:hidden"
     />
   )
 }

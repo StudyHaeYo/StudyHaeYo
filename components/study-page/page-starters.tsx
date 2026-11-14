@@ -4,11 +4,11 @@ import { Sparkles } from "lucide-react"
 import { noteKinds } from "@/lib/templates"
 
 // Shown on a note whose body is still empty (D-26, D-30): pick what the note is for, or just start typing — the
-// row goes away as soon as the body has anything in it, and the note stays a 빈 노트. Each kind shows a small
-// drawing of what makes it different, so the choice is visible rather than a list of names.
-// AI isn't a kind — it fills the note from the title — so it sits apart at the end.
+// list goes away as soon as the body has anything in it, and the note stays a 빈 노트. A quiet list, one line per
+// kind (2026-11-13: the cards with drawings, a heading, a caption and two lines under them read as clutter on an
+// empty page). AI isn't a kind — it fills the note from the title — so it is the last row, set apart.
 // A note that already has a kind (picked earlier, then emptied) stays that kind when typed into.
-// Before the props column exists no kind can be saved (D-27), so only the AI button is offered.
+// Before the props column exists no kind can be saved (D-27), so only the AI row is offered.
 export function PageStarters({
   kindsReady,
   hasKind,
@@ -20,97 +20,37 @@ export function PageStarters({
   onPick: (starterId: string) => void
   onAi: () => void
 }) {
-  const kinds = noteKinds.filter((k) => k.kind !== null)
-  const ai = (
-    <button
-      type="button"
-      onClick={onAi}
-      title="제목을 주제로 AI가 정리 노트나 문제를 만들어 줘요"
-      className="inline-flex items-center gap-1.5 rounded-md text-sm font-semibold text-action-700 hover:underline"
-    >
-      <Sparkles className="size-4" aria-hidden="true" />
-      AI로 채우기
-    </button>
-  )
-  if (!kindsReady) return <div className="mt-6 print:hidden">{ai}</div>
+  const kinds = kindsReady ? noteKinds.filter((k) => k.kind !== null) : []
+  const row =
+    "group flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500"
+  const icon = "flex size-7 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted-foreground group-hover:text-foreground"
   return (
-    <section aria-labelledby="starters-heading" className="mt-6 flex flex-col gap-3 print:hidden">
-      <p className="text-sm text-muted-foreground">
-        <b id="starters-heading" className="mr-2 font-semibold text-foreground">
-          무엇을 정리하나요?
-        </b>
-        고르면 그 노트에 맞는 칸이 생겨요
+    <section aria-labelledby="starters-heading" className="-mx-2 mt-5 print:hidden">
+      <p id="starters-heading" className="px-2 pb-1 text-sm text-muted-foreground">
+        {kinds.length === 0 ? "비어 있는 노트예요" : hasKind ? "고르지 않고 바로 써도 돼요. 다른 종류로 시작하려면" : "그냥 쓰면 빈 노트가 돼요. 종류를 고르면 맞는 칸이 생겨요"}
       </p>
-      <div className="grid grid-cols-3 gap-2.5">
+      <ul>
         {kinds.map((k) => (
-          <button
-            key={k.starterId}
-            type="button"
-            onClick={() => onPick(k.starterId)}
-            className="flex flex-col rounded-xl border border-border bg-card p-2.5 text-left transition-[border-color,transform] duration-150 hover:border-action-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 active:scale-[0.98] motion-reduce:active:scale-100"
-          >
-            <Mini kind={k.starterId} />
-            <span className="mt-2.5 text-sm font-semibold text-foreground">{k.name}</span>
-            <span className="mt-0.5 text-xs leading-snug text-muted-foreground">{k.does}</span>
-          </button>
+          <li key={k.starterId}>
+            <button type="button" onClick={() => onPick(k.starterId)} className={row}>
+              <span className={icon}>
+                <k.icon className="size-4" aria-hidden="true" />
+              </span>
+              <span className="w-20 shrink-0 text-sm font-medium text-foreground">{k.name}</span>
+              <span className="min-w-0 text-pretty text-sm text-muted-foreground sm:truncate">{k.does}</span>
+            </button>
+          </li>
         ))}
-      </div>
-      <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-        <span>{hasKind ? "고르지 않고 바로 써도 돼요" : "그냥 쓰기 시작하면 빈 노트가 돼요"}</span>
-        {ai}
-      </p>
+        <li className={kinds.length > 0 ? "mt-1 border-t border-border pt-1" : ""}>
+          <button type="button" onClick={onAi} title="제목을 주제로 AI가 정리 노트나 문제를 만들어 줘요" className={row}>
+            <span className={`${icon} text-action-700`}>
+              <Sparkles className="size-4" aria-hidden="true" />
+            </span>
+            <span className="w-20 shrink-0 text-sm font-medium text-action-700">AI로 채우기</span>
+            <span className="min-w-0 text-pretty text-sm text-muted-foreground sm:truncate">제목을 주제로 정리 노트를 만들어요</span>
+          </button>
+        </li>
+      </ul>
     </section>
-  )
-}
-
-// Small drawings of each kind's main block. Decorative: the name and description say the same in words.
-function Mini({ kind }: { kind: string }) {
-  const line = "absolute h-[3px] rounded-full bg-muted-foreground/25"
-  return (
-    <span aria-hidden="true" className="relative block h-16 overflow-hidden rounded-lg bg-muted">
-      {kind === "lecture" && (
-        <>
-          {/* 코넬 노트 (D-35): questions on the left, notes on the right, a summary under a line. Sizes in % so the
-              drawing shrinks with the card on a phone instead of being cut off. */}
-          <span className="absolute left-[10%] top-3 h-[3px] w-[18%] rounded-full bg-foreground/60" />
-          <span className="absolute left-[10%] top-7 h-[3px] w-[14%] rounded-full bg-foreground/60" />
-          <span className="absolute bottom-5 left-[33%] top-2.5 w-0.5 rounded-full bg-action-300" />
-          <span className={`${line} left-[38%] top-3 w-[44%]`} />
-          <span className={`${line} left-[38%] top-5 w-[36%]`} />
-          <span className={`${line} left-[38%] top-7 w-[40%]`} />
-          <span className="absolute inset-x-[10%] bottom-3.5 h-px bg-border" />
-          <span className={`${line} bottom-1.5 left-[10%] w-[52%]`} />
-        </>
-      )}
-      {kind === "wrong-answers" && (
-        <>
-          <span className="absolute left-3 top-2.5 text-sm font-bold text-foreground">1</span>
-          <svg className="absolute left-1 top-1 size-6 fill-none stroke-muted-foreground" viewBox="0 0 52 52" strokeWidth="3.5" strokeLinecap="round">
-            <path d="M27 5C40 5 47 14 47 26C47 38 38 47 26 47C13 47 5 38 5 26C5 15 13 6 24 6.5" />
-          </svg>
-          <span className={`${line} left-9 top-4 w-14 max-w-[calc(100%-3rem)]`} />
-          <span className="absolute left-3 top-9 text-sm font-bold text-foreground">2</span>
-          <svg className="absolute left-1.5 top-8 size-5 fill-none stroke-muted-foreground" viewBox="0 0 52 52" strokeWidth="4" strokeLinecap="round">
-            <path d="M10 44L44 8" />
-          </svg>
-          <span className={`${line} left-9 top-[2.65rem] w-11 max-w-[calc(100%-3rem)]`} />
-        </>
-      )}
-      {kind === "exam" && (
-        <>
-          {/* 범위표 (D-35): the exam day as a calendar page, then the scope notes, each with its state dot. */}
-          <span className="absolute left-[10%] top-2.5 w-[22%] max-w-9 overflow-hidden rounded-sm border border-border bg-card">
-            <span className="block h-1.5 bg-action-600" />
-            <span className="block h-5" />
-          </span>
-          <span className="absolute left-[42%] top-3 size-1.5 rounded-full bg-danger-500" />
-          <span className={`${line} left-[calc(42%+0.6rem)] top-3 w-[34%]`} />
-          <span className="absolute left-[42%] top-[1.625rem] size-1.5 rounded-full bg-attention-500" />
-          <span className={`${line} left-[calc(42%+0.6rem)] top-[1.625rem] w-[28%]`} />
-          <span className="absolute left-[42%] top-10 size-1.5 rounded-full bg-success-600" />
-          <span className={`${line} left-[calc(42%+0.6rem)] top-10 w-[31%]`} />
-        </>
-      )}
-    </span>
   )
 }
