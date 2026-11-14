@@ -2,11 +2,13 @@
 
 import { useState, type FormEvent } from "react"
 import { Check, Clock, Plus, X } from "lucide-react"
+import { toast } from "sonner"
 import { useTodayISO } from "@/hooks/use-today"
 import {
   addTodo,
   removeTodo,
   renameTodo,
+  restoreTodo,
   setTodoTime,
   todayChecklist,
   todoStartMin,
@@ -149,9 +151,16 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
       {!editing && (
         <button
           type="button"
-          onClick={() => removeTodo(todo.id)}
+          onClick={() => {
+            // A to-do goes with one tap, so it comes back with one tap too (no confirm dialog for something this light).
+            removeTodo(todo.id)
+            toast(`"${todo.title}" 할 일을 지웠어요`, {
+              duration: 5000,
+              action: { label: "되돌리기", onClick: () => restoreTodo(todo) },
+            })
+          }}
           aria-label={`${todo.title} 삭제`}
-          className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+          className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 [@media(hover:none)]:opacity-50 transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
         >
           <X className="size-3.5" />
         </button>
