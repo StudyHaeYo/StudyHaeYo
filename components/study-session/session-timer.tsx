@@ -8,6 +8,7 @@ import { endSession, formatElapsed, startSession, useStudySession } from "@/lib/
 import { useNowEverySecond } from "@/hooks/use-session-clock"
 import { useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
+import { secondaryButton } from "@/components/page-shell"
 import { todayMinutes } from "@/lib/study-stats"
 import { useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
 import {
@@ -90,9 +91,10 @@ export function SessionTimerCard() {
               </>
             ) : (
               <>
-                <p className="text-sm font-medium text-foreground">학습 세션</p>
-                <p className="text-xs leading-relaxed text-muted-foreground text-pretty">
-                  <TodayStudied />{canPickSubject ? "노트에 머문 시간은 노트별로 모이고, 노트 밖 시간은 끝날 때 과목에 기록할 수 있어요" : "노트에 머문 시간이 노트별로 자동으로 모여요"}
+                <p className="text-sm font-semibold text-foreground">학습 세션</p>
+                {/* How time is gathered moved to the button's title: the line under the name says only today's total. */}
+                <p className="text-xs text-muted-foreground">
+                  <TodayStudied />
                 </p>
               </>
             )}
@@ -130,7 +132,12 @@ export function SessionTimerCard() {
               학습 종료
             </button>
           ) : (
-            <button type="button" onClick={startSession} className={secondaryButton}>
+            <button
+              type="button"
+              onClick={startSession}
+              title={canPickSubject ? "노트에 머문 시간은 노트별로 모이고, 노트 밖 시간은 끝날 때 과목에 기록할 수 있어요" : "노트에 머문 시간이 노트별로 자동으로 모여요"}
+              className={secondaryButton}
+            >
               <Play className="size-3.5" aria-hidden="true" />
               학습 시작
             </button>
@@ -155,18 +162,16 @@ export function SessionTimerCard() {
   )
 }
 
-const secondaryButton =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
 
 // "오늘 1시간 20분 공부 · " prefix from today's study records (nothing before the first record).
 function TodayStudied() {
   const workspace = useWorkspace()
   const today = useTodayISO()
   const minutes = today ? todayMinutes(workspace, today) : 0
-  if (minutes === 0) return null
+  if (minutes === 0) return <>오늘 아직 공부 기록이 없어요</>
   return (
     <>
-      오늘 <span className="font-medium text-foreground">{formatDuration(minutes)}</span> 공부 ·{" "}
+      오늘 <span className="font-medium text-foreground">{formatDuration(minutes)}</span> 공부했어요
     </>
   )
 }

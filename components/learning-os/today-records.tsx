@@ -7,7 +7,7 @@ import { RecordRow } from "@/components/record/record-row"
 import { todayRecords } from "@/lib/study-stats"
 import { recordCreatedAt } from "@/lib/study-session"
 import { useWorkspace } from "@/lib/workspace"
-import { sectionTitle } from "@/components/page-shell"
+import { RuledHeader } from "@/components/page-shell"
 
 // 오늘의 기록 on Home: today's part of 학습 기록, in the same rows (D-28).
 export function TodayRecords() {
@@ -17,15 +17,16 @@ export function TodayRecords() {
 
   return (
     <section aria-labelledby="today-records-heading">
-      <div className="mb-1 flex items-baseline justify-between border-b border-border pb-2">
-        <h2 id="today-records-heading" className={sectionTitle}>
-          오늘의 기록
-        </h2>
-        <Link href="/records" className="inline-flex items-center gap-0.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground">
-          학습 기록 전체 보기
-          <ChevronRight className="size-3.5" aria-hidden="true" />
-        </Link>
-      </div>
+      <RuledHeader
+        id="today-records-heading"
+        title="오늘의 기록"
+        aside={
+          <Link href="/records" className="inline-flex items-center gap-0.5 rounded font-medium transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500">
+            전체 보기
+            <ChevronRight className="size-3.5" aria-hidden="true" />
+          </Link>
+        }
+      />
       {entries === null ? (
         <div className="flex flex-col gap-3" aria-hidden="true">
           <div className="h-16 animate-pulse rounded-xl bg-muted" />

@@ -5,6 +5,7 @@ import { formatDuration } from "@/lib/study-pages"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
 import { weeklyStats } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
+import { RuledHeader } from "@/components/page-shell"
 
 const DAY_NAMES = ["월", "화", "수", "목", "금", "토", "일"]
 
@@ -21,9 +22,7 @@ export function WeeklyStats() {
 
   return (
     <section aria-labelledby="weekly-stats-title">
-      <h2 id="weekly-stats-title" className="text-[15px] font-semibold text-foreground">
-        이번 주 학습
-      </h2>
+      <RuledHeader id="weekly-stats-title" title="이번 주 학습" aside={stats ? `목표 ${formatDuration(WEEKLY_GOAL_MINUTES)}` : null} />
 
       {stats === null ? (
         <div className="mt-4 flex flex-col gap-3" aria-hidden="true">
@@ -33,9 +32,9 @@ export function WeeklyStats() {
         </div>
       ) : (
         <>
-          <p className="mt-3 flex items-baseline gap-1.5">
+          <p className="mt-3 flex items-baseline justify-between gap-2">
             <span className="text-2xl font-semibold tracking-tight tabular-nums text-foreground">{formatDuration(total)}</span>
-            <span className="text-xs text-muted-foreground">/ 목표 {formatDuration(WEEKLY_GOAL_MINUTES)}</span>
+            <span className="text-sm font-medium tabular-nums text-muted-foreground">{percent}%</span>
           </p>
           <div
             className="mt-2 h-2 overflow-hidden rounded-full bg-muted"
@@ -55,8 +54,7 @@ export function WeeklyStats() {
               "이번 주 기록이 아직 없어요. 기록을 남기면 여기에 쌓여요."
             ) : (
               <>
-                목표의 {percent}% · 하루 <span className="font-medium text-foreground">{formatDuration(stats.perDayToGoal)}</span>씩
-                하면 이번 주에 채울 수 있어요.
+                남은 날 하루 <span className="font-medium text-foreground">{formatDuration(stats.perDayToGoal)}</span>씩이면 채워요.
               </>
             )}
           </p>
@@ -73,7 +71,7 @@ export function WeeklyStats() {
                     style={{ height: day.future ? 0 : Math.max(day.minutes === 0 ? 3 : 6, Math.round((day.minutes / maxDay) * 56)) }}
                   />
                 </div>
-                <span className={`text-[11px] ${day.isToday ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                <span className={`text-xs ${day.isToday ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                   {DAY_NAMES[i]}
                 </span>
               </div>
@@ -85,7 +83,7 @@ export function WeeklyStats() {
               {stats.subjects.map((s) => (
                 <li key={s.subject}>
                   <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="font-medium text-foreground">{s.subject}</span>
+                    <span className="text-foreground">{s.subject}</span>
                     <span className="tabular-nums text-muted-foreground">{formatDuration(s.minutes)}</span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">

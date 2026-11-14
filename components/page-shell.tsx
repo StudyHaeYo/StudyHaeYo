@@ -96,3 +96,16 @@ export function StatStrip({ label, items }: { label: string; items: { label: str
     </section>
   )
 }
+
+// A home section's top: name on the left, one short fact or link on the right, a hairline under both. Every content
+// section on Home starts this way, so the page reads as one document; only the timer (a control) is a box.
+export function RuledHeader({ id, title, aside }: { id: string; title: ReactNode; aside?: ReactNode }) {
+  return (
+    <div className="mb-1 flex min-h-8 items-baseline justify-between gap-3 border-b border-border pb-2">
+      <h2 id={id} className={sectionTitle}>
+        {title}
+      </h2>
+      {aside && <div className="shrink-0 text-xs text-muted-foreground">{aside}</div>}
+    </div>
+  )
+}

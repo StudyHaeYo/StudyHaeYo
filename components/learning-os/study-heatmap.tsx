@@ -4,7 +4,7 @@ import { useTodayISO } from "@/hooks/use-today"
 import { formatDate, formatDuration } from "@/lib/study-pages"
 import { studyCalendar, studyStreak, type StudyDay } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
-import { sectionTitle } from "@/components/page-shell"
+import { RuledHeader } from "@/components/page-shell"
 
 const WEEKS = 5
 const DAY_NAMES = ["월", "화", "수", "목", "금", "토", "일"]
@@ -31,21 +31,19 @@ export function StudyHeatmap() {
 
   return (
     <section aria-labelledby="study-heatmap-title">
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 id="study-heatmap-title" className={sectionTitle}>
-          학습 달력
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          {`최근 ${WEEKS}주 · ${studiedDays}일 공부`}
-          {streak && streak.current > 0 ? ` · ${streak.current}일 연속` : ""}
-        </p>
+      <div className="mb-3">
+        <RuledHeader
+          id="study-heatmap-title"
+          title="학습 달력"
+          aside={`${WEEKS}주 중 ${studiedDays}일${streak && streak.current > 0 ? ` · ${streak.current}일 연속` : ""}`}
+        />
       </div>
 
       {weeks === null ? (
         <div className="h-48 animate-pulse rounded-lg bg-muted" aria-hidden="true" />
       ) : (
         <div role="img" aria-label={`최근 ${WEEKS}주 동안 ${studiedDays}일 공부했어요`}>
-          <div className="mb-1 grid grid-cols-7 gap-1 text-center text-[11px] text-muted-foreground" aria-hidden="true">
+          <div className="mb-1 grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground" aria-hidden="true">
             {DAY_NAMES.map((name) => (
               <span key={name}>{name}</span>
             ))}
