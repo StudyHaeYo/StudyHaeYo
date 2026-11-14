@@ -95,7 +95,8 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
   const chosen = rows.filter((r) => r.include && !r.recorded)
   const minutesOf = (r: Row) => Number.parseInt(r.minutes, 10)
   const missing = chosen.find((r) => r.understanding === null || !(minutesOf(r) > 0))
-  const total = formatDuration(Math.round(sessionDurationMs(session) / 60_000))
+  // Same rounding as the rows below (a short session is 1분 there), so the heading never says 0분 above a 1분 row.
+  const total = formatDuration(msToMinutes(sessionDurationMs(session)))
   const date = toISODate(new Date(session.endedAt))
 
   // Where saving moves a running plan (전체, or the subject the time goes to).
