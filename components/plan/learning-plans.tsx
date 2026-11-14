@@ -8,6 +8,7 @@ import { addPlan, decodeTarget, encodeTarget, removePlan, usePlanGoalsReady, use
 import { groupPlans, type ActivePlan } from "@/lib/study-stats"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 import { PlanCard } from "@/components/plan/plan-card"
+import { PageHeader, SectionHeader, emptyState, primaryButton, secondaryButton } from "@/components/page-shell"
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
 
 export function LearningPlans() {
@@ -18,55 +19,46 @@ export function LearningPlans() {
   const groups = today ? groupPlans(workspace, plans, today) : null
 
   return (
-    <section aria-labelledby="plans-title" className="mb-8 flex flex-col gap-8">
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-4">
-          <h2 id="plans-title" className="text-[15px] font-semibold text-foreground">
-            진행 중인 계획
-            {groups && <span className="ml-2 font-normal text-muted-foreground">{groups.active.length}</span>}
-          </h2>
-          {!formOpen && (
-            <button
-              type="button"
-              onClick={() => setFormOpen(true)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-action-600 px-3 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
-            >
-              <Plus className="size-4" />
+    <>
+      <PageHeader
+        title="학습 계획"
+        description="전체, 과목, 페이지 단위로 기간과 목표를 정해 두세요."
+        actions={
+          !formOpen && (
+            <button type="button" onClick={() => setFormOpen(true)} className={primaryButton}>
+              <Plus />
               계획 만들기
             </button>
-          )}
-        </div>
-
+          )
+        }
+      />
+      <div className="flex flex-col gap-10">
         {formOpen && <PlanForm workspace={workspace} onClose={() => setFormOpen(false)} />}
-
-        {groups === null ? (
-          <div className="h-40 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
-        ) : groups.active.length > 0 ? (
-          <PlanGrid items={groups.active} />
-        ) : (
-          !formOpen && (
-            <p className="rounded-xl border border-dashed border-border bg-card/50 px-4 py-6 text-center text-sm text-muted-foreground">
+        <section aria-labelledby="plans-title" className="flex flex-col gap-1">
+          <SectionHeader id="plans-title" title="진행 중인 계획" count={groups ? groups.active.length : null} />
+          {groups === null ? (
+            <div className="h-40 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
+          ) : groups.active.length > 0 ? (
+            <PlanGrid items={groups.active} />
+          ) : (
+            <p className={emptyState}>
               {plans.length === 0 ? "아직 만든 계획이 없어요. 기간과 목표를 정해 두면 홈에서 진행 상황을 보여 줘요." : "지금 진행 중인 계획이 없어요."}
             </p>
-          )
-        )}
+          )}
+        </section>
+        {groups && groups.upcoming.length > 0 && <PlanGroup title="예정된 계획" items={groups.upcoming} />}
+        {groups && groups.ended.length > 0 && <PlanGroup title="끝난 계획" items={groups.ended} />}
       </div>
-
-      {groups && groups.upcoming.length > 0 && <PlanGroup title="예정된 계획" items={groups.upcoming} />}
-      {groups && groups.ended.length > 0 && <PlanGroup title="끝난 계획" items={groups.ended} />}
-    </section>
+    </>
   )
 }
 
 function PlanGroup({ title, items }: { title: string; items: ActivePlan[] }) {
   return (
-    <div className="flex flex-col gap-3">
-      <h2 className="text-[15px] font-semibold text-foreground">
-        {title}
-        <span className="ml-2 font-normal text-muted-foreground">{items.length}</span>
-      </h2>
+    <section className="flex flex-col gap-1">
+      <SectionHeader title={title} count={items.length} />
       <PlanGrid items={items} />
-    </div>
+    </section>
   )
 }
 
@@ -75,7 +67,7 @@ function PlanGrid({ items }: { items: ActivePlan[] }) {
   const [removing, setRemoving] = useState<ActivePlan["plan"] | null>(null)
   return (
     <>
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="divide-y divide-border border-y border-border">
         {items.map((item) => (
           <PlanCard key={item.plan.id} item={item} onRemove={() => setRemoving(item.plan)} />
         ))}
@@ -206,13 +198,13 @@ function PlanForm({ workspace, onClose }: { workspace: WorkspaceState; onClose: 
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          className={secondaryButton}
         >
           취소
         </button>
         <button
           type="submit"
-          className="rounded-lg bg-action-600 px-4 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
+          className={primaryButton}
         >
           계획 생성
         </button>

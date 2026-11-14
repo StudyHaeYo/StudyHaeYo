@@ -7,6 +7,7 @@ import { RecordRow } from "@/components/record/record-row"
 import { todayRecords } from "@/lib/study-stats"
 import { recordCreatedAt } from "@/lib/study-session"
 import { useWorkspace } from "@/lib/workspace"
+import { sectionTitle } from "@/components/page-shell"
 
 // 오늘의 기록 on Home: today's part of 학습 기록, in the same rows (D-28).
 export function TodayRecords() {
@@ -17,7 +18,7 @@ export function TodayRecords() {
   return (
     <section aria-labelledby="today-records-heading">
       <div className="mb-1 flex items-baseline justify-between border-b border-border pb-2">
-        <h2 id="today-records-heading" className="text-base font-semibold text-foreground">
+        <h2 id="today-records-heading" className={sectionTitle}>
           오늘의 기록
         </h2>
         <Link href="/records" className="inline-flex items-center gap-0.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground">

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { SearchX } from "lucide-react"
-import { SubjectHeader } from "@/components/subject/subject-header"
+import { PageHeader } from "@/components/page-shell"
 import { SubjectSummaryPanel } from "@/components/subject/subject-summary"
 import { SubjectRecords } from "@/components/subject/subject-records"
 import { SubjectStudyLog } from "@/components/subject/subject-study-log"
@@ -23,13 +23,15 @@ export function SubjectView({ subjectId }: { subjectId: string }) {
     .map((n) => n.name)
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8">
-      <SubjectHeader ancestors={ancestors} subjectName={subject.name} />
-      <SubjectSummaryPanel subjectId={subject.id} />
-      <SubjectRecords subjectId={subject.id} />
-      <SubjectStudyLog subjectId={subject.id} />
-      <SubjectPlans subjectId={subject.id} />
-    </div>
+    <>
+      <PageHeader eyebrow={ancestors.length > 0 ? ancestors.join(" › ") : "과목"} title={subject.name} />
+      <div className="flex flex-col gap-10">
+        <SubjectSummaryPanel subjectId={subject.id} />
+        <SubjectRecords subjectId={subject.id} />
+        <SubjectStudyLog subjectId={subject.id} />
+        <SubjectPlans subjectId={subject.id} />
+      </div>
+    </>
   )
 }
 

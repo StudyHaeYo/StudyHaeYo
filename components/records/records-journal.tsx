@@ -10,6 +10,7 @@ import { allRecordEntries, recordText, sortEntriesNewestFirst, weekStart, type R
 import { recordCreatedAt } from "@/lib/study-session"
 import { NO_SUBJECT, useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
 import { useTodayISO } from "@/hooks/use-today"
+import { PageHeader, primaryButton } from "@/components/page-shell"
 
 const PAGE_DAYS = 14
 const NONE = "none"
@@ -54,36 +55,32 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
     }`
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">학습 기록</h1>
-          <p className="mt-1 text-sm text-muted-foreground text-pretty">
-            {today && week.length > 0 ? (
-              <>
-                이번 주 <b className="font-semibold text-foreground">{formatDuration(weekMinutes)}</b>
-                {weekOffNote > 0 && (
-                  <>
-                    {" "}· 노트 없이 공부한 시간 <b className="font-semibold text-foreground">{formatDuration(weekOffNote)}</b> 포함
-                  </>
-                )}
-              </>
-            ) : (
-              "노트에서 한 공부도, 수업 · 문제집 · 인강처럼 앱 밖에서 한 공부도 여기에 모여요."
-            )}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => openQuickRecord()}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-action-600 px-3.5 text-sm font-semibold text-action-foreground transition-colors hover:bg-action-700"
-        >
-          <Plus className="size-4" aria-hidden="true" />
-          기록 남기기
-        </button>
-      </header>
+    <div className="flex flex-col">
+      <PageHeader
+        title="학습 기록"
+        description={
+          today && week.length > 0 ? (
+            <>
+              이번 주 <b className="font-semibold text-foreground">{formatDuration(weekMinutes)}</b>
+              {weekOffNote > 0 && (
+                <>
+                  {" "}· 노트 없이 공부한 시간 <b className="font-semibold text-foreground">{formatDuration(weekOffNote)}</b> 포함
+                </>
+              )}
+            </>
+          ) : (
+            "노트에서 한 공부도, 수업 · 문제집 · 인강처럼 앱 밖에서 한 공부도 여기에 모여요."
+          )
+        }
+        actions={
+          <button type="button" onClick={() => openQuickRecord()} className={primaryButton}>
+            <Plus aria-hidden="true" />
+            기록 남기기
+          </button>
+        }
+      />
 
-      <div className="mt-6 flex items-center gap-3">
+      <div className="flex items-center gap-3">
         {byNote ? (
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
             <span className={`${chip(true)} max-w-full pr-1.5`}>

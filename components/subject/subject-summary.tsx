@@ -3,6 +3,7 @@
 import { formatDate } from "@/lib/study-pages"
 import { subjectSummary } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
+import { StatStrip } from "@/components/page-shell"
 
 function formatMinutes(minutes: number) {
   const h = Math.floor(minutes / 60)
@@ -24,16 +25,5 @@ export function SubjectSummaryPanel({ subjectId }: { subjectId: string }) {
     { label: "마지막 학습", value: summary.lastStudiedAt ? formatDate(summary.lastStudiedAt) : "—" },
   ]
 
-  return (
-    <section aria-label="과목 요약">
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-y border-border py-4 sm:grid-cols-4">
-        {items.map((item) => (
-          <div key={item.label} className="flex flex-col gap-0.5">
-            <dt className="text-xs text-muted-foreground">{item.label}</dt>
-            <dd className="text-base font-semibold tabular-nums text-foreground">{item.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </section>
-  )
+  return <StatStrip label="과목 요약" items={items} />
 }

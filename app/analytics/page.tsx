@@ -1,6 +1,6 @@
 "use client"
 
-import { Sidebar } from "@/components/sidebar"
+import { PageHeader, PageShell, StatStrip } from "@/components/page-shell"
 import { SubjectMastery } from "@/components/learning-os/subject-mastery"
 import { AnalyticsTrend } from "@/components/learning-os/analytics-trend"
 import { RecentActivity, UpcomingReviews, WeakAreas } from "@/components/learning-os/analytics-widgets"
@@ -17,58 +17,45 @@ export default function AnalyticsPage() {
   const session = useStudySession()
   const sessionMinutes = unrecordedSessionMinutes(session, pageRecords, Date.now(), new Set(pages.map((p) => p.id)))
   const totalMinutes = records.reduce((sum, r) => sum + r.durationMinutes, 0) + sessionMinutes
-  const averageUnderstanding =
-    records.length > 0 ? (records.reduce((sum, r) => sum + r.understanding, 0) / records.length).toFixed(1) : "-"
+  const averageUnderstanding = records.length > 0 ? (records.reduce((sum, r) => sum + r.understanding, 0) / records.length).toFixed(1) : "-"
 
   const summaryCards: { label: string; value: string; hint: string }[] = [
-    { label: "총 학습 시간", value: formatDuration(totalMinutes), hint:
-        sessionMinutes > 0
-          ? `학습 기록 + 기록 전 타이머 세션 ${formatDuration(sessionMinutes)}`
-          : "학습 기록의 학습 시간 합계",
+    {
+      label: "총 학습 시간",
+      value: formatDuration(totalMinutes),
+      hint: sessionMinutes > 0 ? `학습 기록 + 기록 전 타이머 세션 ${formatDuration(sessionMinutes)}` : "학습 기록의 학습 시간 합계",
     },
-    { label: "학습 기록 수", value: `${records.length}개`, hint: "페이지 · 과목 기록 전체" },
-    { label: "평균 이해도", value: `${averageUnderstanding} / 5`, hint: "전체 기록 기준" },
+    {
+      label: "학습 기록 수",
+      value: `${records.length}개`,
+      hint: "페이지 · 과목 기록 전체",
+    },
+    {
+      label: "평균 이해도",
+      value: `${averageUnderstanding} / 5`,
+      hint: "전체 기록 기준",
+    },
   ]
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
-      <Sidebar />
+    <PageShell width="wide">
+      <PageHeader title="학습 분석" description="학습 상태를 바탕으로 취약한 영역과 다음 복습 일정을 확인해보세요." />
+      <div className="flex flex-col gap-6">
+        <StatStrip label="전체 요약" items={summaryCards} />
 
-      <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 md:h-screen md:overflow-y-auto lg:px-10 lg:py-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6">
-          <header>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">학습 분석</h1>
-            <p className="mt-1 text-sm text-muted-foreground text-pretty">
-              학습 상태를 바탕으로 취약한 영역과 다음 복습 일정을 확인해보세요.
-            </p>
-          </header>
+        <AnalyticsTrend />
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            {summaryCards.map(({ label, value, hint }) => (
-              <div key={label} className="min-w-0 rounded-xl border border-border bg-card p-3 sm:p-5">
-                <p className="text-xs text-muted-foreground sm:text-sm">{label}</p>
-                <p className="mt-1 text-lg font-semibold leading-tight tracking-tight tabular-nums text-foreground sm:mt-2 sm:text-3xl">
-                  {value}
-                </p>
-                <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{hint}</p>
-              </div>
-            ))}
-          </div>
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <SubjectMastery title="과목별 학습 상태" />
 
-          <AnalyticsTrend />
-
-          <div className="grid items-start gap-4 lg:grid-cols-2">
-            <SubjectMastery title="과목별 학습 상태" />
-
-            <WeakAreas />
-          </div>
-
-          <div className="grid items-start gap-4 lg:grid-cols-2">
-            <UpcomingReviews />
-            <RecentActivity />
-          </div>
+          <WeakAreas />
         </div>
-      </main>
-    </div>
+
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <UpcomingReviews />
+          <RecentActivity />
+        </div>
+      </div>
+    </PageShell>
   )
 }
