@@ -171,7 +171,7 @@ function TodayStudied() {
   )
 }
 
-// Small "session running" pill; inline in Home's TopBar and a note's top bar, floating on every other page.
+// Small "session running" pill; inline in Home's header and a note's top bar, floating on every other page.
 // Pressing it opens a small panel where the session can be ended on the spot (2026-11-14): it used to be a link to
 // Home, so ending a session meant leaving the note being studied. The summary opens over whatever page this is.
 export function SessionIndicator({ floating = false }: { floating?: boolean }) {

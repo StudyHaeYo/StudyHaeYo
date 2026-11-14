@@ -12,6 +12,7 @@ import { useWorkspace } from "@/lib/workspace"
 import { UnresolvedBadge } from "@/components/study-page/unresolved-badge"
 import { ChecklistBody, useChecklistCount } from "@/components/checklist-widget"
 import { useTodosStatus } from "@/lib/todos"
+import { sectionTitle } from "@/components/page-shell"
 
 const REVIEW_LIMIT = 3
 
@@ -28,7 +29,7 @@ export function TodayAgenda() {
 
   return (
     <section aria-labelledby="today-agenda-title">
-      <h2 id="today-agenda-title" className="border-b border-border pb-2 text-base font-semibold text-foreground">
+      <h2 id="today-agenda-title" className={`border-b border-border pb-2 ${sectionTitle}`}>
         오늘 할 일
       </h2>
 

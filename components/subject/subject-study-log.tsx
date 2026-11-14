@@ -7,6 +7,7 @@ import { RecordRow } from "@/components/record/record-row"
 import { formatDate } from "@/lib/study-pages"
 import { allRecordEntries } from "@/lib/study-stats"
 import { descendantGroups, useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
+import { SectionHeader, secondaryButton } from "@/components/page-shell"
 
 const LIMIT = 20
 
@@ -21,23 +22,20 @@ export function SubjectStudyLog({ subjectId }: { subjectId: string }) {
     .sort((a, b) => b.record.date.localeCompare(a.record.date) || (b.record.createdAt ?? 0) - (a.record.createdAt ?? 0))
 
   return (
-    <section aria-labelledby="subject-log-title" className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 id="subject-log-title" className="text-base font-semibold text-foreground">
-          학습 기록
-          <span className="ml-2 text-sm font-normal text-muted-foreground">{entries.length}</span>
-        </h2>
-        {ready && (
-          <button
-            type="button"
-            onClick={() => openQuickRecord({ subjectId })}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            <Plus className="size-4" />
-            기록 남기기
-          </button>
-        )}
-      </div>
+    <section aria-labelledby="subject-log-title" className="flex flex-col gap-1">
+      <SectionHeader
+        id="subject-log-title"
+        title="학습 기록"
+        count={entries.length}
+        action={
+          ready && (
+            <button type="button" onClick={() => openQuickRecord({ subjectId })} className={secondaryButton}>
+              <Plus />
+              기록 남기기
+            </button>
+          )
+        }
+      />
 
       {entries.length === 0 ? (
         <p className="border-y border-border py-5 text-sm leading-relaxed text-muted-foreground">
@@ -55,7 +53,7 @@ export function SubjectStudyLog({ subjectId }: { subjectId: string }) {
         </ul>
       )}
       {entries.length > LIMIT && (
-        <Link href="/records" className="text-xs font-medium text-muted-foreground hover:text-foreground">
+        <Link href="/records" className="mt-2 text-xs font-medium text-muted-foreground hover:text-foreground">
           {`최근 ${LIMIT}개만 보여요 · 학습 기록에서 전체 보기`}
         </Link>
       )}

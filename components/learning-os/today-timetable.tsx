@@ -12,6 +12,7 @@ import { activePlans, planToday } from "@/lib/study-stats"
 import { clockLabel, layoutLanes, MIN_DRAWN_MINUTES, planRange, rangeLabel } from "@/lib/timetable"
 import { TimePicker } from "@/components/time-picker"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
+import { sectionTitle } from "@/components/page-shell"
 
 // 오늘 시간표 (D-38): the day as a time grid on a navy-tinted panel. A to-do with a time (todos.start_min, and
 // duration_min for its length) is a white block from its start to its end — 13:30 to 15:00 is drawn from the middle
@@ -80,7 +81,7 @@ export function TodayTimetable() {
 
   const heading = (aside: string | null) => (
     <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
-      <h2 id="today-timetable-title" className="text-base font-semibold text-foreground">
+      <h2 id="today-timetable-title" className={sectionTitle}>
         오늘 시간표
       </h2>
       {aside && <p className="text-xs text-muted-foreground">{aside}</p>}

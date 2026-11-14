@@ -1,25 +1,12 @@
 "use client"
 
-import { Sidebar } from "@/components/sidebar"
+import { PageShell } from "@/components/page-shell"
 import { LearningPlans } from "@/components/plan/learning-plans"
 
 export default function PlanPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
-      <Sidebar />
-
-      <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 md:h-screen md:overflow-y-auto lg:px-10 lg:py-8">
-        <div className="mx-auto max-w-6xl">
-          <header className="mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">학습 계획</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              전체, 과목, 페이지 단위로 기간과 목표를 정해 두세요.
-            </p>
-          </header>
-
-          <LearningPlans />
-        </div>
-      </main>
-    </div>
+    <PageShell>
+      <LearningPlans />
+    </PageShell>
   )
 }

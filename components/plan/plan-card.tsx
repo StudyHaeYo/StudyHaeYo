@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { CalendarRange, Flag, X } from "lucide-react"
+import { X } from "lucide-react"
 import { formatDate, formatDuration } from "@/lib/study-pages"
 import type { ActivePlan } from "@/lib/study-stats"
 
@@ -19,85 +19,78 @@ export function PlanCard({
   const ended = phase === "ended"
   const badge =
     phase === "upcoming"
-      ? { text: startsIn(item.daysLeft - item.totalDays + 1), className: "bg-muted text-muted-foreground" }
+      ? { text: startsIn(item.daysLeft - item.totalDays + 1), className: "text-muted-foreground" }
       : ended
-        ? { text: "끝남", className: "bg-muted text-muted-foreground" }
+        ? { text: "끝남", className: "text-muted-foreground" }
         : item.daysLeft === 0
-          ? { text: "오늘 마감", className: "bg-attention-50 text-attention-700" }
-          : { text: `${item.daysLeft}일 남음`, className: item.daysLeft <= 1 ? "bg-attention-50 text-attention-700" : "bg-action-50 text-action-700" }
+          ? { text: "오늘 마감", className: "font-medium text-attention-700" }
+          : { text: `${item.daysLeft}일 남음`, className: item.daysLeft <= 1 ? "font-medium text-attention-700" : "text-muted-foreground" }
   // With a goal time the bar shows study time against it; otherwise how far through the period we are.
   const goal = plan.goalMinutes
   const percent = goal
     ? Math.min(100, Math.round((item.studiedMinutes / goal) * 100))
     : Math.round((item.elapsedDays / item.totalDays) * 100)
 
+  // A row in a ruled list, like every other list in the app (D-25 문서형): name and what it covers on the left; the
+  // time, a short bar and the days left on the right. Colour only when the plan ends today or tomorrow.
   return (
-    <li className={`group relative flex flex-col gap-3 rounded-xl border border-border bg-card p-4 ${ended ? "opacity-75" : ""}`}>
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="min-w-0 text-sm font-semibold text-card-foreground">{plan.title}</h3>
-        <div className="flex shrink-0 items-center gap-1">
-          <span className={`rounded-md px-1.5 py-0.5 text-xs font-medium ${badge.className}`}>{badge.text}</span>
+    <li className={`group relative py-4 ${ended ? "opacity-70" : ""}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h3 className="text-[15px] font-medium text-foreground">{plan.title}</h3>
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted-foreground">
+            {showTarget &&
+              (item.targetHref ? (
+                <Link href={item.targetHref} className="font-medium text-action-700 hover:underline">
+                  {item.targetLabel}
+                </Link>
+              ) : (
+                <span>{item.targetLabel}</span>
+              ))}
+            {showTarget && <span aria-hidden="true">·</span>}
+            <span className="tabular-nums">
+              {formatDate(plan.startDate)} ~ {formatDate(plan.endDate)}
+            </span>
+            {plan.goal && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="text-foreground">{plan.goal}</span>
+              </>
+            )}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-start gap-1">
+          <div className="flex flex-col items-end gap-1.5">
+            {phase !== "upcoming" && (
+              <span className="text-sm font-semibold tabular-nums text-foreground">
+                {formatDuration(item.studiedMinutes)}
+                {goal ? <span className="font-normal text-muted-foreground">{` / ${formatDuration(goal)}`}</span> : null}
+              </span>
+            )}
+            <div
+              className="h-1 w-32 overflow-hidden rounded-full bg-muted"
+              role="progressbar"
+              aria-label={goal ? "목표 시간 대비 학습" : "기간 진행"}
+              aria-valuenow={percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              title={ended ? `${item.totalDays}일 계획` : item.elapsedDays === 0 ? `${item.totalDays}일 계획` : `${item.totalDays}일 중 ${item.elapsedDays}일째`}
+            >
+              <div className={`h-full rounded-full ${ended ? "bg-muted-foreground/40" : "bg-action-500"}`} style={{ width: `${percent}%` }} />
+            </div>
+            <span className={`text-xs tabular-nums ${badge.className}`}>{badge.text}</span>
+          </div>
           {onRemove && (
             <button
               type="button"
               onClick={onRemove}
               aria-label={`${plan.title} 계획 삭제`}
-              className="flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+              className="-mr-1.5 flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-60"
             >
               <X className="size-3.5" />
             </button>
           )}
         </div>
-      </div>
-
-      {showTarget &&
-        (item.targetHref ? (
-          <Link
-            href={item.targetHref}
-            className="w-fit rounded-md bg-action-50 px-2 py-0.5 text-xs font-medium text-action-700 transition-colors hover:bg-action-100"
-          >
-            {plan.target.scope === "all" ? item.targetLabel : `${plan.target.scope === "subject" ? "과목" : "페이지"} · ${item.targetLabel}`}
-          </Link>
-        ) : (
-          <span className="w-fit rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{item.targetLabel}</span>
-        ))}
-
-      {plan.goal && (
-        <p className="flex items-start gap-1.5 text-sm leading-relaxed text-foreground">
-          <Flag className="mt-1 size-3.5 shrink-0 text-action-600" aria-hidden="true" />
-          {plan.goal}
-        </p>
-      )}
-
-      <div className="mt-auto flex flex-col gap-1.5">
-        {phase !== "upcoming" && (
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-xs text-muted-foreground">{ended ? "기간 중 학습" : "지금까지 학습"}</span>
-            <span className={`text-sm font-semibold tabular-nums ${ended ? "text-foreground" : "text-action-600"}`}>
-              {formatDuration(item.studiedMinutes)}
-              {goal ? <span className="font-normal text-muted-foreground">{` / ${formatDuration(goal)}`}</span> : null}
-            </span>
-          </div>
-        )}
-        <div
-          className="h-1.5 overflow-hidden rounded-full bg-muted"
-          role="progressbar"
-          aria-label={goal ? "목표 시간 대비 학습" : "기간 진행"}
-          aria-valuenow={percent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <div className={`h-full rounded-full ${ended ? "bg-muted-foreground/40" : "bg-action-500"}`} style={{ width: `${percent}%` }} />
-        </div>
-        <p className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <CalendarRange className="size-3.5" aria-hidden="true" />
-            {formatDate(plan.startDate)} ~ {formatDate(plan.endDate)}
-          </span>
-          <span className="tabular-nums">
-            {ended ? `${item.totalDays}일 계획` : item.elapsedDays === 0 ? `${item.totalDays}일 계획` : `${item.totalDays}일 중 ${item.elapsedDays}일째`}
-          </span>
-        </p>
       </div>
     </li>
   )

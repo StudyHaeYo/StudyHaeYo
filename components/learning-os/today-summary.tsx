@@ -27,7 +27,7 @@ export function TodaySummary() {
   ].filter((p): p is { label: string; count: number } => Boolean(p))
 
   return (
-    <p className="mt-1 text-sm text-muted-foreground text-pretty">
+    <p>
       {parts.length === 0
         ? "오늘 정해진 복습과 할 일이 없어요. 새로운 내용을 공부해 보세요."
         : parts.map((p, i) => (

@@ -77,8 +77,17 @@ export function RecordRow({
       </div>
       {(record.difficulties || record.nextSteps) && (
         <div className="col-span-2 flex flex-col gap-0.5 text-[13px] leading-relaxed">
-          {record.difficulties && <p className="text-attention-700">어려웠던 점 · {record.difficulties}</p>}
-          {record.nextSteps && <p className="text-muted-foreground">다음에 할 일 · {record.nextSteps}</p>}
+          {/* Labels carry the meaning; the text itself stays grey so a list of records is not striped with colour. */}
+          {record.difficulties && (
+            <p className="text-muted-foreground">
+              <span className="font-medium text-attention-700">어려웠던 점</span> · {record.difficulties}
+            </p>
+          )}
+          {record.nextSteps && (
+            <p className="text-muted-foreground">
+              <span className="font-medium">다음에 할 일</span> · {record.nextSteps}
+            </p>
+          )}
         </div>
       )}
 

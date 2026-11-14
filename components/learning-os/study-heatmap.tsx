@@ -4,6 +4,7 @@ import { useTodayISO } from "@/hooks/use-today"
 import { formatDate, formatDuration } from "@/lib/study-pages"
 import { studyCalendar, studyStreak, type StudyDay } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
+import { sectionTitle } from "@/components/page-shell"
 
 const WEEKS = 5
 const DAY_NAMES = ["월", "화", "수", "목", "금", "토", "일"]
@@ -31,7 +32,7 @@ export function StudyHeatmap() {
   return (
     <section aria-labelledby="study-heatmap-title">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 id="study-heatmap-title" className="text-base font-semibold text-foreground">
+        <h2 id="study-heatmap-title" className={sectionTitle}>
           학습 달력
         </h2>
         <p className="text-xs text-muted-foreground">

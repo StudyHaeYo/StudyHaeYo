@@ -1,8 +1,8 @@
 "use client"
 
-import { Sidebar } from "@/components/sidebar"
-import { TopBar } from "@/components/top-bar"
-import { SessionTimerCard } from "@/components/study-session/session-timer"
+import { PageHeader, PageShell } from "@/components/page-shell"
+import { SessionIndicator, SessionTimerCard } from "@/components/study-session/session-timer"
+import { TodaySummary } from "@/components/learning-os/today-summary"
 import { TodayAgenda } from "@/components/learning-os/today-agenda"
 import { TodayRecords } from "@/components/learning-os/today-records"
 import { WeeklyStats } from "@/components/learning-os/weekly-stats"
@@ -16,30 +16,24 @@ import { DataStatusNotice } from "@/components/data-status-notice"
 export default function DashboardPage() {
   const todayLabel = useTodayLabel()
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
-      <Sidebar />
+    <PageShell width="wide">
+      <PageHeader eyebrow={todayLabel} title="오늘의 학습 현황" description={<TodaySummary />} actions={<SessionIndicator />} />
+      <DataStatusNotice />
 
-      <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 md:h-screen md:overflow-y-auto lg:px-10 lg:py-8">
-        <div className="mx-auto max-w-6xl">
-          <TopBar date={todayLabel} />
-          <DataStatusNotice />
-
-          <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-            <div className="flex min-w-0 flex-col gap-8">
-              <SessionTimerCard />
-              <TodayAgenda />
-              <TodayRecords />
-            </div>
-
-            <div className="flex min-w-0 flex-col gap-8">
-              {/* Widening in time: today, this week, then the last five weeks. */}
-              <TodayTimetable />
-              <WeeklyStats />
-              <StudyHeatmap />
-            </div>
-          </div>
+      <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-8">
+          <SessionTimerCard />
+          <TodayAgenda />
+          <TodayRecords />
         </div>
-      </main>
-    </div>
+
+        <div className="flex min-w-0 flex-col gap-8">
+          {/* Widening in time: today, this week, then the last five weeks. */}
+          <TodayTimetable />
+          <WeeklyStats />
+          <StudyHeatmap />
+        </div>
+      </div>
+    </PageShell>
   )
 }
