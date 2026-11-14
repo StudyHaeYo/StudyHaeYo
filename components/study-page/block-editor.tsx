@@ -347,7 +347,6 @@ export function BlockEditor({
     latest.current.onChange(
       latest.current.blocks.map((b) => (b.id === id && isTextBlock(b) ? (cue?.trim() ? { ...b, cue } : { ...b, cue: undefined }) : b)),
     )
-  const hasCues = cues && blocks.some((b) => isTextBlock(b) && b.cue?.trim())
   // "/페이지 링크": the empty block that will become a page link while its picker is open.
   const [linkPicker, setLinkPicker] = useState<string | null>(null)
   const pages = usePagesForLinks()
@@ -710,10 +709,18 @@ export function BlockEditor({
         }`}
         aria-label="페이지 본문"
       >
-        {hasCues && (
-          <p aria-hidden="true" className="pointer-events-none absolute -top-6 right-[calc(100%+1.75rem)] hidden w-40 text-right text-xs text-muted-foreground @min-[66.5rem]/page:block">
-            질문
-          </p>
+        {/* 코넬 노트: the margin is drawn from the start — its name and a rule down the page — so an empty 강의 노트
+            already reads as a Cornell sheet instead of a blank page (2026-11-13). Only where the margin has room. */}
+        {cues && (
+          <>
+            <p aria-hidden="true" className="pointer-events-none absolute -top-7 right-[calc(100%+1.75rem)] z-[1] hidden w-40 text-right text-xs font-medium text-muted-foreground @min-[66.5rem]/page:block">
+              질문
+            </p>
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -bottom-3 -top-9 right-[calc(100%+1.25rem)] hidden w-[11rem] rounded-l-lg border-r border-border bg-muted/60 @min-[66.5rem]/page:block"
+            />
+          </>
         )}
         {blocks.map((block, index) => {
           // 복습: what is under a heading being recalled stays out of sight until that heading is opened.
@@ -724,7 +731,10 @@ export function BlockEditor({
               // `#b-<id>` opens the note at this block (시험 정리's "시험 전에 다시 볼 것" links here).
               id={`b-${block.id}`}
               data-block-index={index}
-              className={`group/block relative scroll-mt-28 ${cues ? cueRow : ""} ${isSelected(index) ? "rounded-md bg-action-100/70 ring-1 ring-action-200" : ""} ${
+              className={`group/block relative scroll-mt-28 ${cues ? cueRow : ""} ${
+                // 채점된 시험지: a dashed rule between problems, like the rows of an exam paper.
+                problemMode && block.type === "toggle" && problemNumbers.get(block.id) !== 1 ? "mt-3 border-t border-dashed border-border pt-4" : ""
+              } ${isSelected(index) ? "rounded-md bg-action-100/70 ring-1 ring-action-200" : ""} ${
                 moving === index ? "opacity-40" : ""
               }`}
               onDragOver={(e) => {
@@ -903,7 +913,7 @@ export function BlockEditor({
             <>
               {cueSlotAt(block.type)}
               <div
-                className={`flex items-start gap-2 ${isProblem && problemNumbers.get(block.id) !== 1 ? "mt-4" : ""} ${
+                className={`flex items-start gap-2  ${
                   block.type === "quote"
                     ? "border-l-[3px] border-foreground/70 pl-3"
                     : block.type === "callout"
@@ -1115,6 +1125,8 @@ export function BlockEditor({
                 </div>
               )}
               {block.type === "toggle" && toggleOpen && (
+                <div className={isProblem ? `${inner} flex items-baseline gap-2` : "contents"}>
+                {isProblem && <span className="w-7 shrink-0 text-xs text-muted-foreground">정답</span>}
                 <textarea
                   ref={(el) => {
                     if (el) refs.current.set(`${block.id}:body`, el)
@@ -1124,7 +1136,7 @@ export function BlockEditor({
                   rows={1}
                   spellCheck={false}
                   aria-label={`${block.text || "토글"} 내용`}
-                  placeholder={isProblem ? "정답, 풀이, 왜 틀렸는지…" : "펼치면 보이는 내용 (예: 정답과 풀이)"}
+                  placeholder={isProblem ? "정답과 풀이, 왜 틀렸는지…" : "펼치면 보이는 내용 (예: 정답과 풀이)"}
                   onChange={(e) => onChange(blocks.map((b) => (b.id === block.id ? { ...block, body: e.target.value } : b)))}
                   onKeyDown={(e) => {
                     if (e.nativeEvent.isComposing || e.keyCode === 229) return
@@ -1134,10 +1146,11 @@ export function BlockEditor({
                       setPendingFocus({ id: block.id, caret: block.text.length })
                     }
                   }}
-                  className={`${inner} resize-none bg-transparent text-base leading-relaxed text-foreground outline-none [field-sizing:content] ${
+                  className={`${isProblem ? "min-w-0 flex-1" : inner} resize-none bg-transparent text-base leading-relaxed text-foreground outline-none [field-sizing:content] ${
                     problemMode ? "placeholder:text-muted-foreground/60" : "placeholder:text-transparent focus:placeholder:text-muted-foreground/50"
                   }`}
                 />
+                </div>
               )}
               {isProblem && toggleOpen && !solved && block.text.trim() !== "" && (
                 <div className={`${inner} mt-1.5`}>

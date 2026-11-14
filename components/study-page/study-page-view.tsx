@@ -397,17 +397,6 @@ export function StudyPageView({
             )}
           </div>
         )}
-        {propsReady && kind === "wrong-answers" && (
-          <div className="mt-8 print:hidden">
-            <WrongAnswersHead
-              source={page.props?.source}
-              onChange={(patch) => updatePageProps(page.id, patch)}
-              problems={problems}
-              reasons={reasonSummary(page.blocks)}
-              retryHref={reviewing ? undefined : reviewHref(page.id)}
-            />
-          </div>
-        )}
         {propsReady && kind === "lecture" && (
           <div className="mt-8 print:hidden">
             <LectureHead
@@ -429,7 +418,23 @@ export function StudyPageView({
             />
           </div>
         )}
-        <div className="mt-6">{editor}</div>
+        {propsReady && kind === "wrong-answers" ? (
+          // 오답 노트 = 채점된 시험지 (D-35): the problems sit on one sheet, its head strip (출처 · how many are still
+          // wrong) at the top — so even an empty 오답 노트 reads as a paper to fill in, not a blank page (2026-11-13).
+          <div className="mt-8 rounded-xl border border-border bg-card">
+            <div className="rounded-t-xl border-b border-border bg-muted/50 px-5 py-3 print:hidden sm:pl-12">
+              <WrongAnswersHead
+                source={page.props?.source}
+                onChange={(patch) => updatePageProps(page.id, patch)}
+                problems={problems}
+                reasons={reasonSummary(page.blocks)}
+              />
+            </div>
+            <div className="py-5 pl-5 pr-5 sm:pl-12">{editor}</div>
+          </div>
+        ) : (
+          <div className="mt-6">{editor}</div>
+        )}
         <div className="mt-16 print:hidden">
           <PageFooter page={page} today={today} />
         </div>

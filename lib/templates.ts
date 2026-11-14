@@ -103,9 +103,9 @@ export interface NoteKindOption {
 }
 
 export const noteKinds: NoteKindOption[] = [
-  { kind: "lecture", starterId: "lecture", name: "강의 노트", does: "필기 옆에 질문을 달아 그 줄만 가려 복습해요", icon: Presentation },
+  { kind: "lecture", starterId: "lecture", name: "강의 노트", does: "필기 옆에 질문을 달고, 질문만 보며 복습해요", icon: Presentation },
   { kind: "wrong-answers", starterId: "wrong-answers", name: "오답 노트", does: "내 답은 두고 정답만 가려 다시 풀어요", icon: XCircle },
-  { kind: "exam", starterId: "exam", name: "시험 정리", does: "범위 노트마다 확인 상태를 보고 시험 전에 복습해요", icon: ClipboardCheck },
+  { kind: "exam", starterId: "exam", name: "시험 정리", does: "시험 범위 노트를 모아 얼마나 확인했는지 봐요", icon: ClipboardCheck },
   { kind: null, starterId: "blank", name: "빈 노트", does: "모양 없이 자유롭게 써요", icon: FileText },
 ]
 

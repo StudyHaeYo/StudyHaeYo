@@ -40,13 +40,13 @@ export function MyAnswer({
   if (readOnly)
     return value?.trim() ? (
       <p className="text-[15px] leading-relaxed text-foreground">
-        <span className="mr-2 text-xs text-muted-foreground">내 답</span>
+        <span className="mr-2 inline-block w-7 text-xs text-muted-foreground">내 답</span>
         {value}
       </p>
     ) : null
   return (
     <label className="flex items-baseline gap-2 text-[15px] leading-relaxed">
-      <span className="shrink-0 text-xs text-muted-foreground">내 답</span>
+      <span className="w-7 shrink-0 text-xs text-muted-foreground">내 답</span>
       <input
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
