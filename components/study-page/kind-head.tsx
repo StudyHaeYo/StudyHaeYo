@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { BookOpen, FileText, Upload } from "lucide-react"
 import type { AttachmentBlock, PageProps } from "@/lib/study-pages"
 
@@ -13,7 +12,6 @@ export function WrongAnswersHead({
   onChange,
   problems,
   reasons,
-  retryHref,
 }: {
   source: string | undefined
   onChange: (patch: Partial<PageProps>) => void
@@ -21,7 +19,6 @@ export function WrongAnswersHead({
   // Why the problems went wrong, counted (reasonSummary, D-35): "개념 1 · 실수 2". Empty when none was picked.
   reasons?: string
   // Unset while the note is being reviewed: the retry is already happening in place.
-  retryHref?: string
 }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -47,18 +44,13 @@ export function WrongAnswersHead({
             <span className="whitespace-nowrap">
               {problems.total}문제 중 <b className="font-semibold text-attention-700">{problems.wrong}문제</b> 아직 틀림
             </span>
-            {/* Each "이유 n" and the link stay whole when the line wraps on a phone. */}
+            {/* Each "이유 n" stays whole when the line wraps on a phone. 다시 풀기 lives in the top bar only (one way in). */}
             {reasons?.split(" · ").map((r) => (
               <span key={r} className="whitespace-nowrap">
                 {" · "}
                 {r}
               </span>
             ))}
-            {retryHref && (
-              <Link href={retryHref} className="ml-2 whitespace-nowrap font-semibold text-action-700 hover:underline">
-                다시 풀기
-              </Link>
-            )}
           </>
         )}
       </p>

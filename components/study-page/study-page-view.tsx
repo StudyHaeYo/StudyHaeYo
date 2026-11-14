@@ -428,7 +428,6 @@ export function StudyPageView({
                 onChange={(patch) => updatePageProps(page.id, patch)}
                 problems={problems}
                 reasons={reasonSummary(page.blocks)}
-                retryHref={reviewing ? undefined : reviewHref(page.id)}
               />
             </div>
             <div className="py-5 pl-5 pr-5 sm:pl-12">{editor}</div>
