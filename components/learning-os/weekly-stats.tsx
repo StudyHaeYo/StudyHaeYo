@@ -50,6 +50,9 @@ export function WeeklyStats() {
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {stats.perDayToGoal === 0 ? (
               <span className="font-medium text-action-700">이번 주 목표를 채웠어요.</span>
+            ) : total === 0 ? (
+              // Nothing recorded this week (every new account): say what fills the bar, not a pace to keep up.
+              "이번 주 기록이 아직 없어요. 기록을 남기면 여기에 쌓여요."
             ) : (
               <>
                 목표의 {percent}% · 하루 <span className="font-medium text-foreground">{formatDuration(stats.perDayToGoal)}</span>씩

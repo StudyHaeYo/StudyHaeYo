@@ -327,7 +327,9 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               className="absolute inset-0 cursor-pointer opacity-0"
             />
           </label>
-          <label className={pill}>
+          {/* Empty until typed or picked below (no grey sample number: it read as already filled in). While the
+              time is what is missing, the field carries the same colour as the line that says so. */}
+          <label className={`${pill} ${validTarget && !minutesOk ? "border-attention-300" : ""}`}>
             <Clock className="size-4 text-muted-foreground" aria-hidden="true" />
             <input
               type="number"
@@ -336,7 +338,6 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               aria-label="공부한 시간(분)"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
-              placeholder="50"
               className="w-10 bg-transparent text-right tabular-nums outline-none placeholder:text-muted-foreground/60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
             />
             분

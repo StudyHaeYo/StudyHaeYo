@@ -72,7 +72,7 @@ export function DataStatusNotice() {
               </button>
             </Step>
             <Step n={2}>
-              정리할 노트가 필요하면 템플릿으로 노트를 만들어요.{" "}
+              정리할 노트가 필요하면 종류(강의 · 오답 · 시험)를 골라 노트를 만들어요.{" "}
               <Link href="/new" className={stepLink}>
                 새 페이지
               </Link>
@@ -81,7 +81,7 @@ export function DataStatusNotice() {
         ) : (
           <>
             <Step n={1}>
-              공부할 내용으로 노트를 만들어요. 템플릿에서 과목도 바로 만들 수 있어요.{" "}
+              공부할 내용으로 노트를 만들어요. 종류(강의 · 오답 · 시험)를 고르면 맞는 칸이 생겨요.{" "}
               <Link href="/new" className={stepLink}>
                 새 페이지
               </Link>
