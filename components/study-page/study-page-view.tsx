@@ -470,7 +470,7 @@ export function StudyPageView({
 // The running timer, docked at the end of the top bar (the floating one is off on note pages).
 function SessionDock() {
   return (
-    <span className="ml-1 flex items-center gap-2 [&:not(:has(a))]:hidden">
+    <span className="ml-1 flex items-center gap-2 [&:not(:has(button))]:hidden">
       <span className="hidden h-5 w-px bg-border sm:block" aria-hidden="true" />
       <SessionIndicator />
     </span>
