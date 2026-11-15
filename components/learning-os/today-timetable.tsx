@@ -169,7 +169,7 @@ export function TodayTimetable() {
 
           {/* now: the time to the minute in the label column, and a line across the grid at that minute */}
           <div className="pointer-events-none absolute left-0 right-0 z-10 flex items-center" style={{ top: y(now) - 8 }}>
-            <span className="flex h-4 w-9 shrink-0 items-center justify-center rounded-full bg-foreground text-[10px] font-semibold leading-none tabular-nums text-background">
+            <span className="flex h-4 w-10 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold leading-none tabular-nums text-background">
               <span className="sr-only">지금 </span>
               {clockLabel(now)}
             </span>
@@ -196,9 +196,9 @@ export function TodayTimetable() {
                   >
                     <span className="flex min-w-0 items-baseline justify-between gap-1.5 leading-none">
                       <span className="truncate text-xs font-medium">{it.title}</span>
-                      <span className="shrink-0 text-[11px] tabular-nums text-action-700">{formatDuration(it.end - it.start)}</span>
+                      <span className="shrink-0 text-xs tabular-nums text-action-700">{formatDuration(it.end - it.start)}</span>
                     </span>
-                    {twoLines && <span className="mt-1 text-[11px] leading-none tabular-nums text-action-700">{range} 공부함</span>}
+                    {twoLines && <span className="mt-1 text-xs leading-none tabular-nums text-action-700">{range} 공부함</span>}
                     {!twoLines && <span className="sr-only">{range} 공부함</span>}
                   </li>
                 )
@@ -229,7 +229,7 @@ export function TodayTimetable() {
                     <span className={`truncate text-[13px] leading-none ${done ? "text-muted-foreground line-through" : "text-foreground"}`}>{it.todo.title}</span>
                   </span>
                   {twoLines ? (
-                    <span className="mt-1 pl-5 text-[11px] leading-none tabular-nums text-muted-foreground">{range}</span>
+                    <span className="mt-1 pl-5 text-xs leading-none tabular-nums text-muted-foreground">{range}</span>
                   ) : (
                     <span className="sr-only">{range}</span>
                   )}

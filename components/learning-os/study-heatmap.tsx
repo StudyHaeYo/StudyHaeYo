@@ -53,7 +53,7 @@ export function StudyHeatmap() {
               <span
                 key={day.date}
                 title={day.future ? undefined : `${formatDate(day.date)} · ${day.minutes > 0 ? formatDuration(day.minutes) : "기록 없음"}`}
-                className={`flex aspect-square items-center justify-center rounded-md text-[11px] tabular-nums ${shade(day)} ${
+                className={`flex aspect-square items-center justify-center rounded-md text-xs tabular-nums ${shade(day)} ${
                   day.date === today ? "font-semibold ring-1 ring-foreground ring-offset-1 ring-offset-background" : ""
                 }`}
               >

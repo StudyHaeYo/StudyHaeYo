@@ -60,7 +60,7 @@ export function AnalyticsTrend() {
               const height = week.minutes === 0 ? 3 : Math.max(8, Math.round((week.minutes / max) * CHART_HEIGHT))
               return (
                 <div key={week.start} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-                  <span className={`h-4 whitespace-nowrap text-[11px] tabular-nums ${week.isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                  <span className={`h-4 whitespace-nowrap text-xs tabular-nums ${week.isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                     <span className="sm:hidden">{week.minutes > 0 ? compactDuration(week.minutes) : ""}</span>
                     <span className="hidden sm:inline">{week.minutes > 0 ? formatDuration(week.minutes) : ""}</span>
                   </span>
@@ -71,7 +71,7 @@ export function AnalyticsTrend() {
                       title={`${weekLabel(week.start)} 주 · ${formatDuration(week.minutes)}`}
                     />
                   </div>
-                  <span className={`whitespace-nowrap text-[11px] ${week.isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                  <span className={`whitespace-nowrap text-xs ${week.isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                     {week.isCurrent ? "이번 주" : weekLabel(week.start)}
                   </span>
                 </div>

@@ -42,7 +42,7 @@ function PageIcon({ record }: { record: SidebarRecord }) {
 // Right edge of a page row: an upcoming exam's D-day, the only text the tree adds to a title.
 function PageMark({ record }: { record: SidebarRecord }) {
   if (!record.countdown) return null
-  return <span className="ml-auto shrink-0 pl-1 text-[11px] font-semibold tabular-nums text-attention-700">{record.countdown}</span>
+  return <span className="ml-auto shrink-0 pl-1 text-xs font-semibold tabular-nums text-attention-700">{record.countdown}</span>
 }
 
 interface RecordItemProps {

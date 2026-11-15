@@ -61,7 +61,7 @@ export function RecordRow({
       <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs text-muted-foreground">
         {showWhere && <WherePill entry={entry} />}
         {badge && (
-          <span className="rounded-md bg-success-50 px-1.5 py-0.5 text-[11px] font-semibold text-success-700">{badge}</span>
+          <span className="rounded-md bg-success-50 px-1.5 py-0.5 text-xs font-semibold text-success-700">{badge}</span>
         )}
         {suggest && subjectRecord && (
           <button
@@ -319,7 +319,7 @@ function LinkToNote({ record, onClose }: { record: SubjectStudyRecord; onClose: 
             </button>
           </>
         )}
-        <p className="px-2.5 pb-1 pt-2 text-[11px] text-muted-foreground">
+        <p className="px-2.5 pb-1 pt-2 text-xs text-muted-foreground">
           {query.trim() ? "찾은 노트" : inSubject.length > 0 ? `${subjectName}의 노트` : "최근 노트"}
         </p>
         {notes.length === 0 ? (

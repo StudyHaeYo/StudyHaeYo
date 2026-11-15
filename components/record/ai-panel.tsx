@@ -301,7 +301,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
             <ArrowUp className="size-4" />
           </button>
         </form>
-        <p className="mt-1.5 text-[11px] text-muted-foreground">AI 답은 틀릴 수 있어요. 중요한 내용은 교재로 확인하세요.</p>
+        <p className="mt-1.5 text-xs text-muted-foreground">AI 답은 틀릴 수 있어요. 중요한 내용은 교재로 확인하세요.</p>
       </div>
     </aside>
   )
@@ -365,7 +365,7 @@ function QuizStarter({
           </button>
         ))}
       </div>
-      <p className="text-[11px] leading-relaxed text-muted-foreground">
+      <p className="text-xs leading-relaxed text-muted-foreground">
         섞어서 풀면 채점 결과로 이해도를 재요(하 → 중 → 상 순서로 통과). 한 난이도만 풀면 연습이라 이해도가 그 범위
         안에서만 정해져요(하 1~3 · 중 2~4 · 상 3~5).
       </p>
