@@ -104,7 +104,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
         aria-checked={done}
         aria-label={`${todo.title} ${done ? "완료 취소" : "완료"}`}
         onClick={() => toggleTodo(todo.id)}
-        className={`flex size-5 shrink-0 items-center justify-center rounded-md border transition-[colors,transform] active:scale-95 ${
+        className={`relative flex size-5 shrink-0 items-center justify-center rounded-md border transition-[colors,transform] before:absolute before:-inset-2 active:scale-95 ${
           done ? "border-action-600 bg-action-600 text-action-foreground" : "border-border bg-background hover:border-action-400"
         }`}
       >

@@ -59,7 +59,15 @@ export function WeeklyStats() {
             )}
           </p>
 
-          <div className="mt-5 flex items-end gap-1.5" role="img" aria-label="요일별 학습 시간">
+          {/* The label carries the values (ui-ux-pro-max screen-reader-summary): bars alone say nothing to a screen reader. */}
+          <div
+            className="mt-5 flex items-end gap-1.5"
+            role="img"
+            aria-label={`요일별 학습 시간: ${stats.days
+              .map((d, i) => (d.future ? null : `${DAY_NAMES[i]} ${d.minutes > 0 ? formatDuration(d.minutes) : "없음"}`))
+              .filter(Boolean)
+              .join(", ")}`}
+          >
             {stats.days.map((day, i) => (
               <div key={day.date} className="flex flex-1 flex-col items-center gap-1">
                 <div className="flex h-14 w-full items-end">
