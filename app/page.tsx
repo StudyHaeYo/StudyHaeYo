@@ -2,7 +2,6 @@
 
 import { PageHeader, PageShell } from "@/components/page-shell"
 import { SessionIndicator, SessionTimerCard } from "@/components/study-session/session-timer"
-import { TodaySummary } from "@/components/learning-os/today-summary"
 import { TodayAgenda } from "@/components/learning-os/today-agenda"
 import { TodayRecords } from "@/components/learning-os/today-records"
 import { WeeklyStats } from "@/components/learning-os/weekly-stats"
@@ -17,7 +16,8 @@ export default function DashboardPage() {
   const todayLabel = useTodayLabel()
   return (
     <PageShell width="wide">
-      <PageHeader eyebrow={todayLabel} title="오늘의 학습 현황" description={<TodaySummary />} actions={<SessionIndicator />} />
+      {/* No count line under the title: every count it gave is the first thing in a section below (2026-11-15). */}
+      <PageHeader eyebrow={todayLabel} title="오늘의 학습 현황" actions={<SessionIndicator />} />
       <DataStatusNotice />
 
       <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem]">

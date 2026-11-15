@@ -5,14 +5,14 @@ import Link from "next/link"
 import { CalendarRange, ChevronDown, ChevronRight, ListTodo, RotateCcw } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { reviewCandidates, reviewHref, type StudyCandidate } from "@/lib/study-candidates"
-import { dueToneClass, formatDate, formatDuration } from "@/lib/study-pages"
+import { dueToneClass, formatDuration } from "@/lib/study-pages"
 import { activePlans, type ActivePlan } from "@/lib/study-stats"
 import { usePlans } from "@/lib/plans"
 import { useWorkspace } from "@/lib/workspace"
 import { UnresolvedBadge } from "@/components/study-page/unresolved-badge"
 import { ChecklistBody, useChecklistCount } from "@/components/checklist-widget"
 import { useTodosStatus } from "@/lib/todos"
-import { sectionTitle } from "@/components/page-shell"
+import { RuledHeader } from "@/components/page-shell"
 
 const REVIEW_LIMIT = 3
 
@@ -29,9 +29,7 @@ export function TodayAgenda() {
 
   return (
     <section aria-labelledby="today-agenda-title">
-      <h2 id="today-agenda-title" className={`border-b border-border pb-2 ${sectionTitle}`}>
-        오늘 할 일
-      </h2>
+      <RuledHeader id="today-agenda-title" title="오늘 할 일" />
 
       <div className="divide-y divide-border">
         <AgendaSection
@@ -123,10 +121,11 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
             {item.understanding !== null ? ` · 이해도 ${item.understanding}/5` : ""}
           </span>
         </span>
-        <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>
-          {item.dueTone === "overdue" && <span aria-hidden="true" className="mr-1.5 inline-block size-1.5 rounded-full bg-attention-400 align-middle" />}
-          {item.due}
-        </span>
+        {/* Every row here is due now, so "다시 볼 때예요" / "오늘" would repeat the section's name on each line. Only a
+            row that is not yet due (tomorrow's) says when. */}
+        {item.dueTone !== "overdue" && item.dueTone !== "today" && (
+          <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>{item.due}</span>
+        )}
         {first ? (
           <span className="inline-flex shrink-0 items-center rounded-md bg-action-600 px-2.5 py-1 text-xs font-medium text-action-foreground transition-colors group-hover:bg-action-700">
             {item.action}
@@ -174,17 +173,15 @@ function PlanRow({ item }: { item: ActivePlan }) {
     <>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium text-foreground">{plan.title}</span>
-        <span className="block truncate text-xs text-muted-foreground">
-          {item.targetLabel} · {formatDate(plan.startDate)} ~ {formatDate(plan.endDate)}
-          {plan.goal ? ` · 목표: ${plan.goal}` : ""}
-        </span>
+        {/* One fact under the name; the dates and the goal note are on 학습 계획. */}
+        <span className="block truncate text-xs text-muted-foreground">{item.targetLabel}</span>
       </span>
       <span className="flex shrink-0 flex-col items-end">
-        <span className="text-sm font-medium tabular-nums text-foreground">
+        <span className="text-sm font-semibold tabular-nums text-foreground">
           {formatDuration(item.studiedMinutes)}
           {plan.goalMinutes ? <span className="font-normal text-muted-foreground">{` / ${formatDuration(plan.goalMinutes)}`}</span> : null}
         </span>
-        <span className="text-xs text-muted-foreground">{left}</span>
+        <span className={`text-xs ${item.daysLeft <= 1 ? "font-medium text-attention-700" : "text-muted-foreground"}`}>{left}</span>
       </span>
     </>
   )

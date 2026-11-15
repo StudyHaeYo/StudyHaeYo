@@ -8,6 +8,7 @@ import { endSession, formatElapsed, startSession, useStudySession } from "@/lib/
 import { useNowEverySecond } from "@/hooks/use-session-clock"
 import { useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
+import { secondaryButton } from "@/components/page-shell"
 import { todayMinutes } from "@/lib/study-stats"
 import { useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
 import {
@@ -90,9 +91,10 @@ export function SessionTimerCard() {
               </>
             ) : (
               <>
-                <p className="text-sm font-medium text-foreground">학습 세션</p>
-                <p className="text-xs leading-relaxed text-muted-foreground text-pretty">
-                  <TodayStudied />{canPickSubject ? "노트에 머문 시간은 노트별로 모이고, 노트 밖 시간은 끝날 때 과목에 기록할 수 있어요" : "노트에 머문 시간이 노트별로 자동으로 모여요"}
+                <p className="text-sm font-semibold text-foreground">학습 세션</p>
+                {/* How time is gathered moved to the button's title: the line under the name says only today's total. */}
+                <p className="text-xs text-muted-foreground">
+                  <TodayStudied />
                 </p>
               </>
             )}
@@ -130,7 +132,12 @@ export function SessionTimerCard() {
               학습 종료
             </button>
           ) : (
-            <button type="button" onClick={startSession} className={secondaryButton}>
+            <button
+              type="button"
+              onClick={startSession}
+              title={canPickSubject ? "노트에 머문 시간은 노트별로 모이고, 노트 밖 시간은 끝날 때 과목에 기록할 수 있어요" : "노트에 머문 시간이 노트별로 자동으로 모여요"}
+              className={secondaryButton}
+            >
               <Play className="size-3.5" aria-hidden="true" />
               학습 시작
             </button>
@@ -155,18 +162,16 @@ export function SessionTimerCard() {
   )
 }
 
-const secondaryButton =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
 
 // "오늘 1시간 20분 공부 · " prefix from today's study records (nothing before the first record).
 function TodayStudied() {
   const workspace = useWorkspace()
   const today = useTodayISO()
   const minutes = today ? todayMinutes(workspace, today) : 0
-  if (minutes === 0) return null
+  if (minutes === 0) return <>오늘 아직 공부 기록이 없어요</>
   return (
     <>
-      오늘 <span className="font-medium text-foreground">{formatDuration(minutes)}</span> 공부 ·{" "}
+      오늘 <span className="font-medium text-foreground">{formatDuration(minutes)}</span> 공부했어요
     </>
   )
 }
@@ -174,7 +179,9 @@ function TodayStudied() {
 // Small "session running" pill; inline in Home's header and a note's top bar, floating on every other page.
 // Pressing it opens a small panel where the session can be ended on the spot (2026-11-14): it used to be a link to
 // Home, so ending a session meant leaving the note being studied. The summary opens over whatever page this is.
-export function SessionIndicator({ floating = false }: { floating?: boolean }) {
+// `withStart` (a note's top bar): before a session runs it shows [공부 시작], so studying a note never needs a trip to
+// Home to start the timer (2026-11-15). Home has the full timer card; other pages show the pill only while it runs.
+export function SessionIndicator({ floating = false, withStart = false }: { floating?: boolean; withStart?: boolean }) {
   const { running, elapsed, now } = useElapsed()
   const pomodoro = usePomodoroClock(now)
   const pathname = usePathname()
@@ -201,7 +208,21 @@ export function SessionIndicator({ floating = false }: { floating?: boolean }) {
     }
   }, [open])
 
-  if (!running) return null
+  if (!running) {
+    if (!withStart) return null
+    return (
+      <button
+        type="button"
+        onClick={startSession}
+        title="노트에 머문 시간이 노트별로 모여요"
+        className="inline-flex h-7 min-w-7 items-center justify-center gap-1.5 rounded-full border border-border bg-card text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 sm:px-3"
+      >
+        <Play className="size-3" aria-hidden="true" />
+        {/* A phone's note bar has no room for the words; the icon stays and the name is still read out. */}
+        <span className="sr-only sm:not-sr-only">공부 시작</span>
+      </button>
+    )
+  }
   const onBreak = pomodoro?.phase === "break"
   const label = pomodoro ? `${onBreak ? "휴식" : "집중"} ${formatElapsed(pomodoro.left)}` : formatElapsed(elapsed)
 

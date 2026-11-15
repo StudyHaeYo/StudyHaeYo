@@ -47,7 +47,6 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
 
   const week = today ? entries.filter((e) => e.record.date >= weekStart(today) && e.record.date <= today) : []
   const weekMinutes = week.reduce((sum, e) => sum + e.record.durationMinutes, 0)
-  const weekOffNote = week.filter((e) => e.pageId === null).reduce((sum, e) => sum + e.record.durationMinutes, 0)
 
   const chip = (active: boolean) =>
     `inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-3 text-[13px] transition-colors ${
@@ -58,19 +57,13 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
     <div className="flex flex-col">
       <PageHeader
         title="학습 기록"
+        // Only a fact the list does not show at a glance; what the page is for is said by its empty state.
         description={
           today && week.length > 0 ? (
             <>
               이번 주 <b className="font-semibold text-foreground">{formatDuration(weekMinutes)}</b>
-              {weekOffNote > 0 && (
-                <>
-                  {" "}· 노트 없이 공부한 시간 <b className="font-semibold text-foreground">{formatDuration(weekOffNote)}</b> 포함
-                </>
-              )}
             </>
-          ) : (
-            "노트에서 한 공부도, 수업 · 문제집 · 인강처럼 앱 밖에서 한 공부도 여기에 모여요."
-          )
+          ) : undefined
         }
         actions={
           <button type="button" onClick={() => openQuickRecord()} className={primaryButton}>

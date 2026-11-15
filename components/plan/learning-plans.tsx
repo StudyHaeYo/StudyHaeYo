@@ -22,7 +22,6 @@ export function LearningPlans() {
     <>
       <PageHeader
         title="학습 계획"
-        description="전체, 과목, 페이지 단위로 기간과 목표를 정해 두세요."
         actions={
           !formOpen && (
             <button type="button" onClick={() => setFormOpen(true)} className={primaryButton}>

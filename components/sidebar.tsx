@@ -20,7 +20,6 @@ import {
   Menu,
   Search,
   Plus,
-  Settings,
   X,
 } from "lucide-react"
 import type { Category } from "@/lib/types"
@@ -88,7 +87,6 @@ export function Sidebar(_props: SidebarProps = {}) {
     setMobileOpen(true)
   }
   const homeActive = pathname === "/"
-  const settingsActive = pathname.startsWith("/settings")
   // "+" next to 내 페이지 makes the page where you are: beside the open note, or in the open subject. Elsewhere it
   // goes to the top. The label says which, since the new page's place decides whose records it counts toward.
   const newPageHere = (() => {
@@ -290,16 +288,8 @@ export function Sidebar(_props: SidebarProps = {}) {
               <span className="h-3 w-28 rounded bg-muted" />
             </div>
           )}
-          <Link
-            href="/settings"
-            aria-label="설정"
-            aria-current={settingsActive ? "page" : undefined}
-            className={`flex size-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-foreground ${
-              settingsActive ? "bg-accent text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            <Settings className="size-4" />
-          </Link>
+          {/* No settings button (2026-11-15): the page could not change anything, and its profile rows are the name
+              and email right here. It comes back when there is a setting to change (주간 목표, D-25). */}
           <button
             type="button"
             onClick={handleLogout}

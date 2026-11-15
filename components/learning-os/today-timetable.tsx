@@ -12,7 +12,7 @@ import { activePlans, planToday } from "@/lib/study-stats"
 import { clockLabel, layoutLanes, MIN_DRAWN_MINUTES, planRange, rangeLabel } from "@/lib/timetable"
 import { TimePicker } from "@/components/time-picker"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
-import { sectionTitle } from "@/components/page-shell"
+import { RuledHeader } from "@/components/page-shell"
 
 // 오늘 시간표 (D-38): the day as a time grid on a navy-tinted panel. A to-do with a time (todos.start_min, and
 // duration_min for its length) is a white block from its start to its end — 13:30 to 15:00 is drawn from the middle
@@ -80,23 +80,20 @@ export function TodayTimetable() {
   }, [gridReady])
 
   const heading = (aside: string | null) => (
-    <div className="mb-2 flex items-baseline justify-between gap-3 px-1">
-      <h2 id="today-timetable-title" className={sectionTitle}>
-        오늘 시간표
-      </h2>
-      {aside && <p className="text-xs text-muted-foreground">{aside}</p>}
+    <div className="mb-2">
+      <RuledHeader id="today-timetable-title" title="오늘 시간표" aside={aside} />
     </div>
   )
 
   if (today === null || now === null || todosStatus === "loading") {
-    return <div className="h-72 animate-pulse rounded-xl bg-action-50" aria-hidden="true" />
+    return <div className="h-72 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
   }
   // Neither column yet: nothing to draw. (With only one, the half that exists still shows.)
   if (!todoTimes && !recordTimes) {
     return (
-      <section aria-labelledby="today-timetable-title" className="rounded-xl bg-action-50 p-3">
+      <section aria-labelledby="today-timetable-title">
         {heading("준비 중")}
-        <p className="px-1 text-xs leading-relaxed text-muted-foreground">시간표를 저장할 곳을 준비하고 있어요.</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">시간표를 저장할 곳을 준비하고 있어요.</p>
       </section>
     )
   }
@@ -112,7 +109,6 @@ export function TodayTimetable() {
       ? [{ key: "running", start: minutesOfDay(session.startedAt), end: Math.max(now, minutesOfDay(session.startedAt) + 1), title: "공부 중" }]
       : []),
   ]
-  const studiedMinutes = studied.reduce((sum, s) => sum + (s.end - s.start), 0)
   const items: GridItem[] = [...plans, ...studied.map((s) => ({ kind: "study" as const, ...s }))].sort((a, b) => a.start - b.start)
 
   // What is drawn: nothing shorter than a line of text. Lanes are worked out on the drawn size, so blocks never cover
@@ -140,8 +136,9 @@ export function TodayTimetable() {
     : []
 
   return (
-    <section aria-labelledby="today-timetable-title" className="rounded-xl bg-action-50 p-3">
-      {heading(empty ? null : `할 일 ${plans.length}개 · 공부 ${formatDuration(studiedMinutes)}`)}
+    <section aria-labelledby="today-timetable-title">
+      {/* Today's study minutes are on the timer card just left of this; the header says only what this grid adds. */}
+      {heading(plans.length > 0 ? `할 일 ${plans.length}개` : null)}
 
       <div
         ref={windowRef}
@@ -165,7 +162,7 @@ export function TodayTimetable() {
                 >
                   {h}시
                 </span>
-                <span className="h-px flex-1 bg-action-200/70" />
+                <span className="h-px flex-1 bg-border" />
               </div>
             ))}
           </div>
@@ -244,11 +241,11 @@ export function TodayTimetable() {
       </div>
 
       {fromPlans.length > 0 && (
-        <div className="mt-3 border-t border-action-100 pt-2">
-          <p className="mb-1 px-1 text-xs text-muted-foreground">학습 계획 · 오늘 몫</p>
+        <div className="mt-3 border-t border-border pt-3">
+          <p className="mb-1 text-xs font-semibold text-muted-foreground">계획에서 오늘 할 몫</p>
           <ul>
             {fromPlans.map((p) => (
-              <li key={p.id} className="relative flex items-center justify-between gap-2 px-1 py-1">
+              <li key={p.id} className="relative flex items-center justify-between gap-2 py-1">
                 <span className="min-w-0 truncate text-sm text-foreground">{p.title}</span>
                 <TimePicker
                   startMin={null}
@@ -258,7 +255,7 @@ export function TodayTimetable() {
                   closeOnPick
                   label={`${p.title} 시간표에 넣기`}
                   className={() =>
-                    "h-7 rounded-md px-2 text-xs font-medium text-action-700 transition-colors hover:bg-action-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+                    "h-7 rounded-md px-2 text-xs font-medium text-action-700 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
                   }
                 >
                   시간표에 넣기
@@ -270,7 +267,7 @@ export function TodayTimetable() {
       )}
 
       {empty && todoTimes && (
-        <p className="mt-2 px-1 text-xs leading-relaxed text-muted-foreground">
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
           체크리스트에서 할 일의 시계를 누르면 {todoDurations ? "시각과 길이를 정해" : "그 시각에"} 여기에 넣을 수 있어요.
         </p>
       )}
