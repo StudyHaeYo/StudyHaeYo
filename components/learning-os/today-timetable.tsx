@@ -220,7 +220,7 @@ export function TodayTimetable() {
                       aria-checked={done}
                       aria-label={`${it.todo.title} ${done ? "완료 취소" : "완료"}`}
                       onClick={() => toggleTodo(it.todo.id)}
-                      className={`relative flex size-3.5 shrink-0 items-center justify-center rounded-[4px] border transition-[colors,transform] before:absolute before:-inset-2 active:scale-90 motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 ${
+                      className={`relative flex size-3.5 shrink-0 items-center justify-center rounded-[4px] border transition-[colors,transform] before:absolute before:-inset-2 active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 ${
                         done ? "border-action-600 bg-action-600 text-action-foreground" : "border-input bg-background hover:border-action-400"
                       }`}
                     >

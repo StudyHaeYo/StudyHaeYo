@@ -241,9 +241,11 @@ export function SessionIndicator({ floating = false, withStart = false }: { floa
         }
         className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500"
       >
+        {/* A steady dot, not a ping: the pill sits in a note's top bar for the whole session (an hour or more), and a
+            loop that long pulls the eye off the text (emil-design-eng · web-design-guidelines, 2026-11-15). */}
         <span className="relative flex size-2" aria-hidden="true">
           <span
-            className={`absolute inline-flex size-full rounded-full opacity-60 ${onBreak ? "bg-success-500" : "animate-ping bg-primary"}`}
+            className={`absolute inline-flex size-full rounded-full opacity-60 ${onBreak ? "bg-success-500" : "bg-primary"}`}
           />
           <span className={`relative inline-flex size-2 rounded-full ${onBreak ? "bg-success-500" : "bg-primary"}`} />
         </span>

@@ -296,3 +296,20 @@
     --tw-enter-translate-y: 0 !important;
   }
 }
+
+/* Phones: iOS Safari zooms the whole page when a field under 16px gets focus (할 일 추가, 기록 검색, 주차 …), and the
+   page stays zoomed after. On touch screens every text field is at least 16px (ui-ux-pro-max readable-font-size).
+   `1em` is the parent's size, so a field that inherits its size keeps it (시험 노트 본문 20px); fields sized larger by
+   their own class (노트 제목 text-4xl, 기록 창 제목 text-lg) are left out, or they would shrink to 16px. */
+@media (pointer: coarse) {
+  :is(input:not([type="checkbox"], [type="radio"], [type="range"]), textarea, select):not(
+      [class*="text-lg"],
+      [class*="text-xl"],
+      [class*="text-2xl"],
+      [class*="text-3xl"],
+      [class*="text-4xl"],
+      [class*="text-5xl"]
+    ) {
+    font-size: max(16px, 1em);
+  }
+}

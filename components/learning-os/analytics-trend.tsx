@@ -49,7 +49,13 @@ export function AnalyticsTrend() {
             {weeks.at(-1)!.minutes > 0 && ` 이번 주는 지금까지 ${formatDuration(weeks.at(-1)!.minutes)} 공부했어요.`}
           </p>
         ) : (
-          <div className="flex items-end gap-2" role="img" aria-label={`최근 ${WEEKS}주 주별 학습 시간`}>
+          <div
+            className="flex items-end gap-2"
+            role="img"
+            aria-label={`최근 ${WEEKS}주 주별 학습 시간: ${weeks
+              .map((w) => `${w.isCurrent ? "이번 주" : `${weekLabel(w.start)} 주`} ${w.minutes > 0 ? formatDuration(w.minutes) : "없음"}`)
+              .join(", ")}`}
+          >
             {weeks.map((week) => {
               const height = week.minutes === 0 ? 3 : Math.max(8, Math.round((week.minutes / max) * CHART_HEIGHT))
               return (

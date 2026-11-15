@@ -1081,12 +1081,12 @@ export function BlockEditor({
                             reviewItem?.onMark(block.id, r)
                           }}
                           // Small words, no fill (D-35): the number's mark already says it louder.
-                          className={`rounded px-1.5 py-0.5 text-xs transition-colors ${
+                          className={`rounded px-1.5 py-0.5 text-xs transition-colors [@media(pointer:coarse)]:px-2.5 [@media(pointer:coarse)]:py-1.5 ${
                             pressed
                               ? r === "right"
                                 ? "font-semibold text-success-700"
                                 : "font-semibold text-danger-700"
-                              : "text-muted-foreground/70 hover:bg-muted hover:text-foreground"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
                           }`}
                         >
                           {r === "right" ? "맞힘" : "틀림"}

@@ -11,7 +11,7 @@ import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: '스터디 해요 · 학습 기록 대시보드',
+  title: '스터디 해요',
   description: '자기주도 학습 기록을 관리하는 스터디 해요 대시보드',
   generator: 'v0.app',
   icons: {

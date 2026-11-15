@@ -5,7 +5,7 @@ import { formatDuration } from "@/lib/study-pages"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
 
 export const metadata: Metadata = {
-  title: "설정 | 스터디 해요",
+  title: "설정 · 스터디 해요",
 }
 
 const sections = [
