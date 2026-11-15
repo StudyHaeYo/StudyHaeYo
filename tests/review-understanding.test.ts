@@ -35,4 +35,26 @@ describe("복습 판정 → 이해도 (사다리, D-32)", () => {
     const low = [row("하", "right"), row("하", "right")]
     expect(reviewUnderstanding([...low, row("중", "right", false), row("상", "right", false)])).toBe(3)
   })
+
+  describe("다 알았으면 이전 이해도를 낮추지 않는다 (2026-11-15)", () => {
+    const allRight = [row("하", "right"), row("하", "right"), row("하", "right")]
+    it("이전 5 · 다 알았음 → 5 그대로", () => {
+      expect(reviewUnderstanding(allRight, 5)).toBe(5)
+    })
+    it("이전 4 · 다 알았음 → 4 그대로", () => {
+      expect(reviewUnderstanding(allRight, 4)).toBe(4)
+    })
+    it("이전 2 · 다 알았음 → 사다리대로 3으로 오름", () => {
+      expect(reviewUnderstanding(allRight, 2)).toBe(3)
+    })
+    it("이전 5 · 3곳 중 하나 틀림 → 사다리 그대로 3", () => {
+      expect(reviewUnderstanding([row("하", "right"), row("하", "right"), row("하", "wrong")], 5)).toBe(3)
+    })
+    it("이전 5 · 하나 헷갈림 → 사다리 그대로", () => {
+      expect(reviewUnderstanding([row("하", "right"), row("하", "unsure")], 5)).toBe(2)
+    })
+    it("이전 값이 없으면 사다리 그대로", () => {
+      expect(reviewUnderstanding(allRight, null)).toBe(3)
+    })
+  })
 })

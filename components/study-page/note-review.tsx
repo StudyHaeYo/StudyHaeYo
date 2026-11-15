@@ -96,7 +96,7 @@ export function useNoteReview({
     if (!session || !page || !today || recorded.current === session) return
     recorded.current = session
     const rows: JudgedItem[] = session.items.map((item) => ({ item, judgment: marks[item.blockId] ?? "wrong", written: false }))
-    const after = rows.length === 0 ? (picked ?? 3) : reviewUnderstanding(rows)
+    const after = rows.length === 0 ? (picked ?? 3) : reviewUnderstanding(rows, session.before)
     const recordId = newRecordId()
     addPageRecord(page.id, {
       id: recordId,
