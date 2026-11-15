@@ -41,6 +41,7 @@ import { AiPanel } from "@/components/record/ai-panel"
 import { LectureMaterialPane } from "@/components/study-page/lecture-material-pane"
 import { starterSectionHints } from "@/lib/templates"
 import { withCues } from "@/lib/ai"
+import { useDocumentTitle } from "@/hooks/use-document-title"
 
 // The page on screen, so leaving and coming straight back (or a remount) isn't taken as leaving.
 let openPageId: string | null = null
@@ -69,6 +70,7 @@ export function StudyPageView({
   const attachRef = useRef<AttachmentHandle>(null)
   const page = pages.find((p) => p.id === pageId)
   const dataStatus = useDataStatus()
+  useDocumentTitle(page ? page.title.trim() || "제목 없음" : null)
   const [aiOpen, setAiOpenState] = useState(openAi)
   // 강의 노트: the lecture PDF beside the note. It shares the right-hand slot with the AI panel.
   const [materialOpen, setMaterialOpen] = useState(false)

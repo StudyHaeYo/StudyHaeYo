@@ -5,11 +5,13 @@ import { SubjectMastery } from "@/components/learning-os/subject-mastery"
 import { AnalyticsTrend } from "@/components/learning-os/analytics-trend"
 import { RecentActivity, UpcomingReviews, WeakAreas } from "@/components/learning-os/analytics-widgets"
 import { formatDuration } from "@/lib/study-pages"
+import { useDocumentTitle } from "@/hooks/use-document-title"
 import { useWorkspace } from "@/lib/workspace"
 import { allRecords } from "@/lib/study-stats"
 import { unrecordedSessionMinutes, useStudySession } from "@/lib/study-session"
 
 export default function AnalyticsPage() {
+  useDocumentTitle("학습 분석")
   const workspace = useWorkspace()
   const { pages } = workspace
   const pageRecords = pages.flatMap((p) => p.studyRecords)

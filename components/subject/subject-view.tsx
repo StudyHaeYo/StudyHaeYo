@@ -10,11 +10,13 @@ import { SubjectPlans } from "@/components/subject/subject-plans"
 import { nodePath, useWorkspace } from "@/lib/workspace"
 import { useDataStatus } from "@/lib/db/sync"
 import { DataStatusView } from "@/components/data-status-notice"
+import { useDocumentTitle } from "@/hooks/use-document-title"
 
 export function SubjectView({ subjectId }: { subjectId: string }) {
   const workspace = useWorkspace()
   const dataStatus = useDataStatus()
   const subject = workspace.groups.find((g) => g.id === subjectId && g.kind === "subject")
+  useDocumentTitle(subject?.name)
 
   if (!subject) return dataStatus.phase === "ready" ? <SubjectNotFound /> : <DataStatusView status={dataStatus} />
 
