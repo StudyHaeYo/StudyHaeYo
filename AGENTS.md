@@ -23,7 +23,7 @@
 - 화면 코드에는 색 이름 클래스(`indigo-600`, `amber-50` 등)를 쓰지 않고 역할 토큰(`action` · `attention` · `danger` · `success`, `app/globals.css`)을 쓴다. 디자인을 바꾸거나 어두운 모드를 넣을 때 값을 한 곳에서만 바꾸기 위해서다. PR 전에 `pnpm run check:colors`.
 - 서버 컴포넌트(`page.tsx`, `layout.tsx` 등)에서는 `lib/workspace.ts`, `lib/plans.ts`, `lib/create-store.ts`, `lib/study-stats.ts`를 직접·간접으로 import하지 않는다. 서버와 클라이언트가 같이 쓰는 상수나 함수는 `lib/goals.ts`처럼 import가 없는 파일에 둔다.
 - v0의 Publish로 main에 바로 반영하지 않는다. PR의 Vercel 미리보기 빌드가 Ready인지 확인하고 merge한다.
-- PR의 merge 버튼은 이재윤이 누른다. Vercel 프로젝트가 이재윤의 Hobby 계정이라, 다른 사람이 만든 merge 커밋은 배포가 막힌다(D-19). 김준혁은 리뷰와 승인(Approve)을 남긴다.
+- 리뷰와 승인(Approve)을 받은 PR은 이재윤 · 김준혁 누구나 merge해도 된다. 저장소가 공개라 누가 merge해도 Vercel이 배포한다(D-19). 저장소를 비공개로 되돌리면 다시 이재윤만 merge한다.
 - 비밀값(API 키, Supabase `service_role` 키 등)은 코드와 저장소에 넣지 않는다. 로컬은 `.env.local`(git에 올라가지 않음), 배포는 Vercel 환경 변수를 쓴다.
 - 구현되지 않은 기능을 구현된 것처럼 쓰지 않는다.
 - 기능이 다음 단계로 이어지는지 PR마다 확인하고 PR 설명의 "흐름"에 쓴다. 새로 저장하는 값은 어디서 읽히는가, 새 화면은 사용자를 다음에 무엇으로 보내는가. 읽는 곳이 없거나 보여주기만 하면 그 기능은 미완성이다. 같은 PR에서 잇거나 `docs/PROJECT.md`의 "아직 없다"에 적는다.
@@ -33,7 +33,7 @@
 ## 스킬
 
 `.claude/skills/`에 이 저장소에서 쓰는 스킬이 있다. 규칙이 부딪히면 이 문서가 우선한다.
-- `studyhaeyo-ship`: 브랜치 → 검사 → PR → 미리보기 → merge(이재윤 계정) → 배포 확인 순서
+- `studyhaeyo-ship`: 브랜치 → 검사 → PR → 미리보기 → merge → 배포 확인 순서
 - `web-design-guidelines`: 화면 코드 점검(접근성·포커스·폼·애니메이션). 화면을 바꾼 PR 전에 돌린다
 - `emil-design-eng`: 패널·토글·토스트 같은 작은 동작을 다듬을 때. 디자인 A(차분한 문서형)에 맞게 쓴다
 

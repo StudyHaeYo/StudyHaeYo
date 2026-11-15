@@ -109,7 +109,16 @@ const isRightWritten = (row: JudgedItem) => row.judgment === "right" && row.writ
 // 사다리 (D-32): anything recalled, even 헷갈림 → 2 (많이 헷갈림), the lowest level asked passed → 3, 중 passed with
 // written answers → 4, then 상 passed with written answers → 5. Recalling in the note is all one level, so it tops
 // out at 3 there.
-export function reviewUnderstanding(rows: JudgedItem[]) {
+// `previous`: the 이해도 before this review. When every item was right, the review never lowers it (2026-11-15,
+// 이재윤 · 김준혁): recalling everything in the note cannot raise past 3, but it must not drop a 5 earned with written
+// answers back to 3 either. Any other result is the ladder as it is (a miss among 3+ items can still give 3).
+export function reviewUnderstanding(rows: JudgedItem[], previous: number | null = null) {
+  const value = ladder(rows)
+  if (previous !== null && rows.length > 0 && rows.every(isRight)) return Math.max(value, previous)
+  return value
+}
+
+function ladder(rows: JudgedItem[]) {
   const at = (level: ReviewLevel) => rows.filter((r) => r.item.level === level)
   const low = at("하")
   const mid = at("중")

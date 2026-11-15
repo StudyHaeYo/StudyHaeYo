@@ -1,6 +1,6 @@
 ---
 name: studyhaeyo-ship
-description: Ship a change to StudyHaeYo the agreed way — feature branch, checks, PR, Vercel preview, merge by 이재윤's account, production deploy check. Use whenever code or docs in this repo are about to be committed, opened as a PR, merged or deployed.
+description: Ship a change to StudyHaeYo the agreed way — feature branch, checks, PR, Vercel preview, merge, production deploy check. Use whenever code or docs in this repo are about to be committed, opened as a PR, merged or deployed.
 ---
 
 # StudyHaeYo: branch → PR → preview → merge → deploy
@@ -48,10 +48,10 @@ Also check by hand:
 
 Poll `gh api repos/StudyHaeYo/StudyHaeYo/commits/<head sha>/status --jq .state` until it is not `pending`. `success` = preview Ready. On `failure`, read the build log in Vercel and fix before anyone reviews.
 
-## 5. Merge — only when 이재윤 says so
+## 5. Merge — only when asked
 
-- The Vercel project is on 이재윤's Hobby account: a merge commit authored by anyone else is not deployed (D-19). 김준혁 reviews and approves; he doesn't merge.
-- Merge only after an explicit "merge" from 이재윤 in this conversation. Check `gh api user --jq .login` is `jylee2003`; if it isn't, stop and ask 이재윤 to press the merge button.
+- The repo is public, so Vercel deploys a merge by either 이재윤 or 김준혁 (D-19). If it is ever made private again, only 이재윤's merges deploy: then check `gh api user --jq .login` is `jylee2003` before merging.
+- Merge only after an explicit "merge" from the person in this conversation.
 - `gh api -X PUT repos/StudyHaeYo/StudyHaeYo/pulls/<n>/merge -f merge_method=merge`
 - Never use v0's Publish to push to `main`.
 
