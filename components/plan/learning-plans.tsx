@@ -11,11 +11,11 @@ import { PlanCard } from "@/components/plan/plan-card"
 import { PageHeader, SectionHeader, emptyState, primaryButton, secondaryButton } from "@/components/page-shell"
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
 
-export function LearningPlans() {
+export function LearningPlans({ initialSubjectId }: { initialSubjectId?: string }) {
   const plans = usePlans()
   const workspace = useWorkspace()
   const today = useTodayISO()
-  const [formOpen, setFormOpen] = useState(false)
+  const [formOpen, setFormOpen] = useState(Boolean(initialSubjectId))
   const groups = today ? groupPlans(workspace, plans, today) : null
 
   return (
@@ -32,7 +32,7 @@ export function LearningPlans() {
         }
       />
       <div className="flex flex-col gap-10">
-        {formOpen && <PlanForm workspace={workspace} onClose={() => setFormOpen(false)} />}
+        {formOpen && <PlanForm workspace={workspace} initialSubjectId={initialSubjectId} onClose={() => setFormOpen(false)} />}
         <section aria-labelledby="plans-title" className="flex flex-col gap-1">
           <SectionHeader id="plans-title" title="진행 중인 계획" count={groups ? groups.active.length : null} />
           {groups === null ? (
@@ -86,9 +86,20 @@ function PlanGrid({ items }: { items: ActivePlan[] }) {
   )
 }
 
-function PlanForm({ workspace, onClose }: { workspace: WorkspaceState; onClose: () => void }) {
-  const [title, setTitle] = useState("")
-  const [target, setTarget] = useState("all")
+function PlanForm({
+  workspace,
+  initialSubjectId,
+  onClose,
+}: {
+  workspace: WorkspaceState
+  initialSubjectId?: string
+  onClose: () => void
+}) {
+  // Opened from 학습 분석 for one subject: that subject is the target and names the plan. An unknown id (deleted
+  // subject, stale link) falls back to 전체 학습.
+  const preset = workspace.groups.find((g) => g.kind === "subject" && g.id === initialSubjectId)
+  const [title, setTitle] = useState(preset ? `${preset.name} 다시 보기` : "")
+  const [target, setTarget] = useState(preset ? encodeTarget({ scope: "subject", subjectId: preset.id }) : "all")
   const [startDate, setStartDate] = useState(() => todayISO())
   const [endDate, setEndDate] = useState(() => addDays(todayISO(), 6))
   const [goal, setGoal] = useState("")
@@ -205,7 +216,7 @@ function PlanForm({ workspace, onClose }: { workspace: WorkspaceState; onClose: 
           type="submit"
           className={primaryButton}
         >
-          계획 생성
+          계획 만들기
         </button>
       </div>
     </form>

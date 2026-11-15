@@ -69,7 +69,7 @@ export function TimePicker({
     `h-8 rounded-md text-xs tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 disabled:opacity-40 ${
       selected ? "bg-action-600 font-medium text-action-foreground" : "text-foreground hover:bg-accent"
     }`
-  const caption = "mb-1 mt-2 px-0.5 text-[11px] text-muted-foreground first:mt-0"
+  const caption = "mb-1 mt-2 px-0.5 text-xs text-muted-foreground first:mt-0"
 
   return (
     <span ref={wrapRef} className="shrink-0">
@@ -126,7 +126,7 @@ export function TimePicker({
                     disabled={startMin === null}
                     aria-pressed={durationMin === m}
                     onClick={() => startMin !== null && change(startMin, m)}
-                    className={`${chip(durationMin === m)} whitespace-nowrap px-0.5 text-[11px]`}
+                    className={`${chip(durationMin === m)} whitespace-nowrap px-0.5 text-xs`}
                   >
                     {LENGTH_LABELS[m]}
                   </button>

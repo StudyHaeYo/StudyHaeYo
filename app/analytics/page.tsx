@@ -3,7 +3,7 @@
 import { PageHeader, PageShell, StatStrip } from "@/components/page-shell"
 import { SubjectMastery } from "@/components/learning-os/subject-mastery"
 import { AnalyticsTrend } from "@/components/learning-os/analytics-trend"
-import { RecentActivity, UpcomingReviews, WeakAreas } from "@/components/learning-os/analytics-widgets"
+import { WeakAreas } from "@/components/learning-os/analytics-widgets"
 import { formatDuration } from "@/lib/study-pages"
 import { useDocumentTitle } from "@/hooks/use-document-title"
 import { useWorkspace } from "@/lib/workspace"
@@ -47,15 +47,12 @@ export default function AnalyticsPage() {
 
         <AnalyticsTrend />
 
+        {/* Looking back only (2026-11-15): 복습 예정 was Home's review list and 최근 학습 활동 was 학습 기록. What a weak
+            subject needs next is a plan, so its row leads to one (SubjectMastery). */}
         <div className="grid items-start gap-4 lg:grid-cols-2">
           <SubjectMastery title="과목별 학습 상태" />
 
           <WeakAreas />
-        </div>
-
-        <div className="grid items-start gap-4 lg:grid-cols-2">
-          <UpcomingReviews />
-          <RecentActivity />
         </div>
       </div>
     </PageShell>

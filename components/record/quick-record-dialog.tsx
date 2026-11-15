@@ -649,7 +649,7 @@ function WherePicker({
           {options.map((option, i) => (
             <li key={`${option.group}-${option.target.kind}-${"id" in option.target ? option.target.id : ""}`} role="presentation">
               {option.group && options[i - 1]?.group !== option.group && (
-                <p className="px-2.5 pb-1 pt-2 text-[11px] text-muted-foreground">{option.group}</p>
+                <p className="px-2.5 pb-1 pt-2 text-xs text-muted-foreground">{option.group}</p>
               )}
               <div
                 id={`${listId}-${i}`}
