@@ -182,12 +182,17 @@ export function Sidebar(_props: SidebarProps = {}) {
     >
       {/* Logo */}
       <div className="flex items-center gap-2 px-5 py-5">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-action-600 text-action-foreground">
-          <BookOpen className="size-4" />
-        </div>
-        <span className="flex-1 text-base font-semibold tracking-tight text-foreground">
-          스터디 해요
-        </span>
+        {/* The logo goes home, like the phone top bar's (2026-11-16). */}
+        <Link
+          href="/"
+          onClick={() => setMobileOpen(false)}
+          className="-mx-1.5 flex flex-1 items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+        >
+          <span className="flex size-8 items-center justify-center rounded-lg bg-action-600 text-action-foreground">
+            <BookOpen className="size-4" />
+          </span>
+          <span className="text-base font-semibold tracking-tight text-foreground">스터디 해요</span>
+        </Link>
         <button
           type="button"
           onClick={() => setMobileOpen(false)}
