@@ -34,10 +34,11 @@ const { data, error } = await supabase.auth.getClaims();
 const claims = error ? null : data?.claims ?? null;
   const pathname = request.nextUrl.pathname;
 
-  // 로그인, 회원가입, 인증 콜백, 앱 설치 정보(manifest — 브라우저가 쿠키 없이 받는다)는 공개
+  // 로그인, 회원가입, 비밀번호 재설정 메일 요청, 인증 콜백, 앱 설치 정보(manifest — 브라우저가 쿠키 없이 받는다)는 공개
   const isPublicPath =
     pathname === "/login" ||
     pathname === "/signup" ||
+    pathname === "/forgot-password" ||
     pathname === "/auth/callback" ||
     pathname === "/manifest.webmanifest";
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useSyncExternalStore } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { settleWrites } from "@/lib/db/queue"
 
@@ -25,7 +25,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   email_exists: "이미 가입된 이메일이에요.",
   weak_password: "비밀번호가 너무 단순해요. 더 길거나 복잡하게 만들어 주세요.",
   email_address_invalid: "사용할 수 없는 이메일 주소예요.",
-  over_email_send_rate_limit: "인증 메일을 너무 자주 보냈어요. 잠시 후 다시 시도해 주세요.",
+  over_email_send_rate_limit: "메일을 너무 자주 보냈어요. 잠시 후 다시 시도해 주세요.",
+  same_password: "지금 쓰는 비밀번호와 다른 비밀번호를 입력해 주세요.",
   over_request_rate_limit: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
   signup_disabled: "지금은 회원가입을 받지 않고 있어요.",
 }
@@ -64,6 +65,63 @@ export async function signUp(name: string, email: string, password: string): Pro
   }
 }
 
+// 비밀번호 재설정 메일(2026-11-16). 가입되지 않은 이메일이어도 성공으로 돌아온다(가입 여부를 알려 주지 않기).
+// 메일의 링크는 /auth/callback을 거쳐 /reset-password로 간다.
+export async function requestPasswordReset(email: string): Promise<AuthResult> {
+  try {
+    const { error } = await createClient().auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+    })
+    return error ? { ok: false, message: toMessage(error) } : { ok: true }
+  } catch {
+    return { ok: false, message: FALLBACK_MESSAGE }
+  }
+}
+
+// 재설정 링크로 로그인된 상태에서 새 비밀번호를 저장한다.
+export async function updatePassword(password: string): Promise<AuthResult> {
+  try {
+    const { error } = await createClient().auth.updateUser({ password })
+    return error ? { ok: false, message: toMessage(error) } : { ok: true }
+  } catch {
+    return { ok: false, message: FALLBACK_MESSAGE }
+  }
+}
+
+// "이메일 기억하기"(2026-11-16): 켜고 로그인하면 이 브라우저에만 이메일을 둔다. 끄면 바로 지운다. 기본은 꺼짐
+// (전시회 PC처럼 여럿이 쓰는 컴퓨터에 남지 않게). 서버와 첫 렌더에서는 null(hooks/use-today.ts와 같은 방식).
+const REMEMBERED_EMAIL_KEY = "studyhaeyo.loginEmail"
+const rememberedEmailListeners = new Set<() => void>()
+
+function readRememberedEmail() {
+  try {
+    return window.localStorage.getItem(REMEMBERED_EMAIL_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setRememberedEmail(email: string | null) {
+  try {
+    if (email) window.localStorage.setItem(REMEMBERED_EMAIL_KEY, email)
+    else window.localStorage.removeItem(REMEMBERED_EMAIL_KEY)
+  } catch {
+    // 저장소를 못 쓰면 기억하지 않는다.
+  }
+  rememberedEmailListeners.forEach((listener) => listener())
+}
+
+export function useRememberedEmail(): string | null {
+  return useSyncExternalStore(
+    (onChange) => {
+      rememberedEmailListeners.add(onChange)
+      return () => rememberedEmailListeners.delete(onChange)
+    },
+    readRememberedEmail,
+    () => null,
+  )
+}
+
 export async function signOut(): Promise<AuthResult> {
   try {
     // Finish pending saves while the session is still valid; lib/db/sync.ts clears the cache after sign-out.
@@ -98,6 +156,6 @@ export function useCurrentUser(): CurrentUser | null {
 // 로그인 후 돌아갈 주소. 같은 사이트 안의 경로만 허용한다(외부 주소로 보내지 않기).
 export function safeNextPath(next: string | undefined) {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/"
-  if (next === "/login" || next === "/signup" || next.startsWith("/auth/")) return "/"
+  if (next === "/login" || next === "/signup" || next === "/forgot-password" || next.startsWith("/auth/")) return "/"
   return next
 }
