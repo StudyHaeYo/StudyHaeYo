@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Plus, Search, X } from "lucide-react"
+import { ChevronRight, Plus, Search, Timer, X } from "lucide-react"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { RecordRow } from "@/components/record/record-row"
 import { addDays, formatDate, formatDuration } from "@/lib/study-pages"
@@ -152,11 +152,17 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
                 </span>
               </div>
               <ul className="flex flex-col divide-y divide-border">
-                {list.map((entry) => (
-                  <li key={entry.record.id}>
-                    <RecordRow entry={entry} when={timeOfDay(entry)} />
-                  </li>
-                ))}
+                {(byNote ? list.map((e) => [e]) : sessionGroups(list)).map((group) =>
+                  group.length === 1 ? (
+                    <li key={group[0].record.id}>
+                      <RecordRow entry={group[0]} when={timeOfDay(group[0])} />
+                    </li>
+                  ) : (
+                    <li key={group[0].record.id}>
+                      <SessionGroup entries={group} when={timeOfDay(group[0])} />
+                    </li>
+                  ),
+                )}
               </ul>
             </section>
           ))}
@@ -170,6 +176,76 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
             </button>
           )}
         </>
+      )}
+    </div>
+  )
+}
+
+// Records saved together from one timer summary share their createdAt to the millisecond (the session's end, kept as
+// is in the DB): shown as one session (2026-11-16, "학습 기록에선 통합된 기록으로"). Each record stays its own row
+// underneath, since 이해도 and the next review are per note. In list order, the group where its first record is.
+function sessionGroups(list: RecordEntry[]): RecordEntry[][] {
+  const groups: RecordEntry[][] = []
+  const byTime = new Map<number, RecordEntry[]>()
+  for (const entry of list) {
+    const at = typeof entry.record.createdAt === "number" ? entry.record.createdAt : null
+    const group = at !== null ? byTime.get(at) : undefined
+    if (group) {
+      group.push(entry)
+      continue
+    }
+    const fresh = [entry]
+    if (at !== null) byTime.set(at, fresh)
+    groups.push(fresh)
+  }
+  return groups
+}
+
+function SessionGroup({ entries: saved, when }: { entries: RecordEntry[]; when?: string }) {
+  const [open, setOpen] = useState(false)
+  // In the order they were studied (each record starts at its note's first moment in the session).
+  const entries = [...saved].sort((a, b) => (a.record.startedAt ?? 0) - (b.record.startedAt ?? 0))
+  const id = `session-${entries[0].record.id}`
+  const minutes = entries.reduce((sum, e) => sum + e.record.durationMinutes, 0)
+  const notes = entries.filter((e) => e.pageId !== null)
+  const outside = entries.length - notes.length
+  const names = notes.map((e) => e.pageTitle ?? "제목 없음")
+  const summary = [names.slice(0, 3).join(" · "), names.length > 3 ? `외 ${names.length - 3}개` : "", outside > 0 ? "앱 밖" : ""]
+    .filter(Boolean)
+    .join(names.length > 0 && outside > 0 ? " + " : " ")
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((v) => !v)}
+        className="grid w-full grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 rounded-md py-3.5 pr-9 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 sm:pr-10"
+      >
+        <span className="flex min-w-0 items-start gap-1.5 text-[15px] leading-relaxed text-foreground">
+          <ChevronRight
+            className={`mt-1 size-4 shrink-0 text-muted-foreground transition-transform duration-150 ${open ? "rotate-90" : ""}`}
+            aria-hidden="true"
+          />
+          <span className="min-w-0">{summary}</span>
+        </span>
+        <span className="text-sm font-medium tabular-nums text-foreground">{formatDuration(minutes)}</span>
+        <span className="col-span-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 pl-[22px] text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <Timer className="size-3.5" aria-hidden="true" />
+            {`타이머 세션 · 기록 ${entries.length}개`}
+          </span>
+          {when && <span className="tabular-nums">{when}</span>}
+        </span>
+      </button>
+      {open && (
+        <ul id={id} className="mb-3 ml-[7px] flex flex-col divide-y divide-border border-l border-border pl-4">
+          {entries.map((entry) => (
+            <li key={entry.record.id}>
+              <RecordRow entry={entry} />
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )
