@@ -409,6 +409,89 @@ export function weeklyTrend(workspace: WorkspaceState, today: string, weeks = 8)
   return totals
 }
 
+// 학습 분석 "무엇을 얼마나" (2026-11-16): each bar of the chart split by subject, and each subject by note. Weeks
+// (the last `weeks`, current last) or the days of this week (Monday to Sunday, days after today `future`).
+export const BREAKDOWN_COLORS = 4 // subjects with a hue of their own; the rest are "기타"
+export const OTHER_KEY = "other"
+
+export interface BreakdownNote {
+  key: string
+  title: string
+  href: string
+  minutes: number
+}
+
+export interface BreakdownSubject {
+  key: string // subject id, "none" for 과목 없음
+  name: string
+  minutes: number
+  notes: BreakdownNote[] // most minutes first
+}
+
+export interface BreakdownBucket {
+  start: string
+  end: string
+  isCurrent: boolean
+  future: boolean
+  minutes: number
+  subjects: BreakdownSubject[] // most minutes first
+}
+
+export interface StudyBreakdown {
+  buckets: BreakdownBucket[]
+  // Color slots, most minutes in the whole range first; slot index = position. "기타" last when there are more subjects.
+  legend: { key: string; name: string; minutes: number }[]
+}
+
+export function studyBreakdown(workspace: WorkspaceState, today: string, unit: "week" | "day", count = 8): StudyBreakdown {
+  const first = unit === "week" ? addDays(weekStart(today), -7 * (count - 1)) : weekStart(today)
+  const size = unit === "week" ? 7 : 1
+  const length = unit === "week" ? count : 7
+  const buckets: BreakdownBucket[] = Array.from({ length }, (_, i) => {
+    const start = addDays(first, i * size)
+    const end = addDays(start, size - 1)
+    return { start, end, isCurrent: start <= today && today <= end, future: start > today, minutes: 0, subjects: [] }
+  })
+  const totals = new Map<string, { name: string; minutes: number }>()
+  for (const entry of allRecordEntries(workspace)) {
+    const { record } = entry
+    if (record.date < first || record.date > today || record.durationMinutes <= 0) continue
+    const bucket = buckets[Math.floor(daysBetween(first, record.date) / size)]
+    if (!bucket) continue
+    const key = entry.subjectId ?? "none"
+    bucket.minutes += record.durationMinutes
+    let subject = bucket.subjects.find((x) => x.key === key)
+    if (!subject) bucket.subjects.push((subject = { key, name: entry.subject, minutes: 0, notes: [] }))
+    subject.minutes += record.durationMinutes
+    const noteKey = entry.pageId ?? `subject:${key}`
+    let note = subject.notes.find((n) => n.key === noteKey)
+    if (!note) subject.notes.push((note = { key: noteKey, title: entry.pageTitle ?? "과목에 바로 남긴 기록", href: entryHref(entry), minutes: 0 }))
+    note.minutes += record.durationMinutes
+    const total = totals.get(key) ?? { name: entry.subject, minutes: 0 }
+    total.minutes += record.durationMinutes
+    totals.set(key, total)
+  }
+  const byMinutes = <T extends { minutes: number; name?: string; title?: string }>(a: T, b: T) =>
+    b.minutes - a.minutes || (a.name ?? a.title ?? "").localeCompare(b.name ?? b.title ?? "")
+  for (const bucket of buckets) {
+    bucket.subjects.sort(byMinutes)
+    for (const subject of bucket.subjects) subject.notes.sort(byMinutes)
+  }
+  const ranked = [...totals.entries()].map(([key, t]) => ({ key, ...t })).sort(byMinutes)
+  // Up to four subjects each get a hue; past that the fifth onward fold into "기타" (gray).
+  const legend =
+    ranked.length <= BREAKDOWN_COLORS
+      ? ranked
+      : [...ranked.slice(0, BREAKDOWN_COLORS), { key: OTHER_KEY, name: "기타", minutes: ranked.slice(BREAKDOWN_COLORS).reduce((s, x) => s + x.minutes, 0) }]
+  return { buckets, legend }
+}
+
+// Which legend slot a subject draws in: its own, or "기타".
+export function breakdownSlot(legend: StudyBreakdown["legend"], subjectKey: string) {
+  const own = legend.findIndex((l) => l.key === subjectKey)
+  return own !== -1 ? own : legend.findIndex((l) => l.key === OTHER_KEY)
+}
+
 // 학습 분석 says nothing it can't back up: a comparison needs this many records on each side (one or two records
 // make an "average" that is just those records).
 export const MIN_RECORDS_TO_COMPARE = 3
