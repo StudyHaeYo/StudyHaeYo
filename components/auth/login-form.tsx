@@ -1,7 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
-import { safeNextPath, signIn } from "@/lib/auth"
+import { safeNextPath, setRememberedEmail, signIn, useRememberedEmail } from "@/lib/auth"
 import { AuthField, EMAIL_PATTERN, submitButtonClass } from "./auth-field"
 
 function validate(email: string, password: string) {
@@ -22,7 +23,12 @@ export function LoginForm({
   notice?: string
   noticeTone?: "success" | "error"
 }) {
-  const [email, setEmail] = useState("")
+  // The remembered email fills the field until the user types; the box starts checked when one is remembered.
+  const remembered = useRememberedEmail()
+  const [typedEmail, setEmail] = useState<string | null>(null)
+  const [rememberChoice, setRememberChoice] = useState<boolean | null>(null)
+  const email = typedEmail ?? remembered ?? ""
+  const remember = rememberChoice ?? remembered !== null
   const [password, setPassword] = useState("")
   const [submitted, setSubmitted] = useState(false)
   const [pending, setPending] = useState(false)
@@ -40,6 +46,7 @@ export function LoginForm({
     setPending(true)
     const result = await signIn(email.trim(), password)
     if (result.ok) {
+      setRememberedEmail(remember ? email.trim() : null)
       // A full page load, not a client navigation: the router may still hold the redirect to /login it got before
       // signing in, which left people on the login page until they pressed F5.
       window.location.replace(safeNextPath(next))
@@ -84,6 +91,32 @@ export function LoginForm({
         error={errors.password}
         disabled={pending}
       />
+      <div className="-mt-1 flex items-center justify-between gap-3">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => {
+              setRememberChoice(e.target.checked)
+              // Unchecking forgets right away, not only at the next sign-in.
+              // The field keeps what it shows.
+              if (!e.target.checked) {
+                setEmail(email)
+                setRememberedEmail(null)
+              }
+            }}
+            disabled={pending}
+            className="size-4 rounded border-input accent-action-600"
+          />
+          이메일 기억하기
+        </label>
+        <Link
+          href="/forgot-password"
+          className="rounded text-sm text-action-600 hover:text-action-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+        >
+          비밀번호 찾기
+        </Link>
+      </div>
       {formError && (
         <p role="alert" className="text-sm text-danger-600">
           {formError}
