@@ -1,19 +1,28 @@
 "use client"
 
-import { formatDate, wrongReasons, type TextBlock, type WrongReason } from "@/lib/study-pages"
+import { formatDate, problemSolved, wrongReasons, type TextBlock, type WrongReason } from "@/lib/study-pages"
 
 // 오답 노트 = 채점된 시험지 (D-35). The editor draws these around an ordinary toggle (the problem as its title, the
 // answer and 풀이 as its body); nothing here is required, a problem works with all of it left empty.
 
 // The problem number with a grading mark over it, like a marked exam paper: a circle when it was right, a slash
 // otherwise (a problem without a result counts as wrong, D-27). No mark until the problem has a question.
-export function ProblemNumber({ n, result, marked }: { n: number; result: TextBlock["result"]; marked: boolean }) {
+// The number's mark (D-35, D-39): a circle once solved (right on two different days), a dashed circle when right once
+// and waiting for another day, a slash when wrong.
+export function ProblemNumber({ n, block, marked }: { n: number; block: TextBlock; marked: boolean }) {
+  const state = problemSolved(block) ? "solved" : block.result === "right" ? "once" : "wrong"
   return (
     <span aria-hidden="true" className="relative mt-0.5 flex h-7 w-9 shrink-0 select-none items-start pl-1 text-xl font-bold leading-7 tabular-nums text-foreground">
       {n}
       {marked &&
-        (result === "right" ? (
-          <svg viewBox="0 0 52 52" className="absolute -left-2 -top-1.5 size-9 fill-none stroke-success-600" strokeWidth="3" strokeLinecap="round">
+        (state !== "wrong" ? (
+          <svg
+            viewBox="0 0 52 52"
+            className="absolute -left-2 -top-1.5 size-9 fill-none stroke-success-600"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={state === "once" ? "6 7" : undefined}
+          >
             <path d="M27 5C40 5 47 14 47 26C47 38 38 47 26 47C13 47 5 38 5 26C5 15 13 6 24 6.5" />
           </svg>
         ) : (
@@ -90,10 +99,17 @@ export function WrongReasons({ value, onChange }: { value: WrongReason[] | undef
 
 // Under a folded problem: what it holds, so a folded paper still reads (and a solved one says it can be opened).
 export function ProblemFoldedLine({ block }: { block: TextBlock }) {
-  if (block.result === "right")
+  if (problemSolved(block))
     return (
       <p className="text-[13px] text-muted-foreground">
         맞힘{block.triedOn ? ` · ${formatDate(block.triedOn)}` : ""} · 눌러서 다시 보기
+      </p>
+    )
+  // Right once (or more, the same day): solved only after another day (D-39).
+  if (block.result === "right")
+    return (
+      <p className="text-[13px] text-muted-foreground">
+        한 번 맞힘{block.triedOn ? ` · ${formatDate(block.triedOn)}` : ""} · 다른 날 한 번 더 맞히면 끝나요
       </p>
     )
   const reasons = wrongReasons.filter((r) => block.reasons?.includes(r.id)).map((r) => r.label)
