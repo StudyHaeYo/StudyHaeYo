@@ -1,14 +1,15 @@
 import { PageShell } from "@/components/page-shell"
 import { LearningPlans } from "@/components/plan/learning-plans"
 
-export const metadata = { title: "학습 계획 · 스터디 해요" }
+export const metadata = { title: "계획 · 스터디 해요" }
 
-// ?subject=<id> (학습 분석의 [계획 만들기]): the form opens with that subject already chosen.
-export default async function PlanPage({ searchParams }: { searchParams: Promise<{ subject?: string }> }) {
-  const { subject } = await searchParams
+// Opens from 오늘 (개편안 D-43), no longer a menu of its own. ?new=1 (오늘의 [계획 만들기]) opens the form;
+// ?subject=<id> (돌아보기의 [계획 만들기]) opens it with that subject already chosen.
+export default async function PlanPage({ searchParams }: { searchParams: Promise<{ subject?: string; new?: string }> }) {
+  const { subject, new: fresh } = await searchParams
   return (
     <PageShell>
-      <LearningPlans key={subject ?? "plans"} initialSubjectId={subject} />
+      <LearningPlans key={subject ?? fresh ?? "plans"} initialSubjectId={subject} startOpen={fresh === "1"} />
     </PageShell>
   )
 }

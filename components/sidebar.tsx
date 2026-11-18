@@ -7,10 +7,8 @@ import { toast } from "sonner"
 import { usePathname, useRouter } from "next/navigation"
 import {
   BarChart3,
-  NotebookText,
   BookMarked,
   BookOpen,
-  CalendarRange,
   ChevronDown,
   ChevronRight,
   Folder,
@@ -47,12 +45,11 @@ import { useTodayISO } from "@/hooks/use-today"
 import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
 import { button } from "@/components/ui-styles"
 
+// Two places (개편안 D-43): 오늘 is what to do now (할 일 · 시간표 · 계획), 돌아보기 is what was done (그래프 · 기록).
+// 학습 분석 and 학습 계획 were screens of their own; the first is part of 돌아보기, the second opens from 오늘.
 const mainNav = [
-  { href: "/", label: "홈", icon: Home },
-  // 오늘 → 모든 기록 → 통계 → 목표 (D-28)
-  { href: "/records", label: "학습 기록", icon: NotebookText },
-  { href: "/analytics", label: "학습 분석", icon: BarChart3 },
-  { href: "/plan", label: "학습 계획", icon: CalendarRange },
+  { href: "/", label: "오늘", icon: Home, also: ["/plan"] },
+  { href: "/records", label: "돌아보기", icon: BarChart3, also: ["/analytics"] },
 ]
 
 interface SidebarProps {
@@ -211,7 +208,8 @@ export function Sidebar(_props: SidebarProps = {}) {
           setMobileOpen(false)
           recordFromHere()
         }}
-        className="mx-2 mb-2 hidden items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:flex"
+        // The one action every screen shares, so it is the sidebar's one filled button.
+        className={button("primary", "md", "mx-2 mb-3 hidden md:flex")}
       >
         <Plus className="size-4 shrink-0" aria-hidden="true" />
         기록 남기기
@@ -219,8 +217,8 @@ export function Sidebar(_props: SidebarProps = {}) {
 
       {/* Top: main navigation */}
       <nav className="flex flex-col gap-0.5 px-2 pb-2" aria-label="메인 메뉴">
-        {mainNav.map(({ href, label, icon: Icon }) => {
-          const active = href === "/" ? homeActive : pathname.startsWith(href)
+        {mainNav.map(({ href, label, icon: Icon, also }) => {
+          const active = (href === "/" ? homeActive : pathname.startsWith(href)) || also.some((p) => pathname.startsWith(p))
           return (
             <Link
               key={href}

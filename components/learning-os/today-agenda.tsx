@@ -2,101 +2,103 @@
 
 import { useId, useState } from "react"
 import Link from "next/link"
-import { CalendarRange, ChevronDown, ChevronRight, ListTodo, RotateCcw } from "lucide-react"
+import { ChevronDown, Plus, RotateCcw, Target } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { reviewCandidates, reviewHref, type StudyCandidate } from "@/lib/study-candidates"
 import { dueToneClass, formatDuration } from "@/lib/study-pages"
-import { activePlans, type ActivePlan } from "@/lib/study-stats"
+import { activePlans, planToday, type ActivePlan } from "@/lib/study-stats"
 import { usePlans } from "@/lib/plans"
 import { useWorkspace } from "@/lib/workspace"
 import { UnresolvedBadge } from "@/components/study-page/unresolved-badge"
-import { ChecklistBody, useChecklistCount } from "@/components/checklist-widget"
-import { useTodosStatus } from "@/lib/todos"
+import { ChecklistBody } from "@/components/checklist-widget"
+import { TimePicker } from "@/components/time-picker"
+import { button } from "@/components/ui-styles"
+import { MIN_DRAWN_MINUTES } from "@/lib/timetable"
+import { useTimeSlots } from "@/lib/time-slots"
+import { addTodo, todayChecklist, useTodos, useTodosStatus } from "@/lib/todos"
 import { RuledHeader } from "@/components/page-shell"
 
 const REVIEW_LIMIT = 3
 
-// Home "오늘": what to do today in one place — notes to review, plans running now, and the checklist.
+// 오늘의 할 일 (개편안 D-43): one list, not three boxes. Notes due for review, what each running plan asks of today
+// (D-38's 계획에서 오늘 할 몫, moved here from under the timetable) and the to-dos share one row shape — a 20px mark,
+// the name with one line under it, and what to do on the right — so "what do I do today" is answered in one place.
+// A plan's share becomes an ordinary to-do once it has an hour (no link is stored, D-38).
 export function TodayAgenda() {
   const workspace = useWorkspace()
   const plans = usePlans()
   const today = useTodayISO()
+  const todos = useTodos()
+  const { todoTimes } = useTimeSlots()
   const reviews = today ? reviewCandidates(workspace, today) : null
   const running = today ? activePlans(workspace, plans, today) : null
-  const checklistCount = useChecklistCount()
   // Before the todos table exists the checklist can't save anything, so it stays out of sight.
   const checklistAvailable = useTodosStatus() !== "unavailable"
+  const checklist = today ? todayChecklist(todos, today) : []
+  const left = (reviews?.length ?? 0) + (running?.length ?? 0) + checklist.filter((t) => t.doneAt === null).length
 
   return (
     <section aria-labelledby="today-agenda-title">
-      <RuledHeader id="today-agenda-title" title="오늘 할 일" />
+      <RuledHeader
+        id="today-agenda-title"
+        title="할 일"
+        aside={
+          <span className="flex items-center gap-3">
+            {reviews !== null && left > 0 && <span>{`${left}개 남음`}</span>}
+            <Link href="/plan?new=1" className="inline-flex items-center gap-0.5 font-medium text-action-700 hover:underline">
+              <Plus className="size-3.5" aria-hidden="true" />
+              계획 만들기
+            </Link>
+          </span>
+        }
+      />
 
-      <div className="divide-y divide-border">
-        <AgendaSection
-          icon={RotateCcw}
-          title="복습할 노트"
-          aside={reviews && reviews.length > 0 ? `${reviews.length}개` : null}
-        >
-          {reviews === null ? (
-            <Skeleton />
-          ) : reviews.length === 0 ? (
-            <Empty>오늘 복습할 노트가 없어요. 새로운 내용을 학습해 보세요.</Empty>
-          ) : (
-            <ReviewList reviews={reviews} />
-          )}
-        </AgendaSection>
-
-        <AgendaSection icon={CalendarRange} title="진행 중인 계획" aside={running && running.length > 0 ? `${running.length}개` : null}>
-          {running === null ? (
-            <Skeleton />
-          ) : running.length === 0 ? (
-            <Empty>
-              오늘 진행 중인 계획이 없어요.{" "}
-              <Link href="/plan" className="font-medium text-action-600 hover:underline">
-                계획 만들기
-              </Link>
-            </Empty>
-          ) : (
-            <ul className="flex flex-col gap-1">
+      {reviews === null || running === null ? (
+        <Skeleton />
+      ) : (
+        <>
+          {reviews.length > 0 && <ReviewList reviews={reviews} />}
+          {running.length > 0 && (
+            <ul className="flex flex-col gap-0.5">
               {running.map((item) => (
-                <PlanRow key={item.plan.id} item={item} />
+                <PlanRow
+                  key={item.plan.id}
+                  item={item}
+                  today={today!}
+                  canTime={todoTimes}
+                  scheduled={checklist.some((t) => t.title.startsWith(item.plan.title))}
+                />
               ))}
             </ul>
           )}
-        </AgendaSection>
+          {reviews.length === 0 && running.length === 0 && (
+            <Empty>복습할 노트도 진행 중인 계획도 없어요. 할 일을 적거나 계획을 만들어 보세요.</Empty>
+          )}
+        </>
+      )}
 
-        {checklistAvailable && (
-          <AgendaSection icon={ListTodo} title="체크리스트" aside={checklistCount}>
-            <ChecklistBody />
-          </AgendaSection>
-        )}
-      </div>
+      {checklistAvailable && (
+        <div className="mt-0.5">
+          <ChecklistBody />
+        </div>
+      )}
+      {running !== null && running.length > 0 && (
+        <p className="mt-2 px-2 text-xs text-muted-foreground">
+          <Link href="/plan" className="hover:text-foreground hover:underline">
+            계획 모두 보기
+          </Link>
+        </p>
+      )}
     </section>
   )
 }
 
-function AgendaSection({
-  icon: Icon,
-  title,
-  aside,
-  children,
-}: {
-  icon: typeof RotateCcw
-  title: string
-  aside: string | null
-  children: React.ReactNode
-}) {
+// The mark at the start of a row: what kind of thing it is, the same size as a to-do's check box.
+function RowMark({ icon: Icon }: { icon: typeof RotateCcw }) {
   return (
-    <div className="py-3">
-      <div className="mb-1.5 flex items-center justify-between px-2">
-        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-          <Icon className="size-3.5" aria-hidden="true" />
-          {title}
-        </h3>
-        {aside && <span className="text-xs font-medium text-muted-foreground">{aside}</span>}
-      </div>
-      {children}
-    </div>
+    <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-action-50 text-action-700" aria-hidden="true">
+      <Icon className="size-3.5" />
+    </span>
   )
 }
 
@@ -105,8 +107,9 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
     <li>
       <Link
         href={reviewHref(item.pageId)}
-        className={`group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent ${first ? "bg-action-50" : ""}`}
+        className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-accent"
       >
+        <RowMark icon={RotateCcw} />
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
             <span className="truncate text-sm font-medium text-foreground">{item.topic}</span>
@@ -127,11 +130,9 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
           <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>{item.due}</span>
         )}
         {first ? (
-          <span className="inline-flex shrink-0 items-center rounded-md bg-action-600 px-2.5 py-1 text-xs font-medium text-action-foreground transition-colors group-hover:bg-action-700">
-            {item.action}
-          </span>
+          <span className={button("primary", "sm", "pointer-events-none group-hover:bg-action-700")}>{item.action}</span>
         ) : (
-          <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="shrink-0 text-xs font-medium text-muted-foreground group-hover:text-foreground">{item.action}</span>
         )}
       </Link>
     </li>
@@ -145,7 +146,7 @@ function ReviewList({ reviews }: { reviews: StudyCandidate[] }) {
   const shown = all ? reviews : reviews.slice(0, REVIEW_LIMIT)
   return (
     <>
-      <ul id={listId} className="flex flex-col gap-1">
+      <ul id={listId} className="flex flex-col gap-0.5">
         {shown.map((item, i) => (
           <ReviewRow key={item.pageId} item={item} first={i === 0} />
         ))}
@@ -156,9 +157,9 @@ function ReviewList({ reviews }: { reviews: StudyCandidate[] }) {
           onClick={() => setAll((v) => !v)}
           aria-expanded={all}
           aria-controls={listId}
-          className="mt-1 inline-flex items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+          className="mb-1 ml-9 inline-flex items-center gap-0.5 rounded-md py-1 text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
         >
-          {all ? "접기" : `${reviews.length - REVIEW_LIMIT}개 더 보기`}
+          {all ? "접기" : `복습할 노트 ${reviews.length - REVIEW_LIMIT}개 더 보기`}
           <ChevronDown className={`size-3.5 transition-transform motion-reduce:transition-none ${all ? "rotate-180" : ""}`} aria-hidden="true" />
         </button>
       )}
@@ -166,35 +167,48 @@ function ReviewList({ reviews }: { reviews: StudyCandidate[] }) {
   )
 }
 
-function PlanRow({ item }: { item: ActivePlan }) {
+function PlanRow({ item, today, canTime, scheduled }: { item: ActivePlan; today: string; canTime: boolean; scheduled: boolean }) {
   const { plan } = item
+  const ask = planToday(item)
   const left = item.daysLeft === 0 ? "오늘 마감" : `${item.daysLeft}일 남음`
-  const body = (
-    <>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-foreground">{plan.title}</span>
-        {/* One fact under the name; the dates and the goal note are on 학습 계획. */}
-        <span className="block truncate text-xs text-muted-foreground">{item.targetLabel}</span>
-      </span>
-      <span className="flex shrink-0 flex-col items-end">
-        <span className="text-sm font-semibold tabular-nums text-foreground">
-          {formatDuration(item.studiedMinutes)}
-          {plan.goalMinutes ? <span className="font-normal text-muted-foreground">{` / ${formatDuration(plan.goalMinutes)}`}</span> : null}
-        </span>
-        <span className={`text-xs ${item.daysLeft <= 1 ? "font-medium text-attention-700" : "text-muted-foreground"}`}>{left}</span>
-      </span>
-    </>
+  const progress = plan.goalMinutes ? `${formatDuration(item.studiedMinutes)} / ${formatDuration(plan.goalMinutes)}` : formatDuration(item.studiedMinutes)
+  const title = item.targetHref ? (
+    <Link href={item.targetHref} className="truncate text-sm font-medium text-foreground hover:underline">
+      {plan.title}
+    </Link>
+  ) : (
+    <span className="truncate text-sm font-medium text-foreground">{plan.title}</span>
   )
-  const className = "flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent"
   return (
-    <li>
-      {item.targetHref ? (
-        <Link href={item.targetHref} className={className}>
-          {body}
-        </Link>
-      ) : (
-        <div className={className}>{body}</div>
-      )}
+    <li className="relative flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-accent">
+      <RowMark icon={Target} />
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-baseline gap-1.5">
+          {title}
+          {ask?.minutes ? <span className="shrink-0 text-xs font-medium text-action-700">{`오늘 ${formatDuration(ask.minutes)}`}</span> : null}
+        </span>
+        <span className="block truncate text-xs text-muted-foreground">
+          {`${item.targetLabel} · ${progress} · `}
+          <span className={item.daysLeft <= 1 ? "font-medium text-attention-700" : ""}>{left}</span>
+        </span>
+      </span>
+      {!ask ? (
+        <span className="shrink-0 text-xs font-medium text-success-700">목표 채움</span>
+      ) : scheduled ? (
+        <span className="shrink-0 text-xs text-muted-foreground">할 일에 있음</span>
+      ) : canTime ? (
+        <TimePicker
+          startMin={null}
+          durationMin={null}
+          onChange={(start) => start !== null && addTodo(ask.title, today, start, ask.minutes === null ? null : Math.max(MIN_DRAWN_MINUTES, ask.minutes))}
+          withDuration={false}
+          closeOnPick
+          label={`${plan.title} 시간 정하기`}
+          className={() => button("ghost", "sm", "h-7 px-2 text-xs text-action-700 hover:text-action-700")}
+        >
+          시간 정하기
+        </TimePicker>
+      ) : null}
     </li>
   )
 }

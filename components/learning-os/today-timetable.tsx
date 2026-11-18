@@ -6,11 +6,8 @@ import { useNowMinutes, useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
 import { useStudySession } from "@/lib/study-session"
 import { useTimeSlots } from "@/lib/time-slots"
-import { addTodo, todayChecklist, todoStartMin, toggleTodo, useTodos, useTodosStatus, type Todo } from "@/lib/todos"
-import { usePlans } from "@/lib/plans"
-import { activePlans, planToday } from "@/lib/study-stats"
+import { todayChecklist, todoStartMin, toggleTodo, useTodos, useTodosStatus, type Todo } from "@/lib/todos"
 import { clockLabel, layoutLanes, MIN_DRAWN_MINUTES, planRange, rangeLabel } from "@/lib/timetable"
-import { TimePicker } from "@/components/time-picker"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 import { RuledHeader } from "@/components/page-shell"
 
@@ -67,7 +64,6 @@ export function TodayTimetable() {
   const todos = useTodos()
   const todosStatus = useTodosStatus()
   const session = useStudySession()
-  const allPlans = usePlans()
   const { todoTimes, recordTimes, todoDurations } = useTimeSlots()
 
   // Scrolled once, when the grid first shows — not every minute, or it would pull the grid back while someone is
@@ -126,14 +122,6 @@ export function TodayTimetable() {
   const openFrom = Math.min(Math.max(firstHour, nowHour - 1) * 60, ...items.filter((it, i) => it.start < (nowHour - 1) * 60 && drawn[i].end > (nowHour - 1) * 60).map((it) => it.start))
   const openAt = Math.max(0, y(openFrom) - EDGE - 4)
   const empty = items.length === 0
-
-  // Running plans not on today's checklist yet (a to-do made from a plan starts with the plan's title).
-  const fromPlans = todoTimes
-    ? activePlans(workspace, allPlans, today).flatMap((item) => {
-        const ask = planToday(item)
-        return ask && !checklist.some((t) => t.title.startsWith(item.plan.title)) ? [{ id: item.plan.id, ...ask }] : []
-      })
-    : []
 
   return (
     <section aria-labelledby="today-timetable-title">
@@ -240,35 +228,9 @@ export function TodayTimetable() {
         </div>
       </div>
 
-      {fromPlans.length > 0 && (
-        <div className="mt-3 border-t border-border pt-3">
-          <p className="mb-1 text-xs font-semibold text-muted-foreground">계획에서 오늘 할 몫</p>
-          <ul>
-            {fromPlans.map((p) => (
-              <li key={p.id} className="relative flex items-center justify-between gap-2 py-1">
-                <span className="min-w-0 truncate text-sm text-foreground">{p.title}</span>
-                <TimePicker
-                  startMin={null}
-                  durationMin={null}
-                  onChange={(start) => start !== null && addTodo(p.title, today, start, p.minutes === null ? null : Math.max(MIN_DRAWN_MINUTES, p.minutes))}
-                  withDuration={false}
-                  closeOnPick
-                  label={`${p.title} 시간표에 넣기`}
-                  className={() =>
-                    "touch-hit h-7 rounded-md px-2 text-xs font-medium text-action-700 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
-                  }
-                >
-                  시간표에 넣기
-                </TimePicker>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {empty && todoTimes && (
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          체크리스트에서 할 일의 시계를 누르면 {todoDurations ? "시각과 길이를 정해" : "그 시각에"} 여기에 넣을 수 있어요.
+          할 일의 시계를 누르면 {todoDurations ? "시각과 길이를 정해" : "그 시각에"} 여기에 넣을 수 있어요.
         </p>
       )}
     </section>

@@ -24,8 +24,8 @@ export function WeeklyStats() {
         id="weekly-stats-title"
         title="이번 주 학습"
         aside={
-          <Link href="/analytics" className="font-medium text-action-700 hover:underline">
-            학습 분석
+          <Link href="/records" className="font-medium text-action-700 hover:underline">
+            돌아보기
           </Link>
         }
       />

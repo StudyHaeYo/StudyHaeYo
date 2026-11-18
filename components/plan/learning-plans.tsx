@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Plus } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { addDays, todayISO } from "@/lib/study-pages"
@@ -11,17 +12,18 @@ import { PlanCard } from "@/components/plan/plan-card"
 import { PageHeader, SectionHeader, emptyState, primaryButton, secondaryButton } from "@/components/page-shell"
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
 
-export function LearningPlans({ initialSubjectId }: { initialSubjectId?: string }) {
+export function LearningPlans({ initialSubjectId, startOpen = false }: { initialSubjectId?: string; startOpen?: boolean }) {
   const plans = usePlans()
   const workspace = useWorkspace()
   const today = useTodayISO()
-  const [formOpen, setFormOpen] = useState(Boolean(initialSubjectId))
+  const [formOpen, setFormOpen] = useState(startOpen || Boolean(initialSubjectId))
   const groups = today ? groupPlans(workspace, plans, today) : null
 
   return (
     <>
       <PageHeader
-        title="학습 계획"
+        eyebrow={<Link href="/" className="hover:text-foreground hover:underline">오늘</Link>}
+        title="계획"
         actions={
           !formOpen && (
             <button type="button" onClick={() => setFormOpen(true)} className={primaryButton}>
