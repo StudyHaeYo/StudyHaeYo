@@ -76,13 +76,6 @@ export function ChecklistBody() {
   )
 }
 
-export function useChecklistCount() {
-  const { status, items, ready } = useChecklist()
-  if (status === "unavailable") return "준비 중"
-  if (!ready || items.length === 0) return null
-  return `${items.filter((t) => t.doneAt !== null).length}/${items.length}`
-}
-
 function TodoRow({ todo, today }: { todo: Todo; today: string }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(todo.title)

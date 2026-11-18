@@ -56,7 +56,7 @@ export function RecordsJournal({ noteIds = [], embedded = false }: { noteIds?: s
     }`
 
   return (
-    <div className="flex min-w-0 flex-col">
+    <section aria-labelledby={embedded ? "journal-title" : undefined} className="flex min-w-0 flex-col">
       {embedded ? (
         <div className="mb-3">
           <RuledHeader
@@ -189,7 +189,7 @@ export function RecordsJournal({ noteIds = [], embedded = false }: { noteIds?: s
           )}
         </>
       )}
-    </div>
+    </section>
   )
 }
 

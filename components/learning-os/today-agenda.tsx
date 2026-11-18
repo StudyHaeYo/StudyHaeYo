@@ -2,11 +2,11 @@
 
 import { useId, useState } from "react"
 import Link from "next/link"
-import { ChevronDown, Plus, RotateCcw, Target } from "lucide-react"
+import { CalendarRange, ChevronDown, RotateCcw, Target } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
 import { reviewCandidates, reviewHref, type StudyCandidate } from "@/lib/study-candidates"
 import { dueToneClass, formatDuration } from "@/lib/study-pages"
-import { activePlans, planToday, type ActivePlan } from "@/lib/study-stats"
+import { activePlans, isPlanTodo, planToday, type ActivePlan } from "@/lib/study-stats"
 import { usePlans } from "@/lib/plans"
 import { useWorkspace } from "@/lib/workspace"
 import { UnresolvedBadge } from "@/components/study-page/unresolved-badge"
@@ -35,7 +35,10 @@ export function TodayAgenda() {
   // Before the todos table exists the checklist can't save anything, so it stays out of sight.
   const checklistAvailable = useTodosStatus() !== "unavailable"
   const checklist = today ? todayChecklist(todos, today) : []
-  const left = (reviews?.length ?? 0) + (running?.length ?? 0) + checklist.filter((t) => t.doneAt === null).length
+  // A plan counts as something left only while it still asks for time today and isn't already a to-do (that to-do
+  // is counted once, as a to-do).
+  const plansLeft = (running ?? []).filter((item) => planToday(item) && !checklist.some((t) => isPlanTodo(t.title, item.plan.title)))
+  const left = (reviews?.length ?? 0) + plansLeft.length + checklist.filter((t) => t.doneAt === null).length
 
   return (
     <section aria-labelledby="today-agenda-title">
@@ -43,17 +46,18 @@ export function TodayAgenda() {
         id="today-agenda-title"
         title="할 일"
         aside={
+          // One way into 계획 (the list and [계획 만들기] are both on /plan), next to how much is left.
           <span className="flex items-center gap-3">
-            {reviews !== null && left > 0 && <span>{`${left}개 남음`}</span>}
-            <Link href="/plan?new=1" className="inline-flex items-center gap-0.5 font-medium text-action-700 hover:underline">
-              <Plus className="size-3.5" aria-hidden="true" />
-              계획 만들기
+            {reviews !== null && left > 0 && <span className="tabular-nums">{`${left}개 남음`}</span>}
+            <Link href="/plan" className="inline-flex items-center gap-1 font-medium text-action-700 hover:underline">
+              <CalendarRange className="size-3.5" aria-hidden="true" />
+              계획
             </Link>
           </span>
         }
       />
 
-      {reviews === null || running === null ? (
+      {today === null || reviews === null || running === null ? (
         <Skeleton />
       ) : (
         <>
@@ -64,9 +68,9 @@ export function TodayAgenda() {
                 <PlanRow
                   key={item.plan.id}
                   item={item}
-                  today={today!}
+                  today={today}
                   canTime={todoTimes}
-                  scheduled={checklist.some((t) => t.title.startsWith(item.plan.title))}
+                  scheduled={checklist.some((t) => isPlanTodo(t.title, item.plan.title))}
                 />
               ))}
             </ul>
@@ -81,13 +85,6 @@ export function TodayAgenda() {
         <div className="mt-0.5">
           <ChecklistBody />
         </div>
-      )}
-      {running !== null && running.length > 0 && (
-        <p className="mt-2 px-2 text-xs text-muted-foreground">
-          <Link href="/plan" className="hover:text-foreground hover:underline">
-            계획 모두 보기
-          </Link>
-        </p>
       )}
     </section>
   )
@@ -107,7 +104,7 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
     <li>
       <Link
         href={reviewHref(item.pageId)}
-        className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-accent"
+        className={`group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-accent ${first ? "bg-action-50" : ""}`}
       >
         <RowMark icon={RotateCcw} />
         <span className="min-w-0 flex-1">
@@ -129,11 +126,11 @@ function ReviewRow({ item, first }: { item: StudyCandidate; first: boolean }) {
         {item.dueTone !== "overdue" && item.dueTone !== "today" && (
           <span className={`shrink-0 text-xs font-medium ${dueToneClass[item.dueTone]}`}>{item.due}</span>
         )}
-        {first ? (
-          <span className={button("primary", "sm", "pointer-events-none group-hover:bg-action-700")}>{item.action}</span>
-        ) : (
-          <span className="shrink-0 text-xs font-medium text-muted-foreground group-hover:text-foreground">{item.action}</span>
-        )}
+        {/* Every row says what it does in the same quiet way; the first one is marked by its background, since the
+            screen's one filled button is [공부 시작] (D-40, 개편안 D-43). */}
+        <span className={`shrink-0 text-xs font-medium group-hover:text-foreground ${first ? "text-action-700" : "text-muted-foreground"}`}>
+          {item.action}
+        </span>
       </Link>
     </li>
   )
@@ -180,7 +177,7 @@ function PlanRow({ item, today, canTime, scheduled }: { item: ActivePlan; today:
     <span className="truncate text-sm font-medium text-foreground">{plan.title}</span>
   )
   return (
-    <li className="relative flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-accent">
+    <li className="relative flex items-center gap-2 rounded-md px-2 py-1.5">
       <RowMark icon={Target} />
       <span className="min-w-0 flex-1">
         <span className="flex min-w-0 items-baseline gap-1.5">

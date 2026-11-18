@@ -208,8 +208,9 @@ export function Sidebar(_props: SidebarProps = {}) {
           setMobileOpen(false)
           recordFromHere()
         }}
-        // The one action every screen shares, so it is the sidebar's one filled button.
-        className={button("primary", "md", "mx-2 mb-3 hidden md:flex")}
+        // The action every screen shares: a real button, set apart from the menu, but outlined so the screen's own
+        // filled button (공부 시작 on 오늘) stays the one thing that is filled (D-40).
+        className={button("secondary", "md", "mx-2 mb-3 hidden md:flex")}
       >
         <Plus className="size-4 shrink-0" aria-hidden="true" />
         기록 남기기

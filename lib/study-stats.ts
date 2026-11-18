@@ -330,6 +330,17 @@ export function planToday(item: Pick<ActivePlan, "plan" | "studiedMinutes" | "da
   return { title: `${item.plan.title} ${formatDuration(minutes)}`, minutes }
 }
 
+// A to-do made from a plan's share is named like planToday's title: "<plan>" or "<plan> <length>" (40분 · 1시간 ·
+// 1시간 30분). No link is stored (D-38), so the name is the only tie; matching it whole keeps the plan "자료구조"
+// from claiming "자료구조 집중 40분", which the old startsWith check did.
+export function isPlanTodo(todoTitle: string, planTitle: string) {
+  const todo = todoTitle.trim()
+  const plan = planTitle.trim()
+  if (!plan) return false
+  if (todo === plan) return true
+  return todo.startsWith(`${plan} `) && /^(\d+시간( \d+분)?|\d+분)$/.test(todo.slice(plan.length + 1))
+}
+
 // Running plans end soonest first, upcoming ones start soonest first, ended ones most recent first.
 export function groupPlans(workspace: WorkspaceState, plans: LearningPlan[], today: string) {
   const all = plans.map((plan) => planProgress(workspace, plan, today))
