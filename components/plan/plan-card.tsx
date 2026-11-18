@@ -37,8 +37,8 @@ export function PlanCard({
     <li className={`group relative py-4 ${ended ? "opacity-70" : ""}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1">
-          <h3 className="text-[15px] font-medium text-foreground">{plan.title}</h3>
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted-foreground">
+          <h3 className="text-base font-medium text-foreground">{plan.title}</h3>
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted-foreground">
             {showTarget &&
               (item.targetHref ? (
                 <Link href={item.targetHref} className="font-medium text-action-700 hover:underline">

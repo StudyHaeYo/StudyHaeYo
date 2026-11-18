@@ -13,6 +13,7 @@ import {
   useToolState,
   type ToolState,
 } from "@/components/study-page/drawing-kit"
+import { button } from "@/components/ui-styles"
 
 type Annotations = Record<string, DrawingStroke[]>
 
@@ -160,7 +161,7 @@ export function PdfAnnotator({
             type="button"
             autoFocus
             onClick={onClose}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-action-600 px-3 py-1.5 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
+            className={button("primary", "sm")}
           >
             <Check className="size-4" />
             완료

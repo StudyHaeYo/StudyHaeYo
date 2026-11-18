@@ -64,6 +64,7 @@ import { AttachmentBlockView } from "@/components/study-page/attachment-block"
 import { DrawingBlockView } from "@/components/study-page/drawing-block"
 import { TableBlockView } from "@/components/study-page/table-block"
 import { MathBlockView } from "@/components/study-page/math-block"
+import { menuPanel } from "@/components/ui-styles"
 
 // Typed at the start of an empty-ish paragraph (Notion's markdown shortcuts). "---" makes a divider (handled apart).
 const shortcuts: { prefix: string; type: BlockType; checked?: boolean }[] = [
@@ -1318,7 +1319,7 @@ function BlockHandle({
         <GripVertical className="size-3.5" />
       </button>
       {open && (
-        <div role="menu" className="absolute left-0 top-7 w-40 rounded-xl border border-border bg-card p-1 shadow-lg">
+        <div role="menu" className={`${menuPanel} absolute left-0 top-7 w-40 origin-top-left p-1`}>
           <button role="menuitem" type="button" disabled={index === 0} onClick={() => onMove(-1)} className={`${item} hover:bg-accent`}>
             <ArrowUp className="size-4 text-muted-foreground" />
             위로 옮기기

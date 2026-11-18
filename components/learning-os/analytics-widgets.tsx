@@ -7,7 +7,7 @@ import { useWorkspace } from "@/lib/workspace"
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl border border-border bg-card p-5">
-      <h2 className="mb-4 text-[15px] font-semibold text-foreground">{title}</h2>
+      <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">{title}</h2>
       {children}
     </section>
   )

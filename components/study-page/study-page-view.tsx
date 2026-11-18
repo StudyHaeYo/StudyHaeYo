@@ -42,6 +42,7 @@ import { LectureMaterialPane } from "@/components/study-page/lecture-material-pa
 import { starterSectionHints } from "@/lib/templates"
 import { withCues } from "@/lib/ai"
 import { useDocumentTitle } from "@/hooks/use-document-title"
+import { button } from "@/components/ui-styles"
 
 // The page on screen, so leaving and coming straight back (or a remount) isn't taken as leaving.
 let openPageId: string | null = null
@@ -259,9 +260,7 @@ export function StudyPageView({
                 setMaterialOpen((v) => !v)
               }}
               aria-pressed={materialOpen}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
-                materialOpen ? "bg-action-50 text-action-700" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              }`}
+              className={button("ghost", "sm", "px-2.5 aria-pressed:bg-action-50 aria-pressed:text-action-700")}
             >
               <BookOpen className="size-4" />
               <span className="hidden sm:inline">강의 자료</span>
@@ -271,9 +270,7 @@ export function StudyPageView({
             type="button"
             onClick={() => setAiOpen((v) => !v)}
             aria-pressed={aiOpen}
-            className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
-              aiOpen ? "bg-action-50 text-action-700" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-            }`}
+            className={button("ghost", "sm", "px-2.5 aria-pressed:bg-action-50 aria-pressed:text-action-700")}
           >
             <Sparkles className="size-4" />
             <span className="hidden sm:inline">AI</span>
@@ -495,7 +492,7 @@ export function MissingPage() {
       <p className="mt-1 text-sm text-muted-foreground">삭제되었거나 존재하지 않는 페이지예요.</p>
       <Link
         href="/"
-        className="mt-5 rounded-lg bg-action-600 px-4 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
+        className={button("primary", "md", "mt-5")}
       >
         홈으로
       </Link>

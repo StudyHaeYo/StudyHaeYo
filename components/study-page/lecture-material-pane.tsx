@@ -6,6 +6,7 @@ import { openPdf, type PDFDocumentProxy } from "@/lib/pdf"
 import { useAttachmentUrl } from "@/lib/attachments"
 import type { AttachmentBlock } from "@/lib/study-pages"
 import { PdfAnnotator } from "@/components/study-page/pdf-annotator"
+import { button } from "@/components/ui-styles"
 
 // 강의 노트 (D-27): the lecture PDF beside the note — right side on a wide screen (same slot as the AI panel),
 // full screen on a phone with a button back to the note. Read-only; pen notes still open from the PDF block.
@@ -45,7 +46,7 @@ export function LectureMaterialPane({
           <button
             type="button"
             onClick={onExtractConcepts}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-action-700 transition-colors hover:bg-action-50"
+            className={button("ghost", "sm", "px-2.5 text-action-700 hover:bg-action-50 hover:text-action-700")}
           >
             <Sparkles className="size-3.5" aria-hidden="true" />
             AI로 핵심 개념 뽑기

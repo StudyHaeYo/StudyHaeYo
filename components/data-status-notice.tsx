@@ -7,6 +7,7 @@ import { AlertCircle, Loader2 } from "lucide-react"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { loadUserData, useDataStatus, type DataStatus } from "@/lib/db/sync"
 import { importExampleData, useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
+import { button } from "@/components/ui-styles"
 
 // Home banner for the data load: loading, a failed load with retry, or a first-step guide for an empty workspace.
 export function DataStatusNotice() {
@@ -46,7 +47,7 @@ export function DataStatusNotice() {
         <button
           type="button"
           onClick={() => void loadUserData()}
-          className="shrink-0 rounded-lg border border-danger-200 bg-background px-3 py-1.5 text-xs font-medium text-danger-700 transition-colors hover:bg-danger-100"
+          className={button("secondary", "sm")}
         >
           다시 시도
         </button>
@@ -136,7 +137,7 @@ export function DataStatusView({ status }: { status: DataStatus }) {
           <button
             type="button"
             onClick={() => void loadUserData()}
-            className="mt-5 rounded-lg bg-action-600 px-4 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
+            className={button("primary", "md", "mt-5")}
           >
             다시 시도
           </button>

@@ -1,3 +1,5 @@
+import { button } from "@/components/ui-styles"
+
 const fieldClass =
   "w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-action-500"
 
@@ -37,4 +39,4 @@ export function AuthField({
 }
 
 export const submitButtonClass =
-  "w-full rounded-lg bg-action-600 px-4 py-2.5 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-action-600"
+  button("primary", "md", "h-10 w-full")

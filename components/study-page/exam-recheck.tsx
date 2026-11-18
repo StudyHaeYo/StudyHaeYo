@@ -67,7 +67,7 @@ export function ExamRecheck({ examId, scope, examDate, today }: { examId: string
           시험 전에 다시 볼 것
           {open > 0 && <span className="ml-1.5 text-sm font-medium tabular-nums text-muted-foreground">{open}</span>}
         </h2>
-        <p className="text-[13px] text-muted-foreground">범위 노트의 헷갈린 점 · 틀린 문제 · 지난 기록에서 모았어요</p>
+        <p className="text-sm text-muted-foreground">범위 노트의 헷갈린 점 · 틀린 문제 · 지난 기록에서 모았어요</p>
       </div>
       {groups.length === 0 ? (
         <p className="border-t border-border py-3 text-sm text-muted-foreground">현재 범위에서 다시 볼 항목이 없어요.</p>
@@ -104,7 +104,7 @@ export function ExamRecheck({ examId, scope, examDate, today }: { examId: string
                       ) : (
                         <span aria-hidden="true" className="mt-[9px] size-1.5 shrink-0 rounded-full bg-muted-foreground/50 [margin-inline:6px]" />
                       )}
-                      <span className="min-w-0 flex-1 text-[15px] leading-relaxed">
+                      <span className="min-w-0 flex-1 text-base leading-relaxed">
                         {item.kind === "record" ? (
                           <span className="text-muted-foreground">{item.text}</span>
                         ) : (
@@ -139,7 +139,7 @@ export function ExamRecheck({ examId, scope, examDate, today }: { examId: string
                       else next.add(page.id)
                       return next
                     })}
-                    className="ml-7 mt-1 text-[13px] font-medium text-action-700 hover:underline"
+                    className="ml-7 mt-1 text-sm font-medium text-action-700 hover:underline"
                   >
                     {all ? "접기" : `${items.length - SHOWN}개 더 보기`}
                   </button>

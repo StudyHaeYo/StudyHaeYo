@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react"
+import { menuPanel } from "@/components/ui-styles"
 
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 6) // 6시 ~ 23시
 const LENGTHS = [30, 60, 90, 120, 180]
@@ -89,7 +90,7 @@ export function TimePicker({
           id={panelId}
           role="group"
           aria-label="몇 시부터 얼마 동안"
-          className="absolute right-2 top-full z-20 mt-1 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-popover p-2 shadow-lg"
+          className={`${menuPanel} absolute right-2 top-full z-20 mt-1 w-64 max-w-[calc(100vw-2rem)] origin-top-right p-2`}
         >
           <p className={caption}>시작</p>
           <div className="grid grid-cols-6 gap-1">

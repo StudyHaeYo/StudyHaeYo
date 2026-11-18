@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Check, X } from "lucide-react"
 import { addGroup, nodePath, useWorkspace } from "@/lib/workspace"
+import { button } from "@/components/ui-styles"
 
 const NEW = "__new__"
 const NONE = ""
@@ -79,7 +80,7 @@ export function SubjectPicker({
           onClick={create}
           disabled={!name.trim()}
           aria-label="과목 만들기"
-          className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-action-600 text-action-foreground transition-colors hover:bg-action-700 disabled:opacity-50"
+          className={button("primary", "icon")}
         >
           <Check className="size-4" />
         </button>

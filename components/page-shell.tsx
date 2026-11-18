@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { Sidebar } from "@/components/sidebar"
+import { button } from "@/components/ui-styles"
 
 // One frame for every screen that is not a note (2026-11-14, "화면마다 따로 만든 것 같다"): the same sidebar, the same
 // paddings, and one of two column widths. `wide` is for screens that compare things side by side (홈 · 학습 분석);
@@ -33,7 +34,7 @@ export function PageHeader({
     // Without a line above, the title still starts where it does on screens that have one (md and up).
     <header className={`flex flex-wrap items-end justify-between gap-x-4 gap-y-3 pb-8 ${eyebrow ? "" : "md:pt-[1.625rem]"}`}>
       <div className="min-w-0">
-        {eyebrow && <div className="mb-1.5 text-[13px] text-muted-foreground">{eyebrow}</div>}
+        {eyebrow && <div className="mb-1.5 text-sm text-muted-foreground">{eyebrow}</div>}
         <h1 className="text-balance text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
         {description && <div className="mt-1.5 text-pretty text-sm leading-relaxed text-muted-foreground">{description}</div>}
       </div>
@@ -65,13 +66,12 @@ export function SectionHeader({
   )
 }
 
-export const sectionTitle = "text-[15px] font-semibold text-foreground"
+export const sectionTitle = "text-lg font-semibold tracking-tight text-foreground"
 
 // Buttons: one filled (the screen's main action, at most one per screen) and one outlined (everything else).
-const buttonBase =
-  "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 disabled:opacity-50 [&_svg]:size-4"
-export const primaryButton = `${buttonBase} bg-action-600 text-action-foreground hover:bg-action-700`
-export const secondaryButton = `${buttonBase} border border-border bg-background text-foreground hover:bg-accent`
+// The look lives in components/ui-styles.ts with the rest of the shared parts.
+export const primaryButton = button("primary")
+export const secondaryButton = button("secondary")
 
 // A boxed group (settings, analytics, the session timer): one radius, a hairline, no shadow.
 export const surface = "rounded-xl border border-border bg-card"

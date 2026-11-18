@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { BookMarked, Folder, Home, X } from "lucide-react"
 import { canMoveNode, flattenTree, moveNode, useWorkspace } from "@/lib/workspace"
 import { useFocusTrap } from "@/hooks/use-focus-trap"
+import { dialogBackdrop, dialogPanel } from "@/components/ui-styles"
 
 // [옮기기] (D-31): puts a note into another subject or folder, or back to the top, without drag and drop
 // (phones have none). Only groups are offered; a note goes under another note by dragging on a computer.
@@ -48,7 +49,7 @@ export function MoveDialog({ pageId, title, onClose }: { pageId: string; title: 
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/30 sm:items-center sm:p-4"
+      className={`fixed inset-0 z-50 flex items-end justify-center bg-foreground/30 sm:items-center sm:p-4 ${dialogBackdrop}`}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -58,7 +59,7 @@ export function MoveDialog({ pageId, title, onClose }: { pageId: string; title: 
         role="dialog"
         aria-modal="true"
         aria-labelledby="move-dialog-title"
-        className="flex max-h-[80dvh] w-full max-w-sm flex-col rounded-t-2xl border border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-xl sm:rounded-xl sm:pb-0"
+        className={`${dialogPanel} flex max-h-[80dvh] w-full max-w-sm flex-col rounded-b-none pb-[env(safe-area-inset-bottom)] sm:rounded-b-xl sm:pb-0`}
       >
         <div className="flex items-center justify-between gap-2 px-5 pb-2 pt-4">
           <h2 id="move-dialog-title" className="min-w-0 truncate text-sm font-semibold text-foreground">

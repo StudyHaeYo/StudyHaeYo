@@ -20,6 +20,7 @@ import {
 } from "@/lib/study-session"
 import { SessionIndicator } from "@/components/study-session/session-timer"
 import { useFocusTrap } from "@/hooks/use-focus-trap"
+import { button, dialogBackdrop, dialogPanel } from "@/components/ui-styles"
 
 type Row = {
   key: string
@@ -134,7 +135,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/30 sm:items-center sm:p-4"
+      className={`fixed inset-0 z-50 flex items-end justify-center bg-foreground/30 sm:items-center sm:p-4 ${dialogBackdrop}`}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) closeSummary()
       }}
@@ -144,7 +145,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="session-summary-title"
-        className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-y-auto overscroll-contain rounded-t-3xl bg-card shadow-2xl sm:rounded-2xl"
+        className={`${dialogPanel} flex max-h-[92dvh] w-full max-w-xl flex-col overflow-y-auto overscroll-contain rounded-b-none max-sm:border-x-0 max-sm:border-b-0 sm:rounded-b-xl`}
       >
         <div className="flex items-start justify-between gap-3 px-5 pt-4">
           <div>
@@ -152,7 +153,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
             <h2 id="session-summary-title" className="mt-1 text-xl font-bold tracking-tight text-foreground">
               {total} 공부했어요
             </h2>
-            <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               {session.autoEnded
                 ? "30분 넘게 활동이 없어 마지막 활동 시각에 세션을 끝냈어요. "
                 : ""}
@@ -274,7 +275,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
         )}
 
         <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border bg-muted/30 px-5 py-3.5 sm:flex-nowrap">
-          <p role="status" className="min-w-0 flex-1 basis-full text-[13px] leading-relaxed text-muted-foreground sm:basis-auto">
+          <p role="status" className="min-w-0 flex-1 basis-full text-sm leading-relaxed text-muted-foreground sm:basis-auto">
             {missing
               ? `${missing.title}의 이해도를 골라 주세요.`
               : plan && added > 0
@@ -284,7 +285,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
           <button
             type="button"
             onClick={closeSummary}
-            className="h-10 rounded-xl px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className={button("ghost")}
           >
             나중에
           </button>
@@ -292,7 +293,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
             type="button"
             onClick={save}
             disabled={chosen.length === 0 || Boolean(missing)}
-            className="h-10 flex-1 rounded-xl bg-action-600 px-5 text-sm font-semibold text-action-foreground transition-colors hover:bg-action-700 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+            className={button("primary", "md", "flex-1 sm:flex-none")}
           >
             {chosen.length > 0 ? `${chosen.length}개 기록 남기기` : "기록 남기기"}
           </button>

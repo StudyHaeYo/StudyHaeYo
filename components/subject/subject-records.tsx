@@ -44,7 +44,7 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
               const due = stats.status === "복습 필요"
               return (
                 <li key={page.id}>
-                  <Link href={`/record/${page.id}`} className={`${cols} -mx-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-2 py-3 text-[13px] transition-colors hover:bg-muted/60 sm:text-sm`}>
+                  <Link href={`/record/${page.id}`} className={`${cols} -mx-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-2 py-3 text-sm transition-colors hover:bg-muted/60 sm:text-sm`}>
                     <span className="flex w-full min-w-0 items-center gap-2 text-sm sm:w-auto">
                       <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                       <span className="truncate font-medium text-foreground">{page.title || "제목 없음"}</span>

@@ -35,7 +35,7 @@ export function SearchTrigger() {
     >
       <Search className="size-4 shrink-0" aria-hidden="true" />
       <span className="flex-1 text-left">노트 검색</span>
-      <kbd className="rounded border border-border px-1 font-sans text-[11px] text-muted-foreground">{mac ? "⌘K" : "Ctrl K"}</kbd>
+      <kbd className="rounded border border-border px-1 font-sans text-xs text-muted-foreground">{mac ? "⌘K" : "Ctrl K"}</kbd>
     </button>
   )
 }
@@ -113,7 +113,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
             aria-label="검색어"
             className="h-12 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground/70"
           />
-          <kbd className="rounded border border-border px-1.5 text-[11px] text-muted-foreground">Esc</kbd>
+          <kbd className="rounded border border-border px-1.5 text-xs text-muted-foreground">Esc</kbd>
         </div>
 
         <ul ref={listRef} role="listbox" aria-label="검색 결과" className="max-h-[50vh] overflow-y-auto p-1.5">

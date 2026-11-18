@@ -7,6 +7,7 @@ import { deleteGroup, flattenTree, plansInSubtree, setGroupKind, useWorkspace, t
 import { plansTargetingSubject, usePlans } from "@/lib/plans"
 import { deleteNoteText, menuItemClass } from "@/components/page-actions-menu"
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
+import { menuPanel } from "@/components/ui-styles"
 
 export function GroupActionsMenu({
   group,
@@ -88,7 +89,7 @@ export function GroupActionsMenu({
         <div
           role="menu"
           aria-label={`${group.name} 메뉴`}
-          className="absolute right-0 top-full z-30 mt-1 w-56 rounded-xl border border-border bg-card p-1 shadow-lg"
+          className={`${menuPanel} absolute right-0 top-full z-30 mt-1 w-56 origin-top-right p-1`}
         >
           <button
             role="menuitem"

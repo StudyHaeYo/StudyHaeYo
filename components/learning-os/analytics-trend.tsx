@@ -83,7 +83,7 @@ export function AnalyticsTrend() {
       <div className="min-w-0">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <div className="flex items-baseline gap-3">
-            <h2 id="trend-title" className="text-[15px] font-semibold text-foreground">
+            <h2 id="trend-title" className="text-lg font-semibold tracking-tight text-foreground">
               학습 시간
             </h2>
             {average && (
@@ -228,7 +228,7 @@ export function AnalyticsTrend() {
       </div>
 
       <div className="border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-        <h3 className="mb-3 text-[15px] font-semibold text-foreground">한눈에 보기</h3>
+        <h3 className="mb-3 text-base font-semibold text-foreground">한눈에 보기</h3>
         {insights === null ? (
           <div className="h-24 animate-pulse rounded-lg bg-muted" aria-hidden="true" />
         ) : insights.length === 0 ? (

@@ -45,6 +45,7 @@ import { computePageStats, pageKind } from "@/lib/study-pages"
 import { examCountdown } from "@/components/study-page/page-properties"
 import { useTodayISO } from "@/hooks/use-today"
 import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
+import { button } from "@/components/ui-styles"
 
 const mainNav = [
   { href: "/", label: "홈", icon: Home },
@@ -150,7 +151,7 @@ export function Sidebar(_props: SidebarProps = {}) {
         <button
           type="button"
           onClick={recordFromHere}
-          className="ml-auto inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          className={button("secondary", "sm", "ml-auto gap-1 px-2.5")}
         >
           <Plus className="size-4" />
           기록

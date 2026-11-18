@@ -9,6 +9,7 @@ import { examCountdown } from "@/components/study-page/page-properties"
 import { reviewHref } from "@/lib/review"
 import { examDeadlines } from "@/lib/study-candidates"
 import { useWorkspace } from "@/lib/workspace"
+import { button } from "@/components/ui-styles"
 
 // 시험 정리 = 범위표 (D-27, D-30, D-35): the exam day as a calendar tile, then each note in its scope with one word
 // for how well it is known and, on the right, [복습하기] when it is due or the day it comes up. Review happens in
@@ -137,14 +138,14 @@ export function ExamScope({
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <p className="flex flex-wrap items-baseline gap-x-2.5">
                 {countdown && <span className="text-xl font-bold tabular-nums text-foreground">{countdown}</span>}
-                <span className={past ? "text-[15px] text-muted-foreground" : "text-[15px] text-foreground"}>
+                <span className={past ? "text-base text-muted-foreground" : "text-base text-foreground"}>
                   {/* The tile is a picture; the date is said here for screen readers. */}
                   <span className="sr-only">{formatDate(examDate)} </span>
                   {weekday(examDate)} 시험{past ? " · 끝났어요" : ""}
                 </span>
               </p>
               {rows.length > 0 && (
-                <p className="text-[13px] text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {/* Each count stays on one line ("일부 확인 2" never splits); lines break before a "·". */}
                   <span className="whitespace-nowrap">범위 노트 {rows.length}개</span>
                   {counts.map((c) => (
@@ -159,7 +160,7 @@ export function ExamScope({
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="self-start rounded-md px-1.5 py-1 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="self-start rounded-md px-1.5 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               시험일 바꾸기
             </button>
@@ -172,7 +173,7 @@ export function ExamScope({
           범위 <span className="ml-1 text-sm font-medium text-muted-foreground">{rows.length}</span>
         </h2>
         {rows.length > 0 && (
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             복습은 각 노트에서 해요{reviewBy ? " · 시험 전날까지 복습이 당겨져요" : ""}
           </p>
         )}
@@ -191,7 +192,7 @@ export function ExamScope({
                   href={due ? reviewHref(page.id) : `/record/${page.id}`}
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-2.5 text-sm transition-colors hover:bg-muted/60"
                 >
-                  <span className="flex w-[4.75rem] shrink-0 items-center gap-1.5 text-[13px] font-medium text-foreground">
+                  <span className="flex w-[4.75rem] shrink-0 items-center gap-1.5 text-sm font-medium text-foreground">
                     <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${dot}`} />
                     {word}
                   </span>
@@ -248,7 +249,7 @@ export function ExamScope({
             <button
               type="button"
               onClick={() => onChangeScope([...ids, ...rest.map((o) => o.id)])}
-              className="h-8 rounded-lg px-2 text-sm font-medium text-action-700 transition-colors hover:bg-action-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+              className={button("ghost", "sm", "px-2 text-action-700 hover:bg-action-50 hover:text-action-700")}
             >
               {subjectName} 노트 {rest.length}개 모두 넣기
             </button>

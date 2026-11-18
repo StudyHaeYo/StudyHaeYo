@@ -26,6 +26,7 @@ import {
   type ReviewItem,
 } from "@/lib/review"
 import type { ReviewView } from "@/components/study-page/review-marks"
+import { button } from "@/components/ui-styles"
 
 // 복습 inside the note (D-34): the note stays as it was written; what is under its headings, inside its toggles, and
 // behind its 핵심 개념 is covered in place. This holds the review's state for the note page.
@@ -137,7 +138,7 @@ export function useNoteReview({
 export function ReviewBar({ marked, total, onFinish, exitHref }: { marked: number; total: number; onFinish: () => void; exitHref: string }) {
   const left = total - marked
   return (
-    <span className="flex items-center gap-1 text-[13px]">
+    <span className="flex items-center gap-1 text-sm">
       {total > 0 && (
         <>
           <span aria-live="polite" className="px-1.5 tabular-nums text-muted-foreground">
@@ -149,9 +150,8 @@ export function ReviewBar({ marked, total, onFinish, exitHref }: { marked: numbe
             onClick={() => left === 0 && onFinish()}
             aria-disabled={left > 0}
             title={left > 0 ? `${left}곳을 더 고르면 마칠 수 있어요` : "고른 결과로 학습 기록을 남겨요"}
-            className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold transition-colors ${
-              left === 0 ? "bg-action-600 text-action-foreground hover:bg-action-700" : "bg-muted text-muted-foreground"
-            }`}
+            // aria-disabled, not disabled: a pointer still gets the title that says how many places are left.
+            className={button(left === 0 ? "primary" : "secondary", "sm", left > 0 ? "text-muted-foreground active:scale-100" : undefined)}
           >
             복습 마치기
           </button>
@@ -161,7 +161,7 @@ export function ReviewBar({ marked, total, onFinish, exitHref }: { marked: numbe
         href={exitHref}
         replace
         scroll={false}
-        className="inline-flex h-7 items-center rounded-md px-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className={button("ghost", "sm", "px-2")}
       >
         그만두기
       </Link>
@@ -186,7 +186,7 @@ export function ReviewGuide({ total, onPick }: { total: number; onPick: (value: 
             key={label}
             type="button"
             onClick={() => onPick(i + 1)}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className={button("ghost", "sm", "px-2")}
           >
             <span className="font-semibold tabular-nums text-foreground">{i + 1}</span>
             {label}

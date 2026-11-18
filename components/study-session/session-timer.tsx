@@ -19,6 +19,7 @@ import {
   stopPomodoro,
   usePomodoro,
 } from "@/lib/pomodoro"
+import { button, menuPanel } from "@/components/ui-styles"
 
 function useElapsed() {
   const { startedAt } = useStudySession()
@@ -215,7 +216,7 @@ export function SessionIndicator({ floating = false, withStart = false }: { floa
         type="button"
         onClick={startSession}
         title="노트에 머문 시간이 노트별로 모여요"
-        className="inline-flex h-7 min-w-7 items-center justify-center gap-1.5 rounded-full border border-border bg-card text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 sm:px-3"
+        className={button("secondary", "sm", "max-sm:w-8 max-sm:px-0")}
       >
         <Play className="size-3" aria-hidden="true" />
         {/* A phone's note bar has no room for the words; the icon stays and the name is still read out. */}
@@ -239,7 +240,7 @@ export function SessionIndicator({ floating = false, withStart = false }: { floa
             ? `뽀모도로 ${onBreak ? "휴식" : "집중"} ${formatElapsed(pomodoro.left)} 남음. 눌러서 학습 종료 열기`
             : `학습 세션 진행 중, ${formatElapsed(elapsed)} 경과. 눌러서 학습 종료 열기`
         }
-        className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500"
+        className={button("secondary", "sm", "gap-2 rounded-full")}
       >
         {/* A steady dot, not a ping: the pill sits in a note's top bar for the whole session (an hour or more), and a
             loop that long pulls the eye off the text (emil-design-eng · web-design-guidelines, 2026-11-15). */}
@@ -256,7 +257,7 @@ export function SessionIndicator({ floating = false, withStart = false }: { floa
           id={panelId}
           role="group"
           aria-label="학습 세션"
-          className="absolute right-0 top-full z-40 mt-2 w-56 origin-top-right rounded-lg border border-border bg-popover p-3 shadow-lg animate-in fade-in zoom-in-95 duration-150 motion-reduce:animate-none"
+          className={`${menuPanel} absolute right-0 top-full z-40 mt-2 w-56 origin-top-right p-3`}
         >
           <p className="text-xs text-muted-foreground">
             {pomodoro ? "뽀모도로로 공부하는 중" : "공부하는 중"}

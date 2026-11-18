@@ -28,8 +28,8 @@ export function PageStatusChip({
   canTryReview?: boolean
 }) {
   if (!today) return null
-  const due = "inline-flex h-8 items-center gap-2 rounded-lg border border-attention-200 bg-attention-50 pl-2.5 pr-[3px] text-[13px] font-semibold text-attention-800"
-  const calm = "hidden h-8 items-center rounded-lg px-2.5 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:inline-flex"
+  const due = "inline-flex h-8 items-center gap-2 rounded-lg border border-attention-200 bg-attention-50 pl-2.5 pr-[3px] text-sm font-semibold text-attention-800"
+  const calm = "hidden h-8 items-center rounded-lg px-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:inline-flex"
   const button = "inline-flex h-[26px] items-center rounded-md bg-action-600 px-2.5 text-xs font-semibold text-action-foreground transition-colors hover:bg-action-700"
 
   if (kind === "exam" && exam) {
@@ -82,5 +82,5 @@ export function PageStatusChip({
     )
   }
   // Just the state: the note's records open from [기록] right beside it (D-36).
-  return <span className="hidden h-8 items-center px-1.5 text-[13px] text-muted-foreground sm:inline-flex">다음 복습 {formatDate(stats.nextReviewAt)}</span>
+  return <span className="hidden h-8 items-center px-1.5 text-sm text-muted-foreground sm:inline-flex">다음 복습 {formatDate(stats.nextReviewAt)}</span>
 }

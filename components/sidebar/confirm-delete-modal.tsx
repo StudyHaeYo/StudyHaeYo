@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import { Trash2 } from "lucide-react"
 import { useFocusTrap } from "@/hooks/use-focus-trap"
+import { button, dialogBackdrop, dialogPanel } from "@/components/ui-styles"
 
 interface ConfirmDeleteModalProps {
   open: boolean
@@ -40,7 +41,7 @@ export function ConfirmDeleteModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4"
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4 ${dialogBackdrop}`}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onCancel()
       }}
@@ -51,7 +52,7 @@ export function ConfirmDeleteModal({
         aria-modal="true"
         aria-labelledby="delete-modal-title"
         aria-describedby="delete-modal-desc"
-        className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-xl"
+        className={`${dialogPanel} w-full max-w-sm p-6`}
       >
         <div className="flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
           <Trash2 className="size-5" />
@@ -69,14 +70,14 @@ export function ConfirmDeleteModal({
             ref={cancelRef}
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className={button("secondary")}
           >
             취소
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-destructive/90"
+            className={button("danger")}
           >
             삭제
           </button>

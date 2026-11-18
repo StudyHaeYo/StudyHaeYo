@@ -226,7 +226,7 @@ export function TodayTimetable() {
                     >
                       {done && <Check className="size-2.5" aria-hidden="true" />}
                     </button>
-                    <span className={`truncate text-[13px] leading-none ${done ? "text-muted-foreground line-through" : "text-foreground"}`}>{it.todo.title}</span>
+                    <span className={`truncate text-sm leading-none ${done ? "text-muted-foreground line-through" : "text-foreground"}`}>{it.todo.title}</span>
                   </span>
                   {twoLines ? (
                     <span className="mt-1 pl-5 text-xs leading-none tabular-nums text-muted-foreground">{range}</span>
