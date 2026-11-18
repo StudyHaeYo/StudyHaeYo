@@ -29,6 +29,8 @@ interface PageActionsMenuProps {
   onOpenChange?: (open: boolean) => void
   // Caller-specific items rendered between 복제하기 and the delete separator.
   extraItems?: (close: () => void) => ReactNode
+  // Caller-specific items at the top, above 이름 바꾸기 (the note bar's 학습 기록 · 노트 종류).
+  leadItems?: (close: () => void) => ReactNode
   className?: string
   triggerClassName?: (open: boolean) => string
 }
@@ -41,6 +43,7 @@ export function PageActionsMenu({
   onDeleted,
   onOpenChange,
   extraItems,
+  leadItems,
   className = "",
   triggerClassName,
 }: PageActionsMenuProps) {
@@ -105,8 +108,14 @@ export function PageActionsMenu({
         <div
           role="menu"
           aria-label={`${title} 메뉴`}
-          className={`${menuPanel} absolute right-0 top-full z-30 mt-1 w-52 origin-top-right p-1`}
+          className={`${menuPanel} absolute right-0 top-full z-30 mt-1 w-56 origin-top-right p-1`}
         >
+          {leadItems && (
+            <>
+              {leadItems(close)}
+              <div role="separator" className="my-1 border-t border-border" />
+            </>
+          )}
           <button
             role="menuitem"
             type="button"

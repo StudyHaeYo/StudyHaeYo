@@ -87,7 +87,7 @@ export function DataStatusNotice() {
                 새 노트
               </Link>
             </Step>
-            <Step n={2}>공부를 마치면 노트 위쪽 [기록]에서 시간과 이해도를 남겨요.</Step>
+            <Step n={2}>공부를 마치면 노트에서 [기록 남기기]로 시간과 이해도를 남겨요.</Step>
           </>
         )}
         <Step n={3}>기록이 쌓이면 복습할 날과 주간 통계가 홈에 보여요.</Step>

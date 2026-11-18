@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { BookOpen, ChevronRight, FileQuestion, Paperclip, PenLine, Printer, Sparkles } from "lucide-react"
+import { BookOpen, ChevronRight, FileQuestion, History, Paperclip, PenLine, Printer, Sparkles } from "lucide-react"
 import { addConfusions, computePageStats } from "@/lib/study-pages"
 import { useDataStatus } from "@/lib/db/sync"
 import { DataStatusView } from "@/components/data-status-notice"
@@ -30,16 +30,16 @@ import { PageActionsMenu, menuItemClass } from "@/components/page-actions-menu"
 import { BlockEditor, type AttachmentHandle } from "@/components/study-page/block-editor"
 import { clearRecordPrefill, useStudySession } from "@/lib/study-session"
 import { useTodayISO } from "@/hooks/use-today"
-import { KindChip } from "@/components/study-page/kind-menu"
+import { NoteKindMenu } from "@/components/study-page/kind-menu"
 import { LectureHead, WrongAnswersHead } from "@/components/study-page/kind-head"
 import { PageStatusChip } from "@/components/study-page/page-status-chip"
 import { PageFooter } from "@/components/study-page/page-footer"
-import { RecordsButton } from "@/components/study-page/records-window"
+import { RecordsWindow } from "@/components/study-page/records-window"
 import { SessionIndicator } from "@/components/study-session/session-timer"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { AiPanel } from "@/components/record/ai-panel"
 import { LectureMaterialPane } from "@/components/study-page/lecture-material-pane"
-import { starterSectionHints } from "@/lib/templates"
+import { noteKindOption, starterSectionHints } from "@/lib/templates"
 import { withCues } from "@/lib/ai"
 import { useDocumentTitle } from "@/hooks/use-document-title"
 import { button } from "@/components/ui-styles"
@@ -49,7 +49,7 @@ let openPageId: string | null = null
 
 // The single page UI: seeded pages and user-created pages both render here.
 // Every page has the same block body (D-23) and every page can hold study records (D-30). What the note is for
-// (노트 종류) is the chip in the top bar; the values a kind needs sit at the top of the body.
+// (노트 종류) is in the top bar's ⋯ menu (D-42); the values a kind needs sit at the top of the body.
 export function StudyPageView({
   pageId,
   mode,
@@ -75,6 +75,13 @@ export function StudyPageView({
   const [aiOpen, setAiOpenState] = useState(openAi)
   // 강의 노트: the lecture PDF beside the note. It shares the right-hand slot with the AI panel.
   const [materialOpen, setMaterialOpen] = useState(false)
+  // 학습 기록 and 노트 종류 open from the ⋯ menu and hang under it (D-42).
+  const [barWindow, setBarWindow] = useState<"records" | "kind" | null>(null)
+  const moreRef = useRef<HTMLSpanElement>(null)
+  const closeBarWindow = (refocus: boolean) => {
+    setBarWindow(null)
+    if (refocus) moreRef.current?.querySelector("button")?.focus()
+  }
   const [aiRequest, setAiRequest] = useState<{ id: number; prompt: string; pdfId?: string } | undefined>()
   const setAiOpen = (next: boolean | ((v: boolean) => boolean)) =>
     setAiOpenState((v) => {
@@ -206,8 +213,8 @@ export function StudyPageView({
       // `@container/page`: a 코넬 노트's cues go in the left margin only when the page has room for one (cue-slot.tsx).
       className={`@container/page flex flex-col transition-[padding] ${aiOpen ? "md:pr-[420px]" : material && materialOpen ? "md:pr-[min(48vw,720px)]" : ""}`}
     >
-      {/* Top bar (D-28, D-30): where the note is on the left; on the right its study state, its kind (종류 칩), tools
-          and the running session — the same place on every note, so the page itself is only the title and the body. */}
+      {/* Top bar (D-28, D-30, D-42): where the note is on the left; on the right its study state ([복습하기]), AI, ⋯ (학습
+          기록 · 노트 종류 at its top) and the running session — the same place on every note, so the page itself is only the title and the body. */}
       {/* The folders above the note show only while the bar itself is wide enough (a container query, not the
           window: the AI 창 and the PDF pane narrow the bar without narrowing the window), so they never run under
           the buttons on the right. */}
@@ -250,8 +257,6 @@ export function StudyPageView({
             canTryReview={!problemMode && reviewItems(page, false).length > 0}
           />
           )}
-          {!reviewing && <RecordsButton page={page} stats={stats} today={today} scope={propsReady && kind === "exam" ? scopePages : null} />}
-          <KindChip pageId={page.id} kind={kind} propsReady={propsReady} />
           {material && (
             <button
               type="button"
@@ -275,9 +280,44 @@ export function StudyPageView({
             <Sparkles className="size-4" />
             <span className="hidden sm:inline">AI</span>
           </button>
+          <span ref={moreRef} className="inline-flex">
           <PageActionsMenu
             pageId={page.id}
             title={page.title.trim() || "제목 없음"}
+            leadItems={(close) => {
+              const KindIcon = noteKindOption(kind).icon
+              return (
+                <>
+                  {!reviewing && (
+                    <button
+                      role="menuitem"
+                      type="button"
+                      className={`${menuItemClass} text-foreground`}
+                      onClick={() => {
+                        close()
+                        setBarWindow("records")
+                      }}
+                    >
+                      <History className="size-4 text-muted-foreground" />
+                      {propsReady && kind === "exam" ? "범위 노트 학습 기록" : "학습 기록"}
+                    </button>
+                  )}
+                  <button
+                    role="menuitem"
+                    type="button"
+                    className={`${menuItemClass} text-foreground`}
+                    onClick={() => {
+                      close()
+                      setBarWindow("kind")
+                    }}
+                  >
+                    <KindIcon className="size-4 text-muted-foreground" />
+                    노트 종류
+                    <span className="ml-auto text-xs text-muted-foreground">{noteKindOption(kind).name}</span>
+                  </button>
+                </>
+              )
+            }}
             extraItems={(close) => (
                     <>
                       <button
@@ -329,6 +369,20 @@ export function StudyPageView({
             }}
             onDeleted={() => router.push("/")}
           />
+          </span>
+          {barWindow === "records" && (
+            <RecordsWindow
+              anchorRef={moreRef}
+              page={page}
+              stats={stats}
+              today={today}
+              scope={propsReady && kind === "exam" ? scopePages : null}
+              onClose={closeBarWindow}
+            />
+          )}
+          {barWindow === "kind" && (
+            <NoteKindMenu pageId={page.id} kind={kind} propsReady={propsReady} anchorRef={moreRef} onClose={closeBarWindow} />
+          )}
           <SessionDock />
           </div>
         </div>

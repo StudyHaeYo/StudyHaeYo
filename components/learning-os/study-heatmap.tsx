@@ -4,14 +4,14 @@ import { useTodayISO } from "@/hooks/use-today"
 import { formatDate, formatDuration } from "@/lib/study-pages"
 import { studyCalendar, studyStreak, type StudyDay } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
-import { RuledHeader } from "@/components/page-shell"
 
 const WEEKS = 5
 const DAY_NAMES = ["월", "화", "수", "목", "금", "토", "일"]
 
 // Study minutes → one of five shades (0, <30, <60, <120, 120+ minutes).
 function shade(day: StudyDay) {
-  if (day.future) return "bg-transparent text-muted-foreground/40"
+  // Days to come: no fill, but readable numbers (axe color-contrast on 학습 분석, 2026-11-18).
+  if (day.future) return "bg-transparent text-muted-foreground"
   if (day.minutes === 0) return "bg-muted text-muted-foreground"
   // One step lighter than the full scale, so the calendar doesn't outshine 오늘 할 일 (2026-11-11).
   if (day.minutes < 30) return "bg-action-100 text-action-900"
@@ -31,12 +31,14 @@ export function StudyHeatmap() {
 
   return (
     <section aria-labelledby="study-heatmap-title">
-      <div className="mb-3">
-        <RuledHeader
-          id="study-heatmap-title"
-          title="학습 달력"
-          aside={`${WEEKS}주 중 ${studiedDays}일${streak && streak.current > 0 ? ` · ${streak.current}일 연속` : ""}`}
-        />
+      {/* In 학습 분석's 학습 시간 card, under 한눈에 보기, since UI 개선 1번 ③ (2026-11-18): it was home's last block. */}
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h3 id="study-heatmap-title" className="text-base font-semibold text-foreground">
+          학습 달력
+        </h3>
+        <span className="text-xs text-muted-foreground">
+          {`${WEEKS}주 중 ${studiedDays}일${streak && streak.current > 0 ? ` · ${streak.current}일 연속` : ""}`}
+        </span>
       </div>
 
       {weeks === null ? (

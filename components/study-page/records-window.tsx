@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
-import { History, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import {
   addDays,
@@ -19,62 +19,15 @@ import { recordBadge, recordText } from "@/lib/study-stats"
 import { button, dialogBackdrop, menuPanel } from "@/components/ui-styles"
 
 // 학습 기록 is a log of study, not part of the note (D-36): the note keeps its body, and its records open here from
-// the top bar. The window is a glance — the summary and the last record in one line (D-37); the full list, and
+// the top bar's ⋯ menu (D-42). The window is a glance — the summary and the last record in one line (D-37); the full list, and
 // fixing or removing a record, is on 학습 기록 (filtered to the note).
 // 시험 정리 has no study of its own: its window gathers the scope notes' records, read only, each with its note,
 // and never folds their 이해도 into one number.
 
 const RECENT = 1
 
-export function RecordsButton({
-  page,
-  stats,
-  today,
-  scope,
-}: {
-  page: StudyPage
-  stats: PageStats
-  today: string | null
-  // 시험 정리: the notes in its scope. null for every other note.
-  scope: StudyPage[] | null
-}) {
-  const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const label = scope ? "범위 기록" : "기록"
-  return (
-    <>
-      <button
-        ref={triggerRef}
-        type="button"
-        data-records-toggle
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        // The app bar on a phone has its own "+ 기록" (leave a record); this one opens the note's records.
-        aria-label={scope ? "범위 노트 학습 기록" : "이 노트의 학습 기록"}
-        className={button("ghost", "sm", "px-2 text-foreground")}
-      >
-        <History className="size-4 text-muted-foreground" aria-hidden="true" />
-        {label}
-      </button>
-      {open && (
-        <RecordsWindow
-          anchorRef={triggerRef}
-          page={page}
-          stats={stats}
-          today={today}
-          scope={scope}
-          onClose={(refocus) => {
-            setOpen(false)
-            if (refocus) triggerRef.current?.focus()
-          }}
-        />
-      )}
-    </>
-  )
-}
-
-function RecordsWindow({
+// Opens from the note's ⋯ menu (D-42), anchored under it.
+export function RecordsWindow({
   anchorRef,
   page,
   stats,

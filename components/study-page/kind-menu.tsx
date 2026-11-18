@@ -2,54 +2,39 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
-import { Check, ChevronDown } from "lucide-react"
+import { Check } from "lucide-react"
 import type { PageKind } from "@/lib/study-pages"
-import { noteKindOption, noteKinds } from "@/lib/templates"
+import { noteKinds } from "@/lib/templates"
 import { setPageKind } from "@/lib/workspace"
-import { button, dialogBackdrop, menuPanel } from "@/components/ui-styles"
+import { dialogBackdrop, menuPanel } from "@/components/ui-styles"
 
-// 종류 칩 (D-30): what the note is, in the top bar where [속성] used to be. It only changes the kind; the body
-// stays as written (an empty body starts like the kind's button on a new note). Kinds are kept in props, so they
-// wait for the props column; 빈 노트 is always there.
-export function KindChip({ pageId, kind, propsReady }: { pageId: string; kind: PageKind | null; propsReady: boolean }) {
-  const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const current = noteKindOption(kind)
-  const Icon = current.icon
-
+// 노트 종류 (D-30, D-42): opened from the note's ⋯ menu. It only changes the kind; the body stays as written (an
+// empty body starts like the kind's button on a new note). Kinds are kept in props, so they wait for the props
+// column; 빈 노트 is always there.
+export function NoteKindMenu({
+  pageId,
+  kind,
+  propsReady,
+  anchorRef,
+  onClose,
+}: {
+  pageId: string
+  kind: PageKind | null
+  propsReady: boolean
+  anchorRef: React.RefObject<HTMLElement | null>
+  onClose: (refocus: boolean) => void
+}) {
   return (
-    <>
-      <button
-        ref={triggerRef}
-        type="button"
-        data-kind-toggle
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={`노트 종류: ${current.name}. 바꾸기`}
-        className={button("secondary", "sm", "px-2 sm:pl-2.5 aria-expanded:bg-accent")}
-      >
-        <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
-        <span className="hidden sm:inline">{current.name}</span>
-        <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden="true" />
-      </button>
-      {open && (
-        <KindMenu
-          anchorRef={triggerRef}
-          kind={kind}
-          propsReady={propsReady}
-          onPick={(next) => {
-            setOpen(false)
-            triggerRef.current?.focus()
-            if (next !== kind) setPageKind(pageId, next)
-          }}
-          onClose={(refocus) => {
-            setOpen(false)
-            if (refocus) triggerRef.current?.focus()
-          }}
-        />
-      )}
-    </>
+    <KindMenu
+      anchorRef={anchorRef}
+      kind={kind}
+      propsReady={propsReady}
+      onPick={(next) => {
+        onClose(true)
+        if (next !== kind) setPageKind(pageId, next)
+      }}
+      onClose={onClose}
+    />
   )
 }
 

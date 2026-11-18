@@ -3,9 +3,7 @@
 import { PageHeader, PageShell } from "@/components/page-shell"
 import { SessionIndicator, SessionTimerCard } from "@/components/study-session/session-timer"
 import { TodayAgenda } from "@/components/learning-os/today-agenda"
-import { TodayRecords } from "@/components/learning-os/today-records"
 import { WeeklyStats } from "@/components/learning-os/weekly-stats"
-import { StudyHeatmap } from "@/components/learning-os/study-heatmap"
 import { TodayTimetable } from "@/components/learning-os/today-timetable"
 import { useTodayLabel } from "@/hooks/use-today"
 import { DataStatusNotice } from "@/components/data-status-notice"
@@ -24,14 +22,13 @@ export default function DashboardPage() {
         <div className="flex min-w-0 flex-col gap-8">
           <SessionTimerCard />
           <TodayAgenda />
-          <TodayRecords />
         </div>
 
         <div className="flex min-w-0 flex-col gap-8">
-          {/* Widening in time: today, this week, then the last five weeks. */}
+          {/* Today, then this week in one line. 오늘의 기록 is on 학습 기록 and the five-week calendar on 학습 분석
+              (UI 개선 1번 ③, 2026-11-18): home keeps what to do now. */}
           <TodayTimetable />
           <WeeklyStats />
-          <StudyHeatmap />
         </div>
       </div>
     </PageShell>
