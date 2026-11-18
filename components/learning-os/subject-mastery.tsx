@@ -41,7 +41,7 @@ export function SubjectMastery({ title = "나의 학습 상태" }: { title?: str
                         href={`/plan?subject=${id}`}
                         className="ml-2 whitespace-nowrap rounded text-xs font-medium text-action-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
                       >
-                        계획 세우기
+                        계획 만들기
                       </Link>
                     )}
                   </span>

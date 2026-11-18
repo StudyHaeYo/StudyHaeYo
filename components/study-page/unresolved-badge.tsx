@@ -5,20 +5,20 @@ export function UnresolvedBadge({ count, long = false, quiet = false }: { count:
   // In lists the count is plain grey text, so one row carries one colour signal at most (the amber due label).
   if (quiet)
     return (
-      <span title={`미해결 헷갈린 점 ${count}개`} className="inline-flex shrink-0 items-center gap-0.5 text-xs tabular-nums text-muted-foreground">
+      <span title={`헷갈린 점 ${count}개 남음`} className="inline-flex shrink-0 items-center gap-0.5 text-xs tabular-nums text-muted-foreground">
         <HelpCircle className="size-3" aria-hidden="true" />
         {count}
-        <span className="sr-only">{`미해결 헷갈린 점 ${count}개`}</span>
+        <span className="sr-only">{`헷갈린 점 ${count}개 남음`}</span>
       </span>
     )
   return (
     <span
-      title={`미해결 헷갈린 점 ${count}개`}
+      title={`헷갈린 점 ${count}개 남음`}
       className="inline-flex shrink-0 items-center gap-1 rounded-full bg-attention-50 px-1.5 py-0.5 text-xs font-medium text-attention-700 ring-1 ring-inset ring-attention-200"
     >
       <HelpCircle className="size-3" aria-hidden="true" />
-      {long ? `미해결 헷갈린 점 ${count}개` : count}
-      {!long && <span className="sr-only">{`미해결 헷갈린 점 ${count}개`}</span>}
+      {long ? `헷갈린 점 ${count}개 남음` : count}
+      {!long && <span className="sr-only">{`헷갈린 점 ${count}개 남음`}</span>}
     </span>
   )
 }

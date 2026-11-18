@@ -102,7 +102,7 @@ export function AnalyticsTrend() {
                 type="button"
                 aria-pressed={unit === value}
                 onClick={() => switchUnit(value)}
-                className={`rounded-md px-2.5 py-1 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 ${
+                className={`touch-hit rounded-md px-2.5 py-1 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 ${
                   unit === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 }`}
               >

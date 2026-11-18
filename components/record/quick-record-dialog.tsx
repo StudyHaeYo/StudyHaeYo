@@ -102,7 +102,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
   const todosReady = useTodosStatus() === "ready"
   const edit = request.edit
   const today = todayISO()
-  const dialogRef = useRef<HTMLFormElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLTextAreaElement>(null)
   useFocusTrap(dialogRef)
   // Start typing right away with a mouse/keyboard; on a phone the keyboard would cover the sheet, so focus the sheet.
@@ -255,19 +255,20 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
         if (e.target === e.currentTarget) closeQuickRecord()
       }}
     >
-      <form
+      {/* role="dialog" sits on a div: a <form> may not take it (axe aria-allowed-role). The form adds no box. */}
+      <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="quick-record-title"
         tabIndex={-1}
-        onSubmit={submit}
         className={`${dialogPanel} flex max-h-[92dvh] w-full max-w-xl flex-col overflow-y-auto overscroll-contain rounded-b-none outline-none max-sm:border-x-0 max-sm:border-b-0 sm:rounded-b-xl`}
       >
+        <form onSubmit={submit} className="contents">
         <div className="mx-auto mt-2.5 h-1 w-9 rounded-full bg-border sm:hidden" aria-hidden="true" />
         <div className="flex items-center justify-between px-5 pt-3 sm:pt-4">
           <h2 id="quick-record-title" className="min-w-0 truncate text-sm font-semibold text-foreground">
-            {edit ? "학습 기록 고치기" : !pickWhere && page ? `${page.title || "제목 없음"}에 기록` : "학습 기록 남기기"}
+            {edit ? "기록 고치기" : !pickWhere && page ? `${page.title || "제목 없음"}에 기록` : "기록 남기기"}
           </h2>
           <button
             type="button"
@@ -401,7 +402,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
         {pickWhere ? (
         <div className="px-5 pt-4">
           <p id="qr-where-label" className="mb-1.5 text-xs text-muted-foreground">
-            어디에 남길까요 <span className="text-muted-foreground/70">· {ready ? "선택" : "노트"}</span>
+            어디에 남길까요 <span className="text-muted-foreground">· {ready ? "선택" : "노트"}</span>
           </p>
           <WherePicker
             value={target}
@@ -503,7 +504,8 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
             {edit ? "저장" : "기록 남기기"}
           </button>
         </div>
-      </form>
+        </form>
+      </div>
     </div>
   )
 }

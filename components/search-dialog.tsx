@@ -119,7 +119,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
         <ul ref={listRef} role="listbox" aria-label="검색 결과" className="max-h-[50vh] overflow-y-auto p-1.5">
           {query.trim() === "" ? (
             <>
-              <li className="px-2.5 pb-1 pt-1.5 text-xs text-muted-foreground">최근 페이지</li>
+              <li className="px-2.5 pb-1 pt-1.5 text-xs text-muted-foreground">최근 노트</li>
               {recent.map((page, i) => (
                 <ResultRow key={page.id} index={i} active={i === active} onHover={setActive} onPick={() => go(page.id)}>
                   <span className="truncate text-sm text-foreground">{page.title || "제목 없음"}</span>

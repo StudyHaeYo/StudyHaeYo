@@ -12,7 +12,7 @@ export function PageLinkCard({ pageId, pages }: { pageId: string; pages: StudyPa
     return (
       <p className="flex items-center gap-2 rounded-md px-1 py-1 text-sm text-muted-foreground">
         <FileText className="size-4" aria-hidden="true" />
-        삭제된 페이지
+        삭제된 노트
       </p>
     )
   }
@@ -82,13 +82,13 @@ export function PageLinkPicker({
             if (pick) onPick(pick.id)
           }
         }}
-        placeholder="연결할 페이지 이름"
-        aria-label="연결할 페이지 검색"
+        placeholder="연결할 노트 이름"
+        aria-label="연결할 노트 검색"
         className="w-full rounded-lg bg-muted/60 px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
       />
-      <ul role="listbox" aria-label="페이지 목록" className="mt-1 max-h-64 overflow-y-auto">
+      <ul role="listbox" aria-label="노트 목록" className="mt-1 max-h-64 overflow-y-auto">
         {matches.length === 0 ? (
-          <li className="px-2.5 py-2 text-sm text-muted-foreground">맞는 페이지가 없어요</li>
+          <li className="px-2.5 py-2 text-sm text-muted-foreground">맞는 노트가 없어요</li>
         ) : (
           matches.map((page, i) => (
             <li

@@ -85,14 +85,14 @@ export function SessionTimerCard() {
               </>
             ) : running ? (
               <>
-                <p className="text-xs text-muted-foreground">학습 세션 진행 중</p>
+                <p className="text-xs text-muted-foreground">공부 중</p>
                 <p className="font-mono text-xl font-semibold tabular-nums text-foreground" aria-live="off">
                   {formatElapsed(elapsed)}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-sm font-semibold text-foreground">학습 세션</p>
+                <p className="text-sm font-semibold text-foreground">공부 타이머</p>
                 {/* How time is gathered moved to the button's title: the line under the name says only today's total. */}
                 <p className="text-xs text-muted-foreground">
                   <TodayStudied />
@@ -114,7 +114,7 @@ export function SessionTimerCard() {
                 <SkipForward className="size-3.5" aria-hidden="true" />
                 {onBreak ? "휴식 건너뛰기" : "지금 쉬기"}
               </button>
-              <button type="button" onClick={stopPomodoro} title="뽀모도로만 끄고 학습 세션은 계속해요" className={secondaryButton}>
+              <button type="button" onClick={stopPomodoro} title="뽀모도로만 끄고 공부 시간은 계속 재요" className={secondaryButton}>
                 <X className="size-3.5" aria-hidden="true" />
                 뽀모도로 끄기
               </button>
@@ -130,7 +130,7 @@ export function SessionTimerCard() {
           {running ? (
             <button type="button" onClick={endSession} className={secondaryButton}>
               <Square className="size-3.5" aria-hidden="true" />
-              학습 종료
+              공부 끝내기
             </button>
           ) : (
             <button
@@ -140,7 +140,7 @@ export function SessionTimerCard() {
               className={secondaryButton}
             >
               <Play className="size-3.5" aria-hidden="true" />
-              학습 시작
+              공부 시작
             </button>
           )}
           {running && !pomodoro && (
@@ -237,8 +237,8 @@ export function SessionIndicator({ floating = false, withStart = false }: { floa
         aria-controls={open ? panelId : undefined}
         aria-label={
           pomodoro
-            ? `뽀모도로 ${onBreak ? "휴식" : "집중"} ${formatElapsed(pomodoro.left)} 남음. 눌러서 학습 종료 열기`
-            : `학습 세션 진행 중, ${formatElapsed(elapsed)} 경과. 눌러서 학습 종료 열기`
+            ? `뽀모도로 ${onBreak ? "휴식" : "집중"} ${formatElapsed(pomodoro.left)} 남음. 눌러서 공부 끝내기 열기`
+            : `공부 중, ${formatElapsed(elapsed)} 지남. 눌러서 공부 끝내기 열기`
         }
         className={button("secondary", "sm", "gap-2 rounded-full")}
       >
@@ -256,7 +256,7 @@ export function SessionIndicator({ floating = false, withStart = false }: { floa
         <div
           id={panelId}
           role="group"
-          aria-label="학습 세션"
+          aria-label="공부 타이머"
           className={`${menuPanel} absolute right-0 top-full z-40 mt-2 w-56 origin-top-right p-3`}
         >
           <p className="text-xs text-muted-foreground">
@@ -272,7 +272,7 @@ export function SessionIndicator({ floating = false, withStart = false }: { floa
             className={`${secondaryButton} mt-2.5 w-full justify-center`}
           >
             <Square className="size-3.5" aria-hidden="true" />
-            학습 종료
+            공부 끝내기
           </button>
           {pathname !== "/" && (
             <Link

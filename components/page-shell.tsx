@@ -10,7 +10,7 @@ export function PageShell({ width = "narrow", children }: { width?: "narrow" | "
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <Sidebar />
-      <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 md:h-screen md:overflow-y-auto lg:px-10 lg:py-10">
+      <main id="main" tabIndex={-1} className="min-w-0 flex-1 outline-none px-4 py-6 sm:px-6 md:h-screen md:overflow-y-auto lg:px-10 lg:py-10">
         <div className={`mx-auto flex flex-col ${width === "wide" ? "max-w-6xl" : "max-w-3xl"}`}>{children}</div>
       </main>
     </div>

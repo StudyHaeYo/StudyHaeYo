@@ -166,6 +166,7 @@ export function PageActionsMenu({
         open={confirmOpen}
         title={title}
         note={deleteNote}
+        undoable
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
           setConfirmOpen(false)

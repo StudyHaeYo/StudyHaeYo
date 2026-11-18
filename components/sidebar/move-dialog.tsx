@@ -17,7 +17,7 @@ export function MoveDialog({ pageId, title, onClose }: { pageId: string; title: 
   const currentParent = workspace.pages.find((p) => p.id === pageId)?.parentId ?? null
 
   const targets = [
-    { id: null, name: "맨 위 (내 페이지)", kind: "root" as const, depth: 0 },
+    { id: null, name: "맨 위 (내 노트)", kind: "root" as const, depth: 0 },
     ...flattenTree(workspace)
       .filter((e) => e.node.kind !== "page")
       .map((e) => ({ id: e.node.id, name: e.node.name, kind: e.node.kind, depth: e.depth })),

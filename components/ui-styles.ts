@@ -4,6 +4,7 @@
 //
 // Sizes: text 12 (captions) · 14 (body, controls) · 16 (note body) · 18 (section titles) · 24 (page titles).
 // Corners: rounded-lg (10px) for controls, rounded-xl (14px) for boxes · menus · dialogs, rounded-full for pills.
+// Touch: `touch-hit` (app/globals.css) gives every button a 44px tap area on touch screens, without growing it.
 // Motion (emil-design-eng): a press scales to 0.97; menus and dialogs fade and grow from 95% in 150ms ease-out.
 // Nothing animates for keyboard shortcuts (Ctrl K opens at once) and everything stops under reduced motion.
 
@@ -13,7 +14,7 @@ export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger"
 export type ButtonSize = "md" | "sm" | "icon" | "icon-sm"
 
 const buttonBase =
-  "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg font-medium select-none transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100 [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+  "touch-hit inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg font-medium select-none transition-[color,background-color,border-color,transform] duration-150 ease-out active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100 [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
 
 const buttonSizes: Record<ButtonSize, string> = {
   md: "h-9 px-3.5 text-sm",
