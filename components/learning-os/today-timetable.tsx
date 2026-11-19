@@ -6,8 +6,11 @@ import { useNowMinutes, useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
 import { useStudySession } from "@/lib/study-session"
 import { useTimeSlots } from "@/lib/time-slots"
-import { todayChecklist, todoStartMin, toggleTodo, useTodos, useTodosStatus, type Todo } from "@/lib/todos"
+import { addTodo, todayChecklist, todoStartMin, toggleTodo, useTodos, useTodosStatus, type Todo } from "@/lib/todos"
+import { usePlans } from "@/lib/plans"
+import { activePlans, isPlanTodo, planToday } from "@/lib/study-stats"
 import { clockLabel, layoutLanes, MIN_DRAWN_MINUTES, planRange, rangeLabel } from "@/lib/timetable"
+import { TimePicker } from "@/components/time-picker"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 import { RuledHeader } from "@/components/page-shell"
 
@@ -57,14 +60,14 @@ function studySpans(workspace: WorkspaceState, today: string): Span[] {
 
 type GridItem = { key: string; start: number; end: number } & ({ kind: "plan"; todo: Todo } | { kind: "study"; title: string })
 
-// `bare`: shown as the 시간표 view of 오늘's 하루 할 일 (재설계 D-43), under that section's head.
-export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
+export function TodayTimetable() {
   const today = useTodayISO()
   const now = useNowMinutes()
   const workspace = useWorkspace()
   const todos = useTodos()
   const todosStatus = useTodosStatus()
   const session = useStudySession()
+  const allPlans = usePlans()
   const { todoTimes, recordTimes, todoDurations } = useTimeSlots()
 
   // Scrolled once, when the grid first shows — not every minute, or it would pull the grid back while someone is
@@ -76,16 +79,11 @@ export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
     if (gridReady && el) el.scrollTop = Number(el.dataset.open ?? 0)
   }, [gridReady])
 
-  const heading = (aside: string | null) =>
-    bare ? (
-      <h3 id="today-timetable-title" className="sr-only">
-        오늘 시간표
-      </h3>
-    ) : (
-      <div className="mb-2">
-        <RuledHeader id="today-timetable-title" title="오늘 시간표" aside={aside} />
-      </div>
-    )
+  const heading = (aside: string | null) => (
+    <div className="mb-2">
+      <RuledHeader id="today-timetable-title" title="오늘 시간표" aside={aside} />
+    </div>
+  )
 
   if (today === null || now === null || todosStatus === "loading") {
     return <div className="h-72 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
@@ -128,6 +126,14 @@ export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
   const openFrom = Math.min(Math.max(firstHour, nowHour - 1) * 60, ...items.filter((it, i) => it.start < (nowHour - 1) * 60 && drawn[i].end > (nowHour - 1) * 60).map((it) => it.start))
   const openAt = Math.max(0, y(openFrom) - EDGE - 4)
   const empty = items.length === 0
+
+  // Running plans not on today's checklist yet (a to-do made from a plan starts with the plan's title).
+  const fromPlans = todoTimes
+    ? activePlans(workspace, allPlans, today).flatMap((item) => {
+        const ask = planToday(item)
+        return ask && !checklist.some((t) => isPlanTodo(t.title, item.plan.title)) ? [{ id: item.plan.id, ...ask }] : []
+      })
+    : []
 
   return (
     <section aria-labelledby="today-timetable-title">
@@ -234,9 +240,35 @@ export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
         </div>
       </div>
 
+      {fromPlans.length > 0 && (
+        <div className="mt-3 border-t border-border pt-3">
+          <p className="mb-1 text-xs font-semibold text-muted-foreground">계획에서 오늘 할 몫</p>
+          <ul>
+            {fromPlans.map((p) => (
+              <li key={p.id} className="relative flex items-center justify-between gap-2 py-1">
+                <span className="min-w-0 truncate text-sm text-foreground">{p.title}</span>
+                <TimePicker
+                  startMin={null}
+                  durationMin={null}
+                  onChange={(start) => start !== null && addTodo(p.title, today, start, p.minutes === null ? null : Math.max(MIN_DRAWN_MINUTES, p.minutes))}
+                  withDuration={false}
+                  closeOnPick
+                  label={`${p.title} 시간표에 넣기`}
+                  className={() =>
+                    "touch-hit h-7 rounded-md px-2 text-xs font-medium text-action-700 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+                  }
+                >
+                  시간표에 넣기
+                </TimePicker>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {empty && todoTimes && (
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          할 일의 시계를 누르면 {todoDurations ? "시각과 길이를 정해" : "그 시각에"} 여기에 넣을 수 있어요.
+          체크리스트에서 할 일의 시계를 누르면 {todoDurations ? "시각과 길이를 정해" : "그 시각에"} 여기에 넣을 수 있어요.
         </p>
       )}
     </section>

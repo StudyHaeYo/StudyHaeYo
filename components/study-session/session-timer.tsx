@@ -137,7 +137,6 @@ export function SessionTimerCard() {
               type="button"
               onClick={startSession}
               title={canPickSubject ? "노트에 머문 시간은 노트별로 모이고, 노트 밖 시간은 끝날 때 과목에 기록할 수 있어요" : "노트에 머문 시간이 노트별로 자동으로 모여요"}
-              // Outlined: 오늘's one filled button is in 지금 할 것 (재설계 D-43, D-40).
               className={secondaryButton}
             >
               <Play className="size-3.5" aria-hidden="true" />
