@@ -18,7 +18,7 @@ export interface StudyCandidate {
   subject: string
   status: PageStatus
   understanding: number | null
-  lastStudied: string
+  lastStudied: string | null // null: no record yet (an AI-made 오답 노트, D-32)
   due: string
   dueTone: DueTone
   unresolvedConfusions: number
@@ -51,7 +51,7 @@ export function examDeadlines(workspace: WorkspaceState, today: string) {
 export { reviewHref } from "@/lib/review"
 
 function relativeDay(iso: string | null, today: string) {
-  if (!iso) return "기록 없음"
+  if (!iso) return null
   const diff = daysBetween(iso, today)
   if (diff <= 0) return "오늘"
   if (diff === 1) return "어제"

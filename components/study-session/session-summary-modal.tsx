@@ -280,7 +280,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
               ? `${missing.title}의 이해도를 골라 주세요.`
               : plan && added > 0
                 ? `기록하면 “${plan.plan.title}” ${formatDuration(plan.studiedMinutes)} → ${formatDuration(plan.studiedMinutes + added)}${plan.plan.goalMinutes ? ` / ${formatDuration(plan.plan.goalMinutes)}` : ""}`
-                : "기록하면 오늘 · 돌아보기 · 계획에 바로 반영돼요."}
+                : "기록하면 오늘 · 학습 분석 · 계획에 바로 반영돼요."}
           </p>
           <button
             type="button"

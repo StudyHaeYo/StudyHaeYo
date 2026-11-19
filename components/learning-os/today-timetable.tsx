@@ -57,7 +57,8 @@ function studySpans(workspace: WorkspaceState, today: string): Span[] {
 
 type GridItem = { key: string; start: number; end: number } & ({ kind: "plan"; todo: Todo } | { kind: "study"; title: string })
 
-export function TodayTimetable() {
+// `bare`: shown as the 시간표 view of 오늘's 하루 할 일 (재설계 D-43), under that section's head.
+export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
   const today = useTodayISO()
   const now = useNowMinutes()
   const workspace = useWorkspace()
@@ -75,11 +76,16 @@ export function TodayTimetable() {
     if (gridReady && el) el.scrollTop = Number(el.dataset.open ?? 0)
   }, [gridReady])
 
-  const heading = (aside: string | null) => (
-    <div className="mb-2">
-      <RuledHeader id="today-timetable-title" title="오늘 시간표" aside={aside} />
-    </div>
-  )
+  const heading = (aside: string | null) =>
+    bare ? (
+      <h3 id="today-timetable-title" className="sr-only">
+        오늘 시간표
+      </h3>
+    ) : (
+      <div className="mb-2">
+        <RuledHeader id="today-timetable-title" title="오늘 시간표" aside={aside} />
+      </div>
+    )
 
   if (today === null || now === null || todosStatus === "loading") {
     return <div className="h-72 animate-pulse rounded-xl bg-muted" aria-hidden="true" />

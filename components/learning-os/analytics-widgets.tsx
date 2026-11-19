@@ -28,7 +28,7 @@ export function WeakSpots() {
       {subjects.length === 0 && notes.length === 0 ? (
         <p className="text-sm text-pretty text-muted-foreground">아직 학습 기록이 없어요. 기록을 남기면 과목별 이해도와 약한 노트가 보여요.</p>
       ) : (
-        <ul className="flex flex-col gap-5">
+        <ul className="grid gap-x-10 gap-y-6 md:grid-cols-2 xl:grid-cols-3">
           {subjects.map((item) => {
             const id = subjectId(item.subject)
             const weak = item.progress < 50

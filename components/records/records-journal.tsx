@@ -10,7 +10,7 @@ import { allRecordEntries, recordText, sortEntriesNewestFirst, weekStart, type R
 import { recordCreatedAt } from "@/lib/study-session"
 import { NO_SUBJECT, useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
 import { useTodayISO } from "@/hooks/use-today"
-import { PageHeader, RuledHeader, primaryButton } from "@/components/page-shell"
+import { PageHeader, primaryButton } from "@/components/page-shell"
 import { button } from "@/components/ui-styles"
 
 const PAGE_DAYS = 14
@@ -20,8 +20,7 @@ const NONE = "none"
 // day with the day's total. Records without a note are normal here (수업, 문제집, 인강); only ones that look worth
 // reviewing get a quiet [복습 노트 만들기]. `noteIds`: only those notes' records (opened from a note's [기록] or a
 // 시험 정리's [범위 기록], D-36); fixing and removing a note's records happens here.
-// `embedded`: inside 돌아보기 (look-back.tsx), which has the page head and [기록 남기기].
-export function RecordsJournal({ noteIds = [], embedded = false }: { noteIds?: string[]; embedded?: boolean }) {
+export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
   const workspace = useWorkspace()
   const today = useTodayISO()
   const ready = useSubjectRecordsReady()
@@ -56,16 +55,7 @@ export function RecordsJournal({ noteIds = [], embedded = false }: { noteIds?: s
     }`
 
   return (
-    <section aria-labelledby={embedded ? "journal-title" : undefined} className="flex min-w-0 flex-col">
-      {embedded ? (
-        <div className="mb-3">
-          <RuledHeader
-            id="journal-title"
-            title="날짜별 기록"
-            aside={today && week.length > 0 ? `이번 주 ${formatDuration(weekMinutes)}` : null}
-          />
-        </div>
-      ) : (
+    <div className="flex flex-col">
       <PageHeader
         title="학습 기록"
         // Only a fact the list does not show at a glance; what the page is for is said by its empty state.
@@ -83,7 +73,6 @@ export function RecordsJournal({ noteIds = [], embedded = false }: { noteIds?: s
           </button>
         }
       />
-      )}
 
       <div className="flex items-center gap-3">
         {byNote ? (
@@ -122,7 +111,7 @@ export function RecordsJournal({ noteIds = [], embedded = false }: { noteIds?: s
           )}
         </div>
         )}
-        <label className={`hidden h-8 shrink-0 items-center ${embedded ? "w-40" : "w-52"} gap-2 rounded-lg border border-border px-2.5 text-sm text-muted-foreground focus-within:border-action-400 sm:flex`}>
+        <label className="hidden h-8 w-52 shrink-0 items-center gap-2 rounded-lg border border-border px-2.5 text-sm text-muted-foreground focus-within:border-action-400 sm:flex">
           <Search className="size-4 shrink-0" aria-hidden="true" />
           <span className="sr-only">기록 검색</span>
           <input
@@ -189,7 +178,7 @@ export function RecordsJournal({ noteIds = [], embedded = false }: { noteIds?: s
           )}
         </>
       )}
-    </section>
+    </div>
   )
 }
 

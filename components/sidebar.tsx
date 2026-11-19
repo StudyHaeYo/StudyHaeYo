@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { usePathname, useRouter } from "next/navigation"
 import {
   BarChart3,
+  NotebookText,
   BookMarked,
   BookOpen,
   ChevronDown,
@@ -45,11 +46,13 @@ import { useTodayISO } from "@/hooks/use-today"
 import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
 import { button } from "@/components/ui-styles"
 
-// Two places (개편안 D-43): 오늘 is what to do now (할 일 · 시간표 · 계획), 돌아보기 is what was done (그래프 · 기록).
-// 학습 분석 and 학습 계획 were screens of their own; the first is part of 돌아보기, the second opens from 오늘.
+// 재설계(D-43): 오늘 is what to do now (지금 할 것 · 하루 할 일 · 계획), 학습 기록 is the log you fix and link,
+// 학습 분석 is how the weeks went. 기록 and 분석 stay apart (D-28: the place to fix records must not be a stats screen);
+// 학습 계획 is no longer a menu of its own but opens from 오늘.
 const mainNav = [
   { href: "/", label: "오늘", icon: Home, also: ["/plan"] },
-  { href: "/records", label: "돌아보기", icon: BarChart3, also: ["/analytics"] },
+  { href: "/records", label: "학습 기록", icon: NotebookText, also: [] as string[] },
+  { href: "/analytics", label: "학습 분석", icon: BarChart3, also: [] as string[] },
 ]
 
 interface SidebarProps {
