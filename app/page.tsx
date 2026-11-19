@@ -2,7 +2,7 @@
 
 import { PageHeader, PageShell } from "@/components/page-shell"
 import { SessionIndicator, SessionTimerCard } from "@/components/study-session/session-timer"
-import { TodayAgenda } from "@/components/learning-os/today-agenda"
+import { FirstRun, TodayAgenda } from "@/components/learning-os/today-agenda"
 import { WeeklyStats } from "@/components/learning-os/weekly-stats"
 import { TodayTimetable } from "@/components/learning-os/today-timetable"
 import { useTodayLabel } from "@/hooks/use-today"
@@ -15,8 +15,11 @@ export default function DashboardPage() {
   return (
     <PageShell width="wide">
       {/* No count line under the title: every count it gave is the first thing in a section below (2026-11-15). */}
-      <PageHeader eyebrow={todayLabel} title="오늘의 학습 현황" actions={<SessionIndicator />} />
+      {/* Same word as the menu (D-43). */}
+      <PageHeader eyebrow={todayLabel} title="오늘" actions={<SessionIndicator />} />
       <DataStatusNotice />
+      {/* A brand-new account only: above the grid so it is the first thing on a phone, before the timer. */}
+      <FirstRun />
 
       {/* DOM order is the phone order (timer → 오늘 할 일 → 시간표 → 이번 주); on wide screens the timer sits at the top
           of the right column (D-43), and row 2 takes the list's extra height so the timetable stays under the timer. */}

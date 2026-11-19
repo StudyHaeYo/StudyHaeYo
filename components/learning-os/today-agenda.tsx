@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { CalendarRange, ChevronDown, ChevronRight, ListTodo, Loader2, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
@@ -19,8 +19,33 @@ import { RuledHeader } from "@/components/page-shell"
 
 const REVIEW_LIMIT = 3
 
+// [예시로 한 바퀴] → the first review row explains itself once. FirstRun sits above the page grid (on a phone it comes
+// before the timer), so the flag is shared through this tiny store; leaving 오늘 ends the tour.
+let tourOn = false
+const tourListeners = new Set<() => void>()
+function setTourOn(on: boolean) {
+  tourOn = on
+  tourListeners.forEach((l) => l())
+}
+function useTour() {
+  return useSyncExternalStore(
+    (l) => {
+      tourListeners.add(l)
+      return () => tourListeners.delete(l)
+    },
+    () => tourOn,
+    () => false,
+  )
+}
+
+function useFirstVisit() {
+  const workspace = useWorkspace()
+  const status = useDataStatus()
+  return status.phase === "ready" && workspace.pages.length === 0 && workspace.subjectRecords.length === 0
+}
+
 // Home "오늘": what to do today in one place — notes to review, plans running now, and the checklist.
-// A brand-new account gets FirstRun on top instead of empty sections: the loop in three steps and [예시로 한 바퀴] (D-43).
+// A brand-new account sees FirstRun above instead of empty review and plan sections (D-43).
 export function TodayAgenda() {
   const workspace = useWorkspace()
   const plans = usePlans()
@@ -30,14 +55,12 @@ export function TodayAgenda() {
   const checklistCount = useChecklistCount()
   // Before the todos table exists the checklist can't save anything, so it stays out of sight.
   const checklistAvailable = useTodosStatus() !== "unavailable"
-  const status = useDataStatus()
-  const firstVisit = status.phase === "ready" && workspace.pages.length === 0 && workspace.subjectRecords.length === 0
-  // Set by [예시로 한 바퀴]: the first review row then says what a review is, once, for this visit.
-  const [tour, setTour] = useState(false)
+  const firstVisit = useFirstVisit()
+  const tour = useTour()
+  useEffect(() => () => setTourOn(false), [])
 
   return (
-    <section aria-labelledby="today-agenda-title" className="flex flex-col gap-8">
-      {firstVisit && <FirstRun onImported={() => setTour(true)} />}
+    <section aria-labelledby="today-agenda-title">
       <div>
         <RuledHeader
           id="today-agenda-title"
@@ -132,14 +155,17 @@ function AgendaSection({
 function ReviewRow({ item, first, tour }: { item: StudyCandidate; first: boolean; tour: boolean }) {
   // After [예시로 한 바퀴] the button that was pressed is gone; keyboard focus goes to where the tour says to start.
   const ref = useRef<HTMLAnchorElement>(null)
+  const hintId = useId()
   useEffect(() => {
     if (tour) ref.current?.focus()
   }, [tour])
   return (
-    <li>
+    // On the tour the row and its hint read as one block: the hint sits inside the row's tinted background.
+    <li className={tour ? "rounded-lg bg-action-50" : undefined}>
       <Link
         ref={first ? ref : undefined}
         href={reviewHref(item.pageId)}
+        aria-describedby={tour ? hintId : undefined}
         className={`group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent ${first ? "bg-action-50" : ""}`}
       >
         <span className="min-w-0 flex-1">
@@ -170,9 +196,13 @@ function ReviewRow({ item, first, tour }: { item: StudyCandidate; first: boolean
         )}
       </Link>
       {tour && (
-        <p className="mx-2 mt-1.5 rounded-lg bg-action-50 px-3 py-2.5 text-sm leading-relaxed text-pretty text-foreground">
-          여기서 시작해 보세요. [{item.action}]를 누르면 노트의 답이 회색으로 가려져요. 떠올려 본 뒤 펼쳐서 알았음 ·
-          헷갈림 · 몰랐음을 고르면, 그 결과로 다음 복습일이 정해져요.
+        // Shown once, right after the example import: fades in so the change under the button is noticed (not on reduced motion).
+        <p
+          id={hintId}
+          className="animate-in fade-in-0 slide-in-from-top-1 px-2 pb-2.5 text-sm leading-relaxed text-pretty text-foreground duration-200 ease-out motion-reduce:animate-none"
+        >
+          [{item.action}]부터 눌러 보세요. 가려진 답을 떠올려 보고 알았음 · 헷갈림 · 몰랐음을 고르면 다음 복습일이
+          정해져요.
         </p>
       )}
     </li>
@@ -233,14 +263,15 @@ function PlanRow({ item }: { item: ActivePlan }) {
       </span>
     </>
   )
-  const className = "flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent"
+  const className = "flex items-center gap-3 rounded-lg px-2 py-2"
   return (
     <li>
       {item.targetHref ? (
-        <Link href={item.targetHref} className={className}>
+        <Link href={item.targetHref} className={`${className} transition-colors hover:bg-accent`}>
           {body}
         </Link>
       ) : (
+        // Nothing to open (a plan over a whole folder): no hover, since hover promises a click.
         <div className={className}>{body}</div>
       )}
     </li>
@@ -256,13 +287,22 @@ function Skeleton() {
 }
 
 // A new account: what the app does, as the loop it runs, and a way to try it before writing anything.
-function FirstRun({ onImported }: { onImported: () => void }) {
+// Rendered by the page above its grid, so on a phone it comes before the timer.
+export function FirstRun() {
+  const firstVisit = useFirstVisit()
+  if (!firstVisit) return null
+  return <FirstRunCard />
+}
+
+function FirstRunCard() {
   const [importing, setImporting] = useState(false)
   const start = async () => {
     setImporting(true)
     const result = await importExampleData()
     setImporting(false)
-    if (result === "imported") onImported()
+    if (result === "imported") setTourOn(true)
+    else if (result === "failed")
+      toast.error("로그인이 풀려서 예시 데이터를 넣지 못했어요. 다시 로그인한 뒤 눌러 주세요.")
     else if (result === "not-empty") {
       // The DB already has rows this screen hasn't loaded (another tab); show them instead of importing.
       toast.info("이미 저장된 데이터가 있어서 예시 데이터를 가져오지 않았어요. 저장된 데이터를 다시 불러올게요.")
@@ -272,7 +312,7 @@ function FirstRun({ onImported }: { onImported: () => void }) {
   const steps = [
     {
       title: "노트에 정리해요",
-      body: "수업 · 문제집 · 시험 범위를 노트로. 강의 · 오답 · 시험 정리 모양도 있어요.",
+      body: "강의 · 오답 · 시험 정리 중에 고르면 쓸 칸이 미리 잡혀 있어요.",
     },
     {
       title: "공부한 시간을 남겨요",
@@ -284,9 +324,8 @@ function FirstRun({ onImported }: { onImported: () => void }) {
     },
   ]
   return (
-    <section aria-labelledby="first-run-title" className="rounded-xl border border-border bg-card p-5 sm:p-6">
-      <p className="text-sm font-medium text-action-700">처음 오셨나요</p>
-      <h2 id="first-run-title" className="mt-1 text-2xl font-semibold tracking-tight text-balance text-foreground">
+    <section aria-labelledby="first-run-title" className="mb-8 rounded-xl border border-border bg-card p-5 sm:p-6">
+      <h2 id="first-run-title" className="text-2xl font-semibold tracking-tight text-balance text-foreground">
         정리한 노트를 잊기 전에 다시 보게 해 줘요
       </h2>
       <ol className="mt-5 grid gap-4 sm:grid-cols-3">
@@ -310,7 +349,7 @@ function FirstRun({ onImported }: { onImported: () => void }) {
           {importing ? "예시를 넣는 중…" : "예시로 한 바퀴 둘러보기"}
         </button>
         <Link href="/new" className={button("secondary")}>
-          빈 노트로 시작
+          빈 노트 만들기
         </Link>
       </div>
       <p className="mt-3 text-xs text-pretty text-muted-foreground">
