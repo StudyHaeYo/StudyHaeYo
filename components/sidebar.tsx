@@ -48,7 +48,7 @@ import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "
 import { button } from "@/components/ui-styles"
 
 const mainNav = [
-  { href: "/", label: "홈", icon: Home },
+  { href: "/", label: "오늘", icon: Home },
   // 오늘 → 모든 기록 → 통계 → 목표 (D-28)
   { href: "/records", label: "학습 기록", icon: NotebookText },
   { href: "/analytics", label: "학습 분석", icon: BarChart3 },

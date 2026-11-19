@@ -27,6 +27,14 @@ const HOUR = 40 // px per hour: half an hour still fits one line of text
 const WINDOW_HOURS = 7
 const EDGE = 8 // px above the first hour line
 
+// Where the window opens (data-open). Near the end of the day the window can't scroll that far, and stopping at the
+// bottom put an hour line right on the top edge with its label cut in half; stop on the line above it instead.
+export function openScroll(el: HTMLElement, hourPx: number) {
+  const want = Number(el.dataset.open ?? 0)
+  const max = el.scrollHeight - el.clientHeight
+  return want <= max ? want : Math.max(0, Math.floor((max + 4) / hourPx) * hourPx - 4)
+}
+
 // Minutes of today: [start, end)
 export type Span = { key: string; start: number; end: number; title: string }
 
@@ -77,7 +85,7 @@ export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
   const gridReady = today !== null && now !== null && todosStatus !== "loading" && (todoTimes || recordTimes)
   useEffect(() => {
     const el = windowRef.current
-    if (gridReady && el) el.scrollTop = Number(el.dataset.open ?? 0)
+    if (gridReady && el) el.scrollTop = openScroll(el, HOUR)
   }, [gridReady])
 
   const heading = (aside: string | null) =>

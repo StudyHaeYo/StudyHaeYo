@@ -21,7 +21,7 @@ const sections = [
 export default function SettingsPage() {
   return (
     <PageShell>
-      <PageHeader title="설정" description="설정 변경 기능은 준비 중이에요. 지금은 현재 값만 확인할 수 있어요." />
+      <PageHeader title="설정" description="지금은 보기만 할 수 있어요." />
       <div className="flex flex-col gap-6">
         <ProfileSection />
 
@@ -31,7 +31,6 @@ export default function SettingsPage() {
               <h2 id={`settings-${section.title}`} className="text-sm font-semibold text-card-foreground">
                 {section.title}
               </h2>
-              <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">준비 중</span>
             </div>
             <dl className="divide-y divide-border">
               {section.rows.map((row) => (

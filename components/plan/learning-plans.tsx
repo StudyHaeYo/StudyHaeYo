@@ -41,7 +41,7 @@ export function LearningPlans({ initialSubjectId }: { initialSubjectId?: string 
             <PlanGrid items={groups.active} />
           ) : (
             <p className={emptyState}>
-              {plans.length === 0 ? "아직 만든 계획이 없어요. 기간과 목표를 정해 두면 홈에서 진행 상황을 보여 줘요." : "지금 진행 중인 계획이 없어요."}
+              {plans.length === 0 ? "아직 만든 계획이 없어요. 기간과 목표를 정해 두면 오늘 화면에서 진행 상황을 보여 줘요." : "지금 진행 중인 계획이 없어요."}
             </p>
           )}
         </section>

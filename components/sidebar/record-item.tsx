@@ -2,7 +2,9 @@
 
 import { useState, type HTMLAttributes, type ReactNode } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
+  AppWindow,
   ChevronDown,
   ChevronRight,
   FilePlus,
@@ -12,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { menuItemClass, PageActionsMenu } from "@/components/page-actions-menu"
+import { openInNewTab, wantsNewTab } from "@/lib/note-tabs"
 
 export interface SidebarRecord {
   id: string
@@ -73,6 +76,12 @@ export function RecordItem({
   rowClassName = "",
   children,
 }: RecordItemProps) {
+  const router = useRouter()
+  // Ctrl/⌘ + click, middle click and ⋯ > 새 탭으로 열기 open the note in a new note tab (D-45), not a browser tab.
+  const openNewTab = () => {
+    openInNewTab(record.id)
+    router.push(`/record/${record.id}`)
+  }
   const [menuOpen, setMenuOpen] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [draft, setDraft] = useState(record.title)
@@ -130,6 +139,16 @@ export function RecordItem({
             href={`/record/${record.id}`}
             draggable={false}
             aria-current={active ? "page" : undefined}
+            onClick={(e) => {
+              if (!wantsNewTab(e)) return
+              e.preventDefault()
+              openNewTab()
+            }}
+            onAuxClick={(e) => {
+              if (e.button !== 1) return
+              e.preventDefault()
+              openNewTab()
+            }}
             className={`flex min-w-0 flex-1 items-center gap-2 py-1.5 pr-2 text-sm transition-colors hover:text-foreground ${
               onToggle ? "pl-0.5" : "pl-2"
             } ${active ? "font-medium text-foreground" : "text-muted-foreground"}`}
@@ -165,6 +184,18 @@ export function RecordItem({
             }
             extraItems={(close) => (
               <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`${menuItemClass} text-foreground`}
+                  onClick={() => {
+                    close()
+                    openNewTab()
+                  }}
+                >
+                  <AppWindow className="size-4 text-muted-foreground" />
+                  새 탭으로 열기
+                </button>
                 {addChildHref && (
                   <Link role="menuitem" href={addChildHref} className={`${menuItemClass} text-foreground`} onClick={close}>
                     <FilePlus className="size-4 text-muted-foreground" />

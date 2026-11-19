@@ -16,7 +16,6 @@ export function ProfileSection() {
         <h2 id="settings-profile" className="text-sm font-semibold text-card-foreground">
           프로필
         </h2>
-        <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">수정은 준비 중</span>
       </div>
       <dl className="divide-y divide-border">
         {rows.map((row) => (

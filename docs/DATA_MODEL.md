@@ -127,6 +127,10 @@
 - 남은 날 표시는 `ddayLabel`: 그날은 "D-day", 전은 "D-n", 지나면 "D+n"
 - 테이블 정의와 RLS는 `supabase/migrations/20261119_ddays.sql`(select · insert · delete 본인 행만). 실행 전에는 읽기가 실패해 상태가 `unavailable`이고 D-day 화면이 숨는다(`lib/db/sync.ts` `loadDdays`)
 
+### 노트 탭 (브라우저 전용, localStorage `studyhaeyo:note-tabs`, D-45)
+- `{ids: 노트 id[], active: number}`. 학습 데이터가 아니라 이 기기의 편의라 DB에 없다. 읽기 실패(사생활 보호 창 등)면 탭 없이 시작한다
+- 최대 10개, 지운 노트의 id는 노트를 불러온 뒤 빠진다(`pruneTabs`)
+
 ### 세션 (브라우저 전용, localStorage `studyhaeyo:study-session`)
 - `startedAt`, `segments[{pageId,start,end}]`, `openSegment`, `lastActiveAt`, `log: FinishedSession[]`
 - `FinishedSession = {id, startedAt, endedAt, segments, subjectId?, autoEnded?}`

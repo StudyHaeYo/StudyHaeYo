@@ -25,7 +25,7 @@ import {
 } from "@/lib/ddays"
 import { RuledHeader } from "@/components/page-shell"
 import { button } from "@/components/ui-styles"
-import { minutesOfDay, sameLocalDay, studySpans, TodayTimetable } from "@/components/learning-os/today-timetable"
+import { minutesOfDay, openScroll, sameLocalDay, studySpans, TodayTimetable } from "@/components/learning-os/today-timetable"
 
 // 시간표 (D-44): one card on 오늘 that shows time at three sizes — [일] today's time grid (D-38), [주] the week as seven
 // columns on the same kind of grid, [월] the month as a study calendar with the user's own D-days. One is shown at a
@@ -126,7 +126,7 @@ function WeekTimetable() {
   // Scrolled when the grid first shows and when the week changes — not every minute.
   useEffect(() => {
     const el = windowRef.current
-    if (ready && el) el.scrollTop = Number(el.dataset.open ?? 0)
+    if (ready && el) el.scrollTop = openScroll(el, W_HOUR)
   }, [ready, offset])
 
   if (today === null || now === null || todosStatus === "loading") {
