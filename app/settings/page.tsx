@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { PageHeader, PageShell, surface } from "@/components/page-shell"
-import { ProfileSection } from "@/components/settings/profile-section"
+import { AccountSection, ProfileSection } from "@/components/settings/profile-section"
 import { formatDuration } from "@/lib/study-pages"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
 
@@ -21,7 +21,7 @@ const sections = [
 export default function SettingsPage() {
   return (
     <PageShell>
-      <PageHeader title="설정" description="지금은 보기만 할 수 있어요." />
+      <PageHeader title="설정" />
       <div className="flex flex-col gap-6">
         <ProfileSection />
 
@@ -31,6 +31,7 @@ export default function SettingsPage() {
               <h2 id={`settings-${section.title}`} className="text-sm font-semibold text-card-foreground">
                 {section.title}
               </h2>
+              <span className="text-xs text-muted-foreground">보기만 할 수 있어요</span>
             </div>
             <dl className="divide-y divide-border">
               {section.rows.map((row) => (
@@ -42,6 +43,8 @@ export default function SettingsPage() {
             </dl>
           </section>
         ))}
+
+        <AccountSection />
       </div>
     </PageShell>
   )

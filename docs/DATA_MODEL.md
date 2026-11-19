@@ -106,10 +106,11 @@
 - 형제 순서는 `WorkspaceState.order`(그룹과 페이지 전체를 평면으로 편 id 배열)에 있다. 목록에 없는 id는 뒤로 간다.
 
 ### LearningPlan
-`{id, title, target, startDate, endDate, goal, goalMinutes?}`
+`{id, title, target, startDate, endDate, goal, goalMinutes?, slots?}`
 - `target`은 `{scope:"all"}` \| `{scope:"subject", subjectId}` \| `{scope:"page", pageId}`
 - `goalMinutes`(선택): 목표 학습 시간(분). 있으면 진행 막대가 기간 대비가 아니라 목표 시간 대비로 채워진다. DB `learning_plans.goal_minutes`(`supabase/migrations/20261025_plan_goal_minutes.sql`). 컬럼이 없으면 읽지 않고, 입력 칸을 숨기고, 저장할 때도 보내지 않는다(`usePlanGoalsReady`)
 - `goal`은 자유 메모("목표 메모")다
+- `slots`(선택, D-46): 노트마다 공부할 시각 `[{pageId, days, startMin, durationMin}]`. `days`는 0=월 ~ 6=일, `startMin`은 0시부터 분(0~1439), `durationMin`은 10~720. 계획 기간 안의 그 요일이면 시간표에 그 노트 블록이 나온다(`slotsOn`). 진행도 계산에는 쓰지 않는다. DB `learning_plans.slots`(jsonb, `supabase/migrations/20261120_plan_slots.sql`). 읽을 때 모양이 틀린 줄은 버린다(`toPlanSlots`). 컬럼이 없으면 읽지 않고 시각 칸을 숨긴다(`usePlanSlotsReady`). 고치기는 `updatePlan`(컬럼이 있을 때만 `goal_minutes` · `slots`를 보내고, 비우면 null)
 
 ### Todo (오늘의 체크리스트, `lib/todos.ts`, 테이블 `todos`)
 `{id, title, dueOn, doneAt, position, startMin, durationMin}`
