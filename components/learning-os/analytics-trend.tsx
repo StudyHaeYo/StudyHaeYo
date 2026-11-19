@@ -18,7 +18,6 @@ import {
   type Insight,
 } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
-import { StudyHeatmap } from "@/components/learning-os/study-heatmap"
 
 const WEEKS = 8
 const CHART_HEIGHT = 120
@@ -247,9 +246,6 @@ export function AnalyticsTrend() {
             })}
           </ul>
         )}
-        <div className="mt-6 border-t border-border pt-4">
-          <StudyHeatmap />
-        </div>
       </div>
     </section>
   )

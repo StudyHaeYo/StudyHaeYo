@@ -4,7 +4,7 @@ import { PageHeader, PageShell } from "@/components/page-shell"
 import { SessionIndicator, SessionTimerCard } from "@/components/study-session/session-timer"
 import { TodayAgenda } from "@/components/learning-os/today-agenda"
 import { WeeklyStats } from "@/components/learning-os/weekly-stats"
-import { TodayTimetable } from "@/components/learning-os/today-timetable"
+import { StudyCalendar } from "@/components/learning-os/study-calendar"
 import { useTodayLabel } from "@/hooks/use-today"
 import { DataStatusNotice } from "@/components/data-status-notice"
 
@@ -25,9 +25,9 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex min-w-0 flex-col gap-8">
-          {/* Today, then this week in one line. 오늘의 기록 is on 학습 기록 and the five-week calendar on 학습 분석
-              (UI 개선 1번 ③, 2026-11-18): home keeps what to do now. */}
-          <TodayTimetable />
+          {/* 시간표 [일 | 주 | 월]: today, the week, and the month with D-days in one card (D-44); then this week in one
+              line. 오늘의 기록 is on 학습 기록 (UI 개선 1번 ③). */}
+          <StudyCalendar />
           <WeeklyStats />
         </div>
       </div>

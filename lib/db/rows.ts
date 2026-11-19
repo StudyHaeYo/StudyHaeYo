@@ -15,6 +15,7 @@ import { templateRegistry, type TemplateId } from "@/lib/templates"
 import type { StudyType } from "@/lib/types"
 import type { GroupKind, WorkspaceGroup, WorkspaceState } from "@/lib/workspace"
 import type { Todo } from "@/lib/todos"
+import type { Dday } from "@/lib/ddays"
 import { recordTimesReady } from "@/lib/time-slots"
 
 // Row shapes of the Supabase tables, column for column. The app types stay as they are;
@@ -345,4 +346,24 @@ export function todoInsertRow(todo: Todo, userId: string) {
     ...(todo.startMin !== null ? { start_min: todo.startMin } : {}),
     ...(todo.durationMin !== null ? { duration_min: todo.durationMin } : {}),
   }
+}
+
+// ---- ddays (D-day, 20261119_ddays.sql)
+
+export interface DdayRow {
+  id: string
+  user_id: string
+  title: string
+  on_date: string
+  created_at: string
+}
+
+export const DDAY_COLUMNS = "id, user_id, title, on_date, created_at"
+
+export function toDday(row: DdayRow): Dday {
+  return { id: row.id, title: row.title, date: row.on_date }
+}
+
+export function ddayInsertRow(dday: Dday, userId: string) {
+  return { id: dday.id, user_id: userId, title: dday.title, on_date: dday.date }
 }

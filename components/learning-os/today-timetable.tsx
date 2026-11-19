@@ -28,20 +28,20 @@ const WINDOW_HOURS = 7
 const EDGE = 8 // px above the first hour line
 
 // Minutes of today: [start, end)
-type Span = { key: string; start: number; end: number; title: string }
+export type Span = { key: string; start: number; end: number; title: string }
 
-function minutesOfDay(ms: number) {
+export function minutesOfDay(ms: number) {
   const d = new Date(ms)
   return d.getHours() * 60 + d.getMinutes()
 }
 
-function sameLocalDay(ms: number, today: string) {
+export function sameLocalDay(ms: number, today: string) {
   const d = new Date(ms)
   return today === `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
-// Today's records that know when they started. A record running past midnight is cut at 24:00.
-function studySpans(workspace: WorkspaceState, today: string): Span[] {
+// A day's records that know when they started (오늘 and the [주] view). A record running past midnight is cut at 24:00.
+export function studySpans(workspace: WorkspaceState, today: string): Span[] {
   const spans: Span[] = []
   const add = (id: string, startedAt: number | undefined, minutes: number, title: string) => {
     if (typeof startedAt !== "number" || minutes <= 0 || !sameLocalDay(startedAt, today)) return
@@ -60,7 +60,8 @@ function studySpans(workspace: WorkspaceState, today: string): Span[] {
 
 type GridItem = { key: string; start: number; end: number } & ({ kind: "plan"; todo: Todo } | { kind: "study"; title: string })
 
-export function TodayTimetable() {
+// `bare`: shown as the [일] view of the 시간표 card (D-44), whose head names the view, so no head of its own.
+export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
   const today = useTodayISO()
   const now = useNowMinutes()
   const workspace = useWorkspace()
@@ -79,11 +80,12 @@ export function TodayTimetable() {
     if (gridReady && el) el.scrollTop = Number(el.dataset.open ?? 0)
   }, [gridReady])
 
-  const heading = (aside: string | null) => (
-    <div className="mb-2">
-      <RuledHeader id="today-timetable-title" title="오늘 시간표" aside={aside} />
-    </div>
-  )
+  const heading = (aside: string | null) =>
+    bare ? null : (
+      <div className="mb-2">
+        <RuledHeader id="today-timetable-title" title="오늘 시간표" aside={aside} />
+      </div>
+    )
 
   if (today === null || now === null || todosStatus === "loading") {
     return <div className="h-72 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
@@ -91,7 +93,7 @@ export function TodayTimetable() {
   // Neither column yet: nothing to draw. (With only one, the half that exists still shows.)
   if (!todoTimes && !recordTimes) {
     return (
-      <section aria-labelledby="today-timetable-title">
+      <section aria-labelledby={bare ? undefined : "today-timetable-title"}>
         {heading("준비 중")}
         <p className="text-xs leading-relaxed text-muted-foreground">시간표를 저장할 곳을 준비하고 있어요.</p>
       </section>
@@ -136,7 +138,7 @@ export function TodayTimetable() {
     : []
 
   return (
-    <section aria-labelledby="today-timetable-title">
+    <section aria-labelledby={bare ? undefined : "today-timetable-title"}>
       {/* Today's study minutes are on the timer card just left of this; the header says only what this grid adds. */}
       {heading(plans.length > 0 ? `할 일 ${plans.length}개` : null)}
 

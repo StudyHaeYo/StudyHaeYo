@@ -3,6 +3,7 @@ import { createStore } from "@/lib/create-store"
 import { replacePlans, setPlanGoalsReady } from "@/lib/plans"
 import { replaceWorkspace, setPagePropsReady, setSubjectRecordsReady } from "@/lib/workspace"
 import { replaceTodos } from "@/lib/todos"
+import { replaceDdays } from "@/lib/ddays"
 import { setTimeSlots } from "@/lib/time-slots"
 import { db, resetWrites, setCurrentUserId, setWriteFailureHandler } from "@/lib/db/queue"
 import {
@@ -16,6 +17,8 @@ import {
   PLAN_COLUMNS,
   RECORD_COLUMNS,
   TODO_COLUMNS,
+  DDAY_COLUMNS,
+  toDday,
   toPlan,
   toTodo,
   toWorkspaceState,
@@ -23,6 +26,7 @@ import {
   type PlanRow,
   type RecordRow,
   type TodoRow,
+  type DdayRow,
 } from "@/lib/db/rows"
 
 export type DataStatus = { phase: "loading" } | { phase: "ready" } | { phase: "error"; message: string }
@@ -127,6 +131,7 @@ export async function loadUserData() {
     replacePlans(plans.rows.map(toPlan))
     statusStore.set(() => ({ phase: "ready" }))
     void loadTodos(userId, seq)
+    void loadDdays(userId, seq)
   } catch (error) {
     if (seq !== loadSeq) return
     statusStore.set(() => ({ phase: "error", message: messageOf(error) }))
@@ -162,6 +167,16 @@ async function loadTodos(userId: string, seq: number) {
   }
 }
 
+// D-days load separately too: before 20261119_ddays.sql the table is missing, and only the D-day parts hide.
+async function loadDdays(userId: string, seq: number) {
+  try {
+    const rows = await selectAll<DdayRow>("ddays", DDAY_COLUMNS, userId, ["on_date", "created_at", "id"])
+    if (seq === loadSeq) replaceDdays(rows.map(toDday), "ready")
+  } catch {
+    if (seq === loadSeq) replaceDdays([], "unavailable")
+  }
+}
+
 // Clears everything the previous user left in memory: cached data, pending writes, and the user id.
 function clearUserData() {
   loadSeq += 1
@@ -170,6 +185,7 @@ function clearUserData() {
   replaceWorkspace(null)
   replacePlans([])
   replaceTodos([], "loading")
+  replaceDdays([], "loading")
   setTimeSlots({ todoTimes: false, recordTimes: false, todoDurations: false })
   statusStore.set(() => ({ phase: "loading" }))
 }

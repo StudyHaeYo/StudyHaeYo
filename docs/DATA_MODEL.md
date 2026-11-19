@@ -119,6 +119,14 @@
 - 페이지나 계획과 연결하지 않는다. 시간표의 [시간표에 넣기]는 계획 이름과 오늘 몫 길이로 할 일을 만들 뿐이다(D-38, `planToday`)
 - 테이블 정의와 RLS는 `supabase/migrations/20261021_todos.sql`. `start_min` · `started_at`은 `20261112_time_slots.sql`, `duration_min`은 `20261113_todo_duration.sql`. 실행 전에는 `lib/time-slots.ts`의 값이 false라 그 칸을 쓰지 않는다: `start_min`이 없으면 시간표는 "준비 중"이고 시각 고르기가 숨는다. `duration_min`만 없으면 길이 고르기가 숨고 블록은 한 시간으로 그려진다
 
+### Dday (`lib/ddays.ts`, 테이블 `ddays`, D-44)
+`{id, title, date}`
+- 사용자가 직접 정하는 날(시험, 마감 등). `title` 1~40자, `date`(DB `on_date`)는 로컬 날짜 문자열
+- 노트 · 계획과 연결하지 않는다. 시험 정리 노트의 `props.examDate`(D-35)와는 따로다
+- 넣기 · 지우기만 있다(고치기 없음). 지운 직후 되돌리기는 같은 id로 다시 넣는다(`restoreDday`)
+- 남은 날 표시는 `ddayLabel`: 그날은 "D-day", 전은 "D-n", 지나면 "D+n"
+- 테이블 정의와 RLS는 `supabase/migrations/20261119_ddays.sql`(select · insert · delete 본인 행만). 실행 전에는 읽기가 실패해 상태가 `unavailable`이고 D-day 화면이 숨는다(`lib/db/sync.ts` `loadDdays`)
+
 ### 세션 (브라우저 전용, localStorage `studyhaeyo:study-session`)
 - `startedAt`, `segments[{pageId,start,end}]`, `openSegment`, `lastActiveAt`, `log: FinishedSession[]`
 - `FinishedSession = {id, startedAt, endedAt, segments, subjectId?, autoEnded?}`
