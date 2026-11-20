@@ -4,7 +4,6 @@ import { useState, type HTMLAttributes, type ReactNode } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
-  AppWindow,
   ChevronDown,
   ChevronRight,
   FilePlus,
@@ -14,7 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { menuItemClass, PageActionsMenu } from "@/components/page-actions-menu"
-import { openInNewTab, wantsNewTab } from "@/lib/note-tabs"
+import { visitNote, wantsNewTab } from "@/lib/note-tabs"
 
 export interface SidebarRecord {
   id: string
@@ -77,9 +76,9 @@ export function RecordItem({
   children,
 }: RecordItemProps) {
   const router = useRouter()
-  // Ctrl/⌘ + click, middle click and ⋯ > 새 탭으로 열기 open the note in a new note tab (D-45), not a browser tab.
+  // Ctrl/⌘ + click and middle click open the note in a note tab (D-45) like a plain click, not in a browser tab.
   const openNewTab = () => {
-    openInNewTab(record.id)
+    visitNote(record.id)
     router.push(`/record/${record.id}`)
   }
   const [menuOpen, setMenuOpen] = useState(false)
@@ -184,18 +183,6 @@ export function RecordItem({
             }
             extraItems={(close) => (
               <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={`${menuItemClass} text-foreground`}
-                  onClick={() => {
-                    close()
-                    openNewTab()
-                  }}
-                >
-                  <AppWindow className="size-4 text-muted-foreground" />
-                  새 탭으로 열기
-                </button>
                 {addChildHref && (
                   <Link role="menuitem" href={addChildHref} className={`${menuItemClass} text-foreground`} onClick={close}>
                     <FilePlus className="size-4 text-muted-foreground" />

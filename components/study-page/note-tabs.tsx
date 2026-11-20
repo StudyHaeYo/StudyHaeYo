@@ -4,14 +4,14 @@ import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Plus, X } from "lucide-react"
-import { closeTab, openNewNoteInNewTab, pruneTabs, useNoteTabs, visitNote, wantsNewTab } from "@/lib/note-tabs"
+import { closeTab, pruneTabs, useNoteTabs, visitNote } from "@/lib/note-tabs"
 import { noteIcon } from "@/lib/templates"
 import { useDataStatus } from "@/lib/db/sync"
 import { useWorkspace } from "@/lib/workspace"
 
 // 노트 탭 (D-45): the open notes as tabs above the note, on screens wide enough for them (md and up; a phone has the
-// sidebar menu instead). The tab you are on follows the note shown; Ctrl/⌘ + click, middle click, ⋯ > 새 탭으로 열기
-// and + add tabs (lib/note-tabs.ts). Switching tabs is frequent, so nothing animates.
+// sidebar menu instead). Each note opened adds a tab, + makes a new note in one (lib/note-tabs.ts). Switching tabs is
+// frequent, so nothing animates.
 export function NoteTabs({ pageId }: { pageId: string }) {
   const router = useRouter()
   const tabs = useNoteTabs()
@@ -95,12 +95,8 @@ export function NoteTabs({ pageId }: { pageId: string }) {
       </ul>
       <Link
         href="/new"
-        // Only a plain click: Ctrl/⌘ + click opens /new in a browser tab, and this window's next note must not jump tabs.
-        onClick={(e) => {
-          if (!wantsNewTab(e)) openNewNoteInNewTab()
-        }}
-        aria-label="새 노트를 새 탭으로"
-        title="새 노트를 새 탭으로"
+        aria-label="새 노트"
+        title="새 노트"
         className="mb-1 flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground transition-[color,background-color,transform] duration-150 ease-out hover:bg-accent hover:text-foreground active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-action-500 motion-reduce:transition-none motion-reduce:active:scale-100"
       >
         <Plus className="size-4" aria-hidden="true" />
