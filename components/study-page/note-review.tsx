@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { X } from "lucide-react"
+import { toast } from "sonner"
 import { addPageRecord, updatePage, useWorkspace } from "@/lib/workspace"
 import { examDeadlines, reviewCandidates } from "@/lib/study-candidates"
 import {
@@ -32,6 +33,8 @@ import { button } from "@/components/ui-styles"
 // behind its 핵심 개념 is covered in place. This holds the review's state for the note page.
 
 interface Session {
+  pageId: string
+  date: string
   items: ReviewItem[]
   before: number | null
   startedAt: number
@@ -42,6 +45,39 @@ export interface ReviewOutcome {
   after: number
   rows: JudgedItem[]
   recordId: string
+  // Left before every place was marked (D-51): only the marked ones were recorded, out of `total`.
+  total: number
+}
+
+const removeRecord = (pageId: string, recordId: string) =>
+  updatePage(pageId, (p) => ({ ...p, studyRecords: p.studyRecords.filter((r) => r.id !== recordId) }))
+
+// The one record a review leaves: 이해도 from the marked places (the D-32 ladder), the time since it started.
+function recordReview(session: Session, rows: JudgedItem[], understanding: number): ReviewOutcome {
+  const recordId = newRecordId()
+  addPageRecord(session.pageId, {
+    id: recordId,
+    pageId: session.pageId,
+    date: session.date,
+    createdAt: Date.now(),
+    startedAt: session.startedAt,
+    durationMinutes: Math.max(1, Math.round((Date.now() - session.startedAt) / 60_000)),
+    understanding,
+    ...reviewRecordText(rows, session.items.length),
+    nextSteps: "",
+    tags: [],
+  })
+  return { before: session.before, after: understanding, rows, recordId, total: session.items.length }
+}
+
+// Leaving before 복습 마치기 (D-51): the places marked so far still count, so the time is not lost. Nothing marked,
+// nothing to judge by: no record.
+function recordMarked(session: Session, marks: Record<string, Judgment>): ReviewOutcome | null {
+  const rows: JudgedItem[] = session.items
+    .filter((item) => marks[item.blockId])
+    .map((item) => ({ item, judgment: marks[item.blockId], written: false }))
+  if (rows.length === 0) return null
+  return recordReview(session, rows, reviewUnderstanding(rows, session.before))
 }
 
 export function useNoteReview({
@@ -63,15 +99,43 @@ export function useNoteReview({
   // The session that already left its record: a second press before the bar goes away must not record twice.
   const recorded = useRef<Session | null>(null)
 
+  // Left mid-review (D-51): record what was marked. On this note the result line shows with 기록 되돌리기; from
+  // anywhere else (the note is gone from the screen) a toast says so and can take it back.
+  const leave = (s: Session, m: Record<string, Judgment>, here: boolean) => {
+    if (recorded.current === s) return
+    recorded.current = s
+    const out = recordMarked(s, m)
+    if (!out) return
+    if (here) return setOutcome(out)
+    toast.success(`복습을 고른 ${out.rows.length}곳까지 기록했습니다`, {
+      action: { label: "되돌리기", onClick: () => removeRecord(s.pageId, out.recordId) },
+    })
+  }
+  const live = useRef<{ session: Session | null; marks: Record<string, Judgment> }>({ session: null, marks: {} })
+  useEffect(() => {
+    live.current = { session, marks }
+  }, [session, marks])
+  // The note screen closes (another page, another note) in the middle of a review.
+  useEffect(
+    () => () => {
+      const { session: s, marks: m } = live.current
+      if (s) leave(s, m, false)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
+
   // Fixed when the review starts: marking a problem 맞힘 must not take it out from under the user.
   useEffect(() => {
     if (!reviewing) {
+      // 그만두기, the browser's back button, or anything else that ends review mode on this note.
+      if (session) leave(session, marks, page?.id === session.pageId)
       setSession(null)
       return
     }
     if (session || !ready || !page || !today) return
     const items = reviewItems(page, problemsOn && pageKind(page) === "wrong-answers")
-    setSession({ items, before: computePageStats(page, today).understanding, startedAt: Date.now() })
+    setSession({ pageId: page.id, date: today, items, before: computePageStats(page, today).understanding, startedAt: Date.now() })
     setOpened({})
     setMarks({})
     setOutcome(null)
@@ -98,27 +162,14 @@ export function useNoteReview({
     recorded.current = session
     const rows: JudgedItem[] = session.items.map((item) => ({ item, judgment: marks[item.blockId] ?? "wrong", written: false }))
     const after = rows.length === 0 ? (picked ?? 3) : reviewUnderstanding(rows, session.before)
-    const recordId = newRecordId()
-    addPageRecord(page.id, {
-      id: recordId,
-      pageId: page.id,
-      date: today,
-      createdAt: Date.now(),
-      startedAt: session.startedAt,
-      durationMinutes: Math.max(1, Math.round((Date.now() - session.startedAt) / 60_000)),
-      understanding: after,
-      ...reviewRecordText(rows),
-      nextSteps: "",
-      tags: [],
-    })
-    setOutcome({ before: session.before, after, rows, recordId })
+    setOutcome(recordReview(session, rows, after))
     setSession(null)
   }
 
   // Takes the record back (the problem marks stay: they were the user's own marks on the note).
   const undo = () => {
     if (!outcome || !page) return
-    updatePage(page.id, (p) => ({ ...p, studyRecords: p.studyRecords.filter((r) => r.id !== outcome.recordId) }))
+    removeRecord(page.id, outcome.recordId)
     setOutcome(null)
   }
 
@@ -161,6 +212,7 @@ export function ReviewBar({ marked, total, onFinish, exitHref }: { marked: numbe
         href={exitHref}
         replace
         scroll={false}
+        title={marked > 0 && left > 0 ? `고른 ${marked}곳까지 기록` : undefined}
         className={button("ghost", "sm", "px-2")}
       >
         그만두기
@@ -225,7 +277,9 @@ export function ReviewResult({
   return (
     <div role="status" className="group flex flex-col gap-1 text-sm print:hidden">
       <p className="text-muted-foreground">
-        <span className="font-medium text-foreground">복습 기록됨</span>
+        <span className="font-medium text-foreground">
+          {rows.length > 0 && rows.length < outcome.total ? `복습 기록됨 (${outcome.total}곳 중 ${rows.length}곳)` : "복습 기록됨"}
+        </span>
         {[
           `이해도 ${before !== null && before !== after ? `${before} → ` : ""}${after} ${understandingLabel(after)}`,
           nextDay,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { addDays, computePageStats, studyPages, type PageStudyRecord, type StudyPage } from "@/lib/study-pages"
-import { reviewItems, reviewUnderstanding, type JudgedItem, type Judgment } from "@/lib/review"
+import { reviewItems, reviewRecordText, reviewUnderstanding, type JudgedItem, type Judgment } from "@/lib/review"
 import { msToMinutes } from "@/lib/study-session"
 
 // 노트 → 복습 → 기록 → 다음 복습일, the loop the app is built around, run through the same functions the screens call
@@ -61,6 +61,17 @@ describe("복습 흐름: 노트 → 복습 → 기록 → 다음 복습일", () 
     expect(after).toBe(1)
     const next = computePageStats(withRecords(lecture, [{ date: "2026-11-01", understanding: 5 }, { date: today, understanding: after }]), today)
     expect(next.nextReviewAt).toBe(addDays(today, 1))
+  })
+
+  it("다 고르기 전에 나가면 고른 곳만으로 기록한다 (D-51)", () => {
+    const all = judge(before, () => "right")
+    const marked = all.slice(0, 2).map((row, i) => ({ ...row, judgment: (i === 0 ? "right" : "wrong") as Judgment }))
+    expect(reviewRecordText(marked, all.length).studyContent).toBe(`복습: ${all.length}곳 중 2곳 확인 (알았음 1 · 헷갈림 0 · 몰랐음 1)`)
+    // a miss among the marked places: the ladder as it is, not the previous 5
+    const after = reviewUnderstanding(marked, 5)
+    expect(after).toBe(2)
+    const next = computePageStats(withRecords(lecture, [{ date: "2026-11-01", understanding: 5 }, { date: today, understanding: after }]), today)
+    expect(next.nextReviewAt).toBe(addDays(today, 2))
   })
 })
 

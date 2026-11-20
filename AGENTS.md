@@ -23,7 +23,7 @@
 - 화면 코드에는 색 이름 클래스(`indigo-600`, `amber-50` 등)를 쓰지 않고 역할 토큰(`action` · `attention` · `danger` · `success`, `app/globals.css`)을 쓴다. 디자인을 바꾸거나 어두운 모드를 넣을 때 값을 한 곳에서만 바꾸기 위해서다. PR 전에 `pnpm run check:colors`.
 - 화면 문구는 D-50을 따른다: 설명 · 빈 안내 · 툴팁 · placeholder는 짧은 명사형, 알림 · 오류 · 확인 창은 합니다체. 제목이나 버튼이 이미 말하는 설명 문장은 붙이지 않는다.
 - 버튼 · 메뉴 · 창은 `components/ui-styles.ts`(`button()`, `menuPanel`, `dialogPanel`)를 쓴다. 글자 크기 · 모서리 · 그림자 단계는 그 파일 머리말과 D-40을 따른다.
-- 서버 컴포넌트(`page.tsx`, `layout.tsx` 등)에서는 `lib/workspace.ts`, `lib/plans.ts`, `lib/create-store.ts`, `lib/study-stats.ts`를 직접·간접으로 import하지 않는다. 서버와 클라이언트가 같이 쓰는 상수나 함수는 `lib/goals.ts`처럼 import가 없는 파일에 둔다.
+- 서버 컴포넌트(`page.tsx`, `layout.tsx` 등)에서는 `lib/workspace.ts`, `lib/plans.ts`, `lib/create-store.ts`, `lib/study-stats.ts`를 직접·간접으로 import하지 않는다. 서버와 클라이언트가 같이 쓰는 상수나 함수는 `lib/theme.ts`처럼 import가 없는 파일에 둔다.
 - v0의 Publish로 main에 바로 반영하지 않는다. PR의 Vercel 미리보기 빌드가 Ready인지 확인하고 merge한다.
 - 리뷰와 승인(Approve)을 받은 PR은 이재윤 · 김준혁 누구나 merge해도 된다. 저장소가 공개라 누가 merge해도 Vercel이 배포한다(D-19). 저장소를 비공개로 되돌리면 다시 이재윤만 merge한다.
 - 비밀값(API 키, Supabase `service_role` 키 등)은 코드와 저장소에 넣지 않는다. 로컬은 `.env.local`(git에 올라가지 않음), 배포는 Vercel 환경 변수를 쓴다.

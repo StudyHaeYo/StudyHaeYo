@@ -143,13 +143,15 @@ export function reviewSummary(rows: JudgedItem[], value: number) {
   return { line: parts.join(" · "), hint }
 }
 
-// One line for the record (학습 기록): what was reviewed and how it went.
-export function reviewRecordText(rows: JudgedItem[]) {
+// One line for the record (학습 기록): what was reviewed and how it went. `total`: the places the review had, when the
+// user left before marking them all (D-51: "복습: 12곳 중 5곳 확인 …").
+export function reviewRecordText(rows: JudgedItem[], total = rows.length) {
   if (rows.length === 0) return { studyContent: "복습: 노트를 다시 읽고 이해도 선택", difficulties: "" }
   const count = (j: Judgment) => rows.filter((r) => r.judgment === j).length
   const missed = rows.filter((r) => r.judgment !== "right").map((r) => r.item.label)
+  const scope = total > rows.length ? `${total}곳 중 ${rows.length}곳` : `${rows.length}곳`
   return {
-    studyContent: `복습: ${rows.length}곳 확인 (알았음 ${count("right")} · 헷갈림 ${count("unsure")} · 몰랐음 ${count("wrong")})`,
+    studyContent: `복습: ${scope} 확인 (알았음 ${count("right")} · 헷갈림 ${count("unsure")} · 몰랐음 ${count("wrong")})`,
     difficulties: missed.length > 0 ? `다시 볼 것: ${missed.join(", ")}`.slice(0, 300) : "",
   }
 }
