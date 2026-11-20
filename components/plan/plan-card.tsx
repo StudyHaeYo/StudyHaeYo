@@ -1,20 +1,25 @@
 "use client"
 
 import Link from "next/link"
-import { X } from "lucide-react"
+import { Pencil, X } from "lucide-react"
 import { formatDate, formatDuration } from "@/lib/study-pages"
+import { rangeLabel } from "@/lib/timetable"
 import type { ActivePlan } from "@/lib/study-stats"
+import { useWorkspace } from "@/lib/workspace"
 
 // One learning plan with where it stands today: days left, how far through the period, study time so far.
 export function PlanCard({
   item,
   showTarget = true,
+  onEdit,
   onRemove,
 }: {
   item: ActivePlan
   showTarget?: boolean
+  onEdit?: () => void
   onRemove?: () => void
 }) {
+  const workspace = useWorkspace()
   const { plan, phase } = item
   const ended = phase === "ended"
   const badge =
@@ -58,6 +63,18 @@ export function PlanCard({
               </>
             )}
           </p>
+          {/* 공부할 시각 (D-46): "해시테이블 정리 · 월 수 19:00~20:00" */}
+          {plan.slots && plan.slots.length > 0 && (
+            <ul className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+              {plan.slots.map((slot, i) => (
+                <li key={i} className="tabular-nums">
+                  {`${workspace.pages.find((p) => p.id === slot.pageId)?.title || "지운 노트"} · ${slot.days
+                    .map((d) => "월화수목금토일"[d])
+                    .join(" ")} ${rangeLabel(slot.startMin, Math.min(1440, slot.startMin + slot.durationMin))}`}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className="flex shrink-0 items-start gap-1">
           <div className="flex flex-col items-end gap-1.5">
@@ -80,6 +97,17 @@ export function PlanCard({
             </div>
             <span className={`text-xs tabular-nums ${badge.className}`}>{badge.text}</span>
           </div>
+          {onEdit && (
+            <button
+              type="button"
+              id={`plan-edit-${plan.id}`}
+              onClick={onEdit}
+              aria-label={`${plan.title} 계획 고치기`}
+              className="touch-hit flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-60"
+            >
+              <Pencil className="size-3.5" />
+            </button>
+          )}
           {onRemove && (
             <button
               type="button"

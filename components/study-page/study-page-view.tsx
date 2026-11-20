@@ -218,7 +218,8 @@ export function StudyPageView({
       {/* The folders above the note show only while the bar itself is wide enough (a container query, not the
           window: the AI 창 and the PDF pane narrow the bar without narrowing the window), so they never run under
           the buttons on the right. */}
-      <header className="@container/bar sticky top-12 z-20 border-b border-border bg-background/90 backdrop-blur print:hidden md:top-0">
+      {/* md:top-9: under the note tabs (h-9, components/study-page/note-tabs.tsx, D-45). */}
+      <header className="@container/bar sticky top-12 z-20 border-b border-border bg-background/90 backdrop-blur print:hidden md:top-9">
         <div className="flex h-14 items-center justify-between gap-3 px-4 md:px-6">
           <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 overflow-hidden text-sm">
             <span className="hidden shrink-0 text-muted-foreground @min-[58rem]/bar:inline">내 노트</span>

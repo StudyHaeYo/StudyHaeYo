@@ -20,6 +20,7 @@ import {
 import { useTimeSlots } from "@/lib/time-slots"
 import { TimePicker } from "@/components/time-picker"
 import { clockLabel } from "@/lib/timetable"
+import { daysBetween } from "@/lib/study-pages"
 
 function useChecklist() {
   const todos = useTodos()
@@ -143,8 +144,9 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
       )}
 
       {carried && !editing && (
+        // Plain words instead of 이월: since when it has been waiting (ux-copy, 2026-11-19).
         <span className="shrink-0 text-xs text-muted-foreground" title="전날에 못 끝내서 넘어온 할 일">
-          이월
+          {carriedLabel(todo.dueOn, today)}
         </span>
       )}
       {!editing && timesReady && <TodoTime todo={todo} today={today} />}
@@ -192,4 +194,10 @@ function TodoTime({ todo, today }: { todo: Todo; today: string }) {
       {shown ?? <Clock className="size-3.5" aria-hidden="true" />}
     </TimePicker>
   )
+}
+
+// A to-do carried over from an earlier day: "어제부터", "3일 전부터".
+function carriedLabel(dueOn: string, today: string) {
+  const days = daysBetween(dueOn, today)
+  return days <= 1 ? "어제부터" : `${days}일 전부터`
 }

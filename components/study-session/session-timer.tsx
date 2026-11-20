@@ -280,7 +280,7 @@ export function SessionIndicator({ floating = false, withStart = false }: { floa
               onClick={() => setOpen(false)}
               className="mt-2 block rounded text-center text-xs text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500"
             >
-              홈에서 타이머 보기
+              오늘 화면에서 타이머 보기
             </Link>
           )}
         </div>

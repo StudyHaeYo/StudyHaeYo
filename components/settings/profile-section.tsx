@@ -1,33 +1,216 @@
 "use client"
 
-import { useCurrentUser } from "@/lib/auth"
+import { useEffect, useState, type FormEvent } from "react"
+import { LogOut } from "lucide-react"
+import { toast } from "sonner"
+import { signOut, updateDisplayName, updatePassword, useCurrentUser } from "@/lib/auth"
+import { MIN_PASSWORD_LENGTH } from "@/components/auth/auth-field"
+import { surface } from "@/components/page-shell"
+import { button } from "@/components/ui-styles"
 
-// 로그인한 사용자의 이름/이메일. 첫 렌더에서는 자리표시를 보여준다(hydration 안전).
+const NAME_MAX = 30
+const fieldClass =
+  "h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-action-500 disabled:opacity-60"
+
+// 계정 설정(2026-11-19): 이름 · 비밀번호 바꾸기, 로그아웃. 첫 렌더에서는 이름 · 이메일 자리표시(hydration 안전).
+// 탈퇴는 서버에서 계정을 지워야 해서(service_role) 김준혁과 정한 뒤에 넣는다.
 export function ProfileSection() {
+  return (
+    <>
+      <NameAndEmail />
+      <PasswordChange />
+    </>
+  )
+}
+
+function SectionHead({ id, title }: { id: string; title: string }) {
+  return (
+    <div className="border-b border-border px-5 py-3">
+      <h2 id={id} className="text-sm font-semibold text-card-foreground">
+        {title}
+      </h2>
+    </div>
+  )
+}
+
+function NameAndEmail() {
   const user = useCurrentUser()
-  const rows = [
-    { label: "이름", value: user?.name },
-    { label: "이메일", value: user?.email },
-  ]
+  const [name, setName] = useState("")
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  // The field starts with the current name once it is known (after mount).
+  useEffect(() => {
+    if (user) setName(user.name)
+  }, [user])
+
+  const changed = user !== null && name.trim() !== user.name
+  const save = async (e: FormEvent) => {
+    e.preventDefault()
+    const next = name.trim()
+    if (!next) {
+      setError("이름을 적어 주세요.")
+      return
+    }
+    if (!changed || pending) return
+    setPending(true)
+    setError(null)
+    const result = await updateDisplayName(next)
+    setPending(false)
+    if (result.ok) toast.success("이름을 바꿨어요.")
+    else setError(result.message)
+  }
 
   return (
-    <section aria-labelledby="settings-profile" className="rounded-xl border border-border bg-card">
-      <div className="flex items-center justify-between border-b border-border px-5 py-3">
-        <h2 id="settings-profile" className="text-sm font-semibold text-card-foreground">
-          프로필
-        </h2>
-        <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">수정은 준비 중</span>
+    <section aria-labelledby="settings-profile" className={surface}>
+      <SectionHead id="settings-profile" title="프로필" />
+      <form onSubmit={save} noValidate className="flex flex-col gap-3 px-5 py-4 text-sm">
+        <label htmlFor="settings-name" className="text-muted-foreground">
+          이름
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="settings-name"
+            name="name"
+            autoComplete="name"
+            maxLength={NAME_MAX}
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value)
+              setError(null)
+            }}
+            disabled={user === null || pending}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "settings-name-error" : undefined}
+            className={fieldClass}
+          />
+          <button type="submit" disabled={pending} className={button("secondary")}>
+            {pending ? "저장 중…" : "이름 저장"}
+          </button>
+        </div>
+        {error && (
+          <p id="settings-name-error" role="alert" className="text-xs text-danger-700">
+            {error}
+          </p>
+        )}
+        <div className="flex items-center justify-between gap-4 border-t border-border pt-3">
+          <span className="text-muted-foreground">이메일</span>
+          <span className="min-w-0 truncate font-medium text-card-foreground">
+            {user?.email ?? <span aria-hidden="true" className="inline-block h-3.5 w-28 rounded bg-muted align-middle" />}
+          </span>
+        </div>
+      </form>
+    </section>
+  )
+}
+
+function PasswordChange() {
+  const [password, setPassword] = useState("")
+  const [confirm, setConfirm] = useState("")
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<{ field: "password" | "confirm" | "form"; text: string } | null>(null)
+
+  const save = async (e: FormEvent) => {
+    e.preventDefault()
+    if (pending) return
+    if (!password) {
+      setError({ field: "password", text: "새 비밀번호를 입력해 주세요." })
+      return
+    }
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError({ field: "password", text: `새 비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 해요.` })
+      return
+    }
+    if (confirm !== password) {
+      setError({ field: "confirm", text: "새 비밀번호가 서로 달라요. 한 번 더 같게 입력해 주세요." })
+      return
+    }
+    setPending(true)
+    setError(null)
+    const result = await updatePassword(password)
+    setPending(false)
+    if (result.ok) {
+      setPassword("")
+      setConfirm("")
+      toast.success("비밀번호를 바꿨어요.")
+    } else setError({ field: "form", text: result.message })
+  }
+
+  return (
+    <section aria-labelledby="settings-password" className={surface}>
+      <SectionHead id="settings-password" title="비밀번호 바꾸기" />
+      <form onSubmit={save} noValidate className="grid gap-3 px-5 py-4 text-sm sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5 text-muted-foreground">
+          새 비밀번호
+          <input
+            type="password"
+            name="new-password"
+            autoComplete="new-password"
+            placeholder={`${MIN_PASSWORD_LENGTH}자 이상`}
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value)
+              setError(null)
+            }}
+            disabled={pending}
+            aria-invalid={error?.field === "password" ? true : undefined}
+            className={fieldClass}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-muted-foreground">
+          새 비밀번호 확인
+          <input
+            type="password"
+            name="confirm-password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(e) => {
+              setConfirm(e.target.value)
+              setError(null)
+            }}
+            disabled={pending}
+            aria-invalid={error?.field === "confirm" ? true : undefined}
+            className={fieldClass}
+          />
+        </label>
+        {error && (
+          <p role="alert" className="text-xs text-danger-700 sm:col-span-2">
+            {error.text}
+          </p>
+        )}
+        <div className="sm:col-span-2">
+          <button type="submit" disabled={pending} className={button("secondary")}>
+            {pending ? "바꾸는 중…" : "비밀번호 바꾸기"}
+          </button>
+        </div>
+      </form>
+    </section>
+  )
+}
+
+// Last on the page: leaving the account comes after everything about it.
+export function AccountSection() {
+  const [pending, setPending] = useState(false)
+  const logout = async () => {
+    setPending(true)
+    const result = await signOut()
+    if (!result.ok) {
+      setPending(false)
+      toast.error("로그아웃하지 못했어요", { description: result.message })
+      return
+    }
+    // Full page load so nothing of this account stays in memory or in the router cache (same as the sidebar).
+    window.location.replace("/login")
+  }
+  return (
+    <section aria-labelledby="settings-account" className={surface}>
+      <SectionHead id="settings-account" title="계정" />
+      <div className="flex items-center justify-between gap-4 px-5 py-4 text-sm">
+        <span className="text-muted-foreground">이 기기에서 로그아웃해요. 저장 중인 내용은 먼저 저장돼요.</span>
+        <button type="button" onClick={() => void logout()} disabled={pending} className={button("secondary")}>
+          <LogOut aria-hidden="true" />
+          {pending ? "로그아웃 중…" : "로그아웃"}
+        </button>
       </div>
-      <dl className="divide-y divide-border">
-        {rows.map((row) => (
-          <div key={row.label} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
-            <dt className="text-muted-foreground">{row.label}</dt>
-            <dd className="min-w-0 truncate font-medium text-card-foreground">
-              {row.value ?? <span aria-hidden="true" className="inline-block h-3.5 w-28 rounded bg-muted align-middle" />}
-            </dd>
-          </div>
-        ))}
-      </dl>
     </section>
   )
 }

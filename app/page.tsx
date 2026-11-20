@@ -4,7 +4,7 @@ import { PageHeader, PageShell } from "@/components/page-shell"
 import { SessionIndicator, SessionTimerCard } from "@/components/study-session/session-timer"
 import { TodayAgenda } from "@/components/learning-os/today-agenda"
 import { WeeklyStats } from "@/components/learning-os/weekly-stats"
-import { TodayTimetable } from "@/components/learning-os/today-timetable"
+import { StudyCalendar } from "@/components/learning-os/study-calendar"
 import { useTodayLabel } from "@/hooks/use-today"
 import { DataStatusNotice } from "@/components/data-status-notice"
 
@@ -15,7 +15,7 @@ export default function DashboardPage() {
   return (
     <PageShell width="wide">
       {/* No count line under the title: every count it gave is the first thing in a section below (2026-11-15). */}
-      <PageHeader eyebrow={todayLabel} title="오늘의 학습 현황" actions={<SessionIndicator />} />
+      <PageHeader eyebrow={todayLabel} title="오늘" actions={<SessionIndicator />} />
       <DataStatusNotice />
 
       <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
@@ -25,9 +25,9 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex min-w-0 flex-col gap-8">
-          {/* Today, then this week in one line. 오늘의 기록 is on 학습 기록 and the five-week calendar on 학습 분석
-              (UI 개선 1번 ③, 2026-11-18): home keeps what to do now. */}
-          <TodayTimetable />
+          {/* 시간표 [일 | 주 | 월]: today, the week, and the month with D-days in one card (D-44); then this week in one
+              line. 오늘의 기록 is on 학습 기록 (UI 개선 1번 ③). */}
+          <StudyCalendar />
           <WeeklyStats />
         </div>
       </div>

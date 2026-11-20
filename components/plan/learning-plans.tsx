@@ -1,10 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import { Plus } from "lucide-react"
+import { Plus, X } from "lucide-react"
 import { useTodayISO } from "@/hooks/use-today"
-import { addDays, todayISO } from "@/lib/study-pages"
-import { addPlan, decodeTarget, encodeTarget, removePlan, usePlanGoalsReady, usePlans } from "@/lib/plans"
+import { addDays, formatDuration, todayISO } from "@/lib/study-pages"
+import {
+  addPlan,
+  decodeTarget,
+  encodeTarget,
+  removePlan,
+  updatePlan,
+  usePlanGoalsReady,
+  usePlans,
+  usePlanSlotsReady,
+  type LearningPlan,
+  type PlanSlot,
+} from "@/lib/plans"
+import { button } from "@/components/ui-styles"
 import { groupPlans, type ActivePlan } from "@/lib/study-stats"
 import { useWorkspace, type WorkspaceState } from "@/lib/workspace"
 import { PlanCard } from "@/components/plan/plan-card"
@@ -41,7 +53,7 @@ export function LearningPlans({ initialSubjectId }: { initialSubjectId?: string 
             <PlanGrid items={groups.active} />
           ) : (
             <p className={emptyState}>
-              {plans.length === 0 ? "아직 만든 계획이 없어요. 기간과 목표를 정해 두면 홈에서 진행 상황을 보여 줘요." : "지금 진행 중인 계획이 없어요."}
+              {plans.length === 0 ? "아직 만든 계획이 없어요. 기간과 목표를 정해 두면 오늘 화면에서 진행 상황을 보여 줘요." : "지금 진행 중인 계획이 없어요."}
             </p>
           )}
         </section>
@@ -62,14 +74,36 @@ function PlanGroup({ title, items }: { title: string; items: ActivePlan[] }) {
 }
 
 function PlanGrid({ items }: { items: ActivePlan[] }) {
+  const workspace = useWorkspace()
   // Removing a plan can't be undone, so it asks first (same dialog as pages and records).
   const [removing, setRemoving] = useState<ActivePlan["plan"] | null>(null)
+  // 계획 고치기 (2026-11-19): the form opens in place of the plan's row.
+  const [editing, setEditing] = useState<string | null>(null)
   return (
     <>
       <ul className="divide-y divide-border border-y border-border">
-        {items.map((item) => (
-          <PlanCard key={item.plan.id} item={item} onRemove={() => setRemoving(item.plan)} />
-        ))}
+        {items.map((item) =>
+          editing === item.plan.id ? (
+            <li key={item.plan.id} className="py-4">
+              <PlanForm
+                workspace={workspace}
+                editing={item.plan}
+                onClose={() => {
+                  setEditing(null)
+                  // The form is gone: keyboard focus goes back to this plan's edit button.
+                  setTimeout(() => document.getElementById(`plan-edit-${item.plan.id}`)?.focus(), 0)
+                }}
+              />
+            </li>
+          ) : (
+            <PlanCard
+              key={item.plan.id}
+              item={item}
+              onEdit={() => setEditing(item.plan.id)}
+              onRemove={() => setRemoving(item.plan)}
+            />
+          ),
+        )}
       </ul>
       <ConfirmDeleteModal
         open={removing !== null}
@@ -86,47 +120,98 @@ function PlanGrid({ items }: { items: ActivePlan[] }) {
   )
 }
 
+const DAY_NAMES = ["월", "화", "수", "목", "금", "토", "일"]
+const DURATIONS = [30, 60, 90, 120, 150, 180, 240]
+
+type SlotDraft = { key: string; pageId: string; days: number[]; start: string; duration: number }
+
+const toClock = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`
+const fromClock = (value: string) => {
+  const [h, m] = value.split(":").map(Number)
+  return Number.isInteger(h) && Number.isInteger(m) ? h * 60 + m : null
+}
+
 function PlanForm({
   workspace,
   initialSubjectId,
+  editing,
   onClose,
 }: {
   workspace: WorkspaceState
   initialSubjectId?: string
+  // 계획 고치기: the plan to change (the form starts with its values and saves over it).
+  editing?: LearningPlan
   onClose: () => void
 }) {
   // Opened from 학습 분석 for one subject: that subject is the target and names the plan. An unknown id (deleted
   // subject, stale link) falls back to 전체 학습.
   const preset = workspace.groups.find((g) => g.kind === "subject" && g.id === initialSubjectId)
-  const [title, setTitle] = useState(preset ? `${preset.name} 다시 보기` : "")
-  const [target, setTarget] = useState(preset ? encodeTarget({ scope: "subject", subjectId: preset.id }) : "all")
-  const [startDate, setStartDate] = useState(() => todayISO())
-  const [endDate, setEndDate] = useState(() => addDays(todayISO(), 6))
-  const [goal, setGoal] = useState("")
-  const [goalHours, setGoalHours] = useState("")
+  const [title, setTitle] = useState(editing?.title ?? (preset ? `${preset.name} 다시 보기` : ""))
+  const [target, setTarget] = useState(
+    editing ? encodeTarget(editing.target) : preset ? encodeTarget({ scope: "subject", subjectId: preset.id }) : "all",
+  )
+  const [startDate, setStartDate] = useState(() => editing?.startDate ?? todayISO())
+  const [endDate, setEndDate] = useState(() => editing?.endDate ?? addDays(todayISO(), 6))
+  const [goal, setGoal] = useState(editing?.goal ?? "")
+  const [goalHours, setGoalHours] = useState(editing?.goalMinutes ? String(editing.goalMinutes / 60) : "")
   const goalsReady = usePlanGoalsReady()
+  const slotsReady = usePlanSlotsReady()
   const subjects = workspace.groups.filter((g) => g.kind === "subject")
+  const pages = workspace.pages
+  const [slots, setSlots] = useState<SlotDraft[]>(() =>
+    (editing?.slots ?? []).map((s, i) => ({ key: `s${i}`, pageId: s.pageId, days: s.days, start: toClock(s.startMin), duration: s.durationMin })),
+  )
+  const [slotError, setSlotError] = useState<string | null>(null)
+
+  // A new time row starts on the plan's own note, else the first note.
+  const addSlot = () => {
+    const decoded = decodeTarget(target)
+    const pageId = decoded.scope === "page" ? decoded.pageId : (pages[0]?.id ?? "")
+    setSlots((list) => [...list, { key: `n${Date.now()}`, pageId, days: [], start: "19:00", duration: 60 }])
+    setSlotError(null)
+  }
+  const patchSlot = (key: string, patch: Partial<SlotDraft>) => {
+    setSlots((list) => list.map((s) => (s.key === key ? { ...s, ...patch } : s)))
+    setSlotError(null)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
-    addPlan({
+    const cleanSlots: PlanSlot[] = []
+    for (const s of slots) {
+      const startMin = fromClock(s.start)
+      if (!s.pageId || s.days.length === 0 || startMin === null) {
+        setSlotError("공부할 시각마다 노트, 요일, 시작 시각을 정해 주세요.")
+        // Focus the row to fix (web-design-guidelines: focus the first error on submit).
+        document.querySelector<HTMLElement>(`[data-slot="${s.key}"] ${s.days.length === 0 ? "button" : "input, select"}`)?.focus()
+        return
+      }
+      cleanSlots.push({ pageId: s.pageId, days: [...s.days].sort(), startMin, durationMin: s.duration })
+    }
+    const fields = {
       title: title.trim(),
       target: decodeTarget(target),
       startDate,
       endDate: endDate < startDate ? startDate : endDate,
       goal: goal.trim(),
       ...(goalsReady && Number(goalHours) > 0 ? { goalMinutes: Math.round(Number(goalHours) * 60) } : {}),
-    })
+      ...(slotsReady && cleanSlots.length > 0 ? { slots: cleanSlots } : {}),
+    }
+    if (editing) updatePlan(editing.id, fields)
+    else addPlan(fields)
     onClose()
   }
 
   const fieldClass =
     "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-action-500"
+  const smallField =
+    "h-9 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none transition-colors focus:ring-2 focus:ring-action-500"
 
   return (
     <form
       onSubmit={handleSubmit}
+      aria-label={editing ? `${editing.title} 계획 고치기` : "새 계획"}
       className="grid gap-4 rounded-xl border border-action-200 bg-card p-5 sm:grid-cols-2"
     >
       <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
@@ -152,7 +237,7 @@ function PlanForm({
             ))}
           </optgroup>
           <optgroup label="노트">
-            {workspace.pages.map((p) => (
+            {pages.map((p) => (
               <option key={p.id} value={encodeTarget({ scope: "page", pageId: p.id })}>
                 {p.title || "제목 없음"}
               </option>
@@ -204,19 +289,100 @@ function PlanForm({
           className={fieldClass}
         />
       </label>
+
+      {/* 공부할 시각 (D-46): note + weekdays + time. Each one shows on the timetable on those days while the plan runs. */}
+      {slotsReady && (
+        <fieldset className="flex flex-col gap-2 sm:col-span-2">
+          <legend className="text-sm font-medium text-card-foreground">공부할 시각 (선택)</legend>
+          <p className="text-xs text-muted-foreground">
+            노트마다 요일과 시각을 정하면, 계획 기간 동안 그 요일 시간표에 들어가요.
+          </p>
+          {slots.length > 0 && (
+            <ul className="flex flex-col gap-2">
+              {slots.map((slot, i) => (
+                <li key={slot.key} data-slot={slot.key} className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/50 p-2">
+                  <select
+                    aria-label={`${i + 1}번째 시각의 노트`}
+                    value={slot.pageId}
+                    onChange={(e) => patchSlot(slot.key, { pageId: e.target.value })}
+                    className={`${smallField} min-w-0 flex-1 basis-40`}
+                  >
+                    {pages.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.title || "제목 없음"}
+                      </option>
+                    ))}
+                  </select>
+                  <div role="group" aria-label={`${i + 1}번째 시각의 요일`} className="flex gap-0.5">
+                    {DAY_NAMES.map((name, d) => {
+                      const on = slot.days.includes(d)
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() => patchSlot(slot.key, { days: on ? slot.days.filter((x) => x !== d) : [...slot.days, d] })}
+                          className={`touch-hit size-8 rounded-md text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 ${
+                            on ? "bg-action-600 text-action-foreground" : "bg-background text-muted-foreground ring-1 ring-inset ring-border hover:text-foreground"
+                          }`}
+                        >
+                          {name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <input
+                    type="time"
+                    step={600}
+                    aria-label={`${i + 1}번째 시각의 시작`}
+                    value={slot.start}
+                    onChange={(e) => patchSlot(slot.key, { start: e.target.value })}
+                    className={`${smallField} tabular-nums`}
+                  />
+                  <select
+                    aria-label={`${i + 1}번째 시각의 길이`}
+                    value={slot.duration}
+                    onChange={(e) => patchSlot(slot.key, { duration: Number(e.target.value) })}
+                    className={smallField}
+                  >
+                    {DURATIONS.map((m) => (
+                      <option key={m} value={m}>
+                        {formatDuration(m)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setSlots((list) => list.filter((s) => s.key !== slot.key))}
+                    aria-label={`${i + 1}번째 시각 빼기`}
+                    className={button("ghost", "icon-sm")}
+                  >
+                    <X aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div>
+            <button type="button" onClick={addSlot} disabled={pages.length === 0} className={button("secondary", "sm")}>
+              <Plus aria-hidden="true" />
+              시각 추가
+            </button>
+          </div>
+          {slotError && (
+            <p role="alert" className="text-xs text-danger-700">
+              {slotError}
+            </p>
+          )}
+        </fieldset>
+      )}
+
       <div className="flex justify-end gap-2 sm:col-span-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className={secondaryButton}
-        >
+        <button type="button" onClick={onClose} className={secondaryButton}>
           취소
         </button>
-        <button
-          type="submit"
-          className={primaryButton}
-        >
-          계획 만들기
+        <button type="submit" className={primaryButton}>
+          {editing ? "고친 내용 저장" : "계획 만들기"}
         </button>
       </div>
     </form>

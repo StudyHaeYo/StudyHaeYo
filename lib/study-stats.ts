@@ -362,6 +362,33 @@ export function studyCalendar(workspace: WorkspaceState, today: string, weeks = 
   )
 }
 
+// One calendar month (month = "YYYY-MM") laid out like 학습 달력: 월~일 across, a week per row. Cells before the 1st
+// and after the last day are null. Used by 오늘 시간표 [월] (D-44).
+export function studyMonth(workspace: WorkspaceState, month: string, today: string): (StudyDay | null)[][] {
+  const minutes = new Map<string, number>()
+  for (const record of allRecords(workspace)) {
+    minutes.set(record.date, (minutes.get(record.date) ?? 0) + record.durationMinutes)
+  }
+  const first = `${month}-01`
+  const [y, m] = month.split("-").map(Number)
+  const length = new Date(y, m, 0).getDate()
+  const lead = daysBetween(weekStart(first), first) // 0 when the 1st is a Monday
+  const cells: (StudyDay | null)[] = Array.from({ length: lead }, () => null)
+  for (let d = 0; d < length; d++) {
+    const date = addDays(first, d)
+    cells.push({ date, minutes: minutes.get(date) ?? 0, future: date > today })
+  }
+  while (cells.length % 7 !== 0) cells.push(null)
+  return Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7))
+}
+
+// "2026-11" → "2026-12" (n = 1) or "2026-10" (n = -1).
+export function shiftMonth(month: string, n: number) {
+  const [y, m] = month.split("-").map(Number)
+  const d = new Date(y, m - 1 + n, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+}
+
 export interface StudyStreak {
   // Consecutive days with a study record, ending today (or yesterday if today has none yet).
   current: number

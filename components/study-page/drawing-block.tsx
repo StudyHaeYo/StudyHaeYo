@@ -146,7 +146,7 @@ export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActi
           onRedo={redo}
           onClear={clearAll}
           canClear={block.strokes.length > 0}
-          className="sticky top-16 z-[5] self-start rounded-lg border border-border bg-card p-1"
+          className="sticky top-16 z-[5] self-start rounded-lg border border-border bg-card p-1 md:top-[6.25rem]"
         />
       )}
 
