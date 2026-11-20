@@ -206,14 +206,14 @@ export function AccountSection({ deletable }: { deletable: boolean }) {
   return (
     <section aria-labelledby="settings-account" className={surface}>
       <SectionHead id="settings-account" title="계정" />
-      <div className="flex items-center justify-between gap-4 px-5 py-4 text-sm">
-        <span className="text-muted-foreground">이 기기에서 로그아웃해요. 저장 중인 내용은 먼저 저장돼요.</span>
+      {/* Two buttons, no sentences: what 탈퇴 removes is said in its confirm dialog. 탈퇴 sits apart, at the far end. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 text-sm">
         <button type="button" onClick={() => void logout()} disabled={pending} className={button("secondary")}>
           <LogOut aria-hidden="true" />
           {pending ? "로그아웃 중…" : "로그아웃"}
         </button>
+        {deletable && <DeleteAccount />}
       </div>
-      {deletable && <DeleteAccount />}
     </section>
   )
 }
@@ -226,14 +226,13 @@ function DeleteAccount() {
     triggerRef.current?.focus()
   }
   return (
-    <div className="flex items-center justify-between gap-4 border-t border-border px-5 py-4 text-sm">
-      <span className="text-muted-foreground">탈퇴하면 이 계정의 노트와 학습 기록이 모두 지워져요.</span>
+    <>
       <button ref={triggerRef} type="button" onClick={() => setOpen(true)} className={button("danger")}>
         <UserX aria-hidden="true" />
         탈퇴하기
       </button>
       {open && <DeleteAccountDialog onClose={close} />}
-    </div>
+    </>
   )
 }
 
