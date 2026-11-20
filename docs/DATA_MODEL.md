@@ -51,6 +51,7 @@
 - `todo`(체크 목록): `checked`. 홈의 "오늘의 체크리스트"(`todos` 테이블)와는 따로다
 - `toggle`(토글): `text`가 제목, `body`가 접히는 내용(여러 줄 글), `open`이 펼침 상태. 검색과 AI는 `body`도 읽는다(`textBlockWords`)
   - 오답 노트에서는 토글 하나가 문제 하나다. `result`(right｜wrong)와 `triedOn`(마지막으로 푼 날)을 둔다. `result`가 없으면 틀린 문제로 본다
+  - `attempts`(선택, D-39): `{ on: "YYYY-MM-DD", result: "right"｜"wrong" }[]`, 오래된 것부터, 최근 10개까지. 시도를 남길 때마다 `result` · `triedOn`도 마지막 시도로 같이 바꾼다(예전 빌드 호환). 문제가 "맞힘"인지는 저장하지 않고 그때 계산한다: 최근부터 틀림 전까지의 맞힘이 서로 다른 날 2번 이상. `attempts`가 없고 `result`가 `right`인 예전 문제는 맞힘
   - 오답 노트 문제(D-35, 둘 다 선택): `myAnswer`(내 답 한 줄, 다시 풀기에서 가리지 않음), `reasons`(틀린 이유 여러 개: concept · careless · misread · time). 읽는 곳: 오답 노트 위쪽 줄의 이유별 수(`reasonSummary`), 접힌 문제 아래 줄, 검색 · AI(`textBlockWords`)
 - `quote`(인용), `callout`(💡 강조 박스)은 모양만 다르다
 - `cue`(단서, 선택, D-35): 강의 노트에서 블록 왼쪽 여백에 다는 질문이나 키워드(한 줄, 80자까지). 블록에 붙어 있어서 블록을 옮기면 같이 가고, 블록 종류를 바꿔도 남는다. 다른 종류 노트에서는 보이지 않을 뿐 지우지 않는다(강의 노트로 되돌리면 다시 보인다). 읽는 곳: 강의 노트 복습(R3), 검색 · AI(`textBlockWords`)
@@ -157,7 +158,7 @@ User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유�
 
 - **최신 기록**: `date` 내림차순(같으면 `id` 내림차순)의 첫 기록
 - **understanding** = 최신 기록의 값 → 없으면 null
-- **nextReviewAt** = 최신 기록의 `date` + `reviewOffsetDays[understanding]`일. 기록이 없으면 null. 오답 노트의 문제가 모두 맞힘이면 null(다 풀었으니 복습할 것이 없다). 기록이 없는 오답 노트에 틀린 문제가 있으면 만든 날(`createdAt`) + 1일(D-32, AI 채점으로 만든 오답 노트가 홈에 나오도록)
+- **nextReviewAt** = 최신 기록의 `date` + `reviewOffsetDays[understanding]`일. 기록이 없으면 null. 오답 노트의 문제가 모두 맞힘(D-39: 다른 날 두 번 연속)이면 null(다 풀었으니 복습할 것이 없다). 기록이 없는 오답 노트에 틀린 문제가 있으면 만든 날(`createdAt`) + 1일(D-32, AI 채점으로 만든 오답 노트가 홈에 나오도록)
 - **reviewOffsetDays** = 이해도 1→1일, 2→2일, 3→4일, 4→7일, 5→14일 (`lib/learning-os.ts`). 값이 없으면 4일
 - 이해도를 말로 보일 때는 어디서나 `understandingLevels` 한 벌만 쓴다(기록 창 · 학습 마침 · 노트 끝, D-31)
 - **status** = 기록이 없을 때 "시작 전", `nextReviewAt <= 오늘`이면 "복습 필요", 이해도 5면 "완료", 그 외 "학습 중"
