@@ -298,7 +298,7 @@ export function planProgress(workspace: WorkspaceState, plan: LearningPlan, toda
     const page = workspace.pages.find((p) => p.id === target.pageId)
     pages = page ? [page, ...descendantPages(workspace, page.id)] : []
     records = pages.flatMap((p) => p.studyRecords)
-    targetLabel = page ? page.title || "제목 없음" : "삭제된 페이지"
+    targetLabel = page ? page.title || "제목 없음" : "삭제된 노트"
     targetHref = page ? `/record/${page.id}` : null
   }
   const phase: PlanPhase = today < plan.startDate ? "upcoming" : today > plan.endDate ? "ended" : "active"

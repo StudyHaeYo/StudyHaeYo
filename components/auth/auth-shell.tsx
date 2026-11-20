@@ -13,7 +13,7 @@ export function AuthShell({
   footer: React.ReactNode
 }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10 text-foreground">
+    <main id="main" tabIndex={-1} className="flex min-h-screen outline-none items-center justify-center bg-background px-4 py-10 text-foreground">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Link href="/" className="flex items-center justify-center gap-2 self-center rounded-lg">
           <span className="flex size-8 items-center justify-center rounded-lg bg-action-600 text-action-foreground">

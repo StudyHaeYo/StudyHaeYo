@@ -50,7 +50,7 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
   const weekMinutes = week.reduce((sum, e) => sum + e.record.durationMinutes, 0)
 
   const chip = (active: boolean) =>
-    `inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-3 text-sm transition-colors ${
+    `touch-hit inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-3 text-sm transition-colors ${
       active ? "border-foreground bg-foreground font-semibold text-background" : "border-border bg-background text-foreground hover:bg-accent"
     }`
 

@@ -193,7 +193,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
           <div className="flex flex-col gap-3">
             <p className="text-sm leading-relaxed text-muted-foreground">
               {hasBody || picked.length > 0
-                ? "이 페이지 내용으로 정리하거나 문제를 만들어요. 문제를 풀고 답을 보내면 채점해요."
+                ? "이 노트 내용으로 정리하거나 문제를 만들어요. 문제를 풀고 답을 보내면 채점해요."
                 : topic
                   ? "아직 본문이 없어서 노트 내용 대신 일반 지식으로 만들어요."
                   : "공부할 주제나 궁금한 것을 보내 보세요. 노트 제목을 적으면 확인 문제도 만들어요."}
@@ -534,7 +534,7 @@ function AssistantMessage({
             onClick={() => {
               onAddConfusions(confusions)
               setConfusionsAdded(true)
-              toast.success(`헷갈린 점 ${confusions.length}개를 페이지에 추가했어요`)
+              toast.success(`헷갈린 점 ${confusions.length}개를 노트에 추가했어요`)
             }}
             className={button("ghost", "sm", "px-2.5 text-attention-700 hover:bg-attention-50 hover:text-attention-700")}
           >

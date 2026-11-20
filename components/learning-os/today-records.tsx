@@ -36,7 +36,7 @@ export function TodayRecords() {
         <div className="py-3">
           <p className="text-sm text-muted-foreground">오늘 아직 학습 기록이 없어요.</p>
           <p className="mt-0.5 text-pretty text-xs text-muted-foreground">
-            공부를 마치고 [+ 기록]으로 남기면 여기에 보여요. 수업 · 문제집처럼 앱 밖에서 한 공부도 남길 수 있어요.
+            공부를 마치고 [기록 남기기]로 남기면 여기에 보여요. 수업 · 문제집처럼 앱 밖에서 한 공부도 남길 수 있어요.
           </p>
         </div>
       ) : (

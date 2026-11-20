@@ -13,7 +13,7 @@ export default async function NewPage({
     <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <Sidebar />
 
-      <main className="min-w-0 flex-1 overflow-y-auto px-6 py-12 lg:px-10">
+      <main id="main" tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto outline-none px-6 py-12 lg:px-10">
         <CreatePageRedirect key={contextParentId ?? "global"} parentId={contextParentId} />
       </main>
     </div>

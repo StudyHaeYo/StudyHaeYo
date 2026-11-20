@@ -152,6 +152,7 @@ export function GroupActionsMenu({
         open={confirmOpen}
         title={group.name}
         targetLabel={kindLabel}
+        undoable
         note={deleteNoteText(
           nested.length,
           plansInSubtree(workspace, group.id).length,

@@ -151,7 +151,7 @@ function PlanForm({
               </option>
             ))}
           </optgroup>
-          <optgroup label="페이지">
+          <optgroup label="노트">
             {workspace.pages.map((p) => (
               <option key={p.id} value={encodeTarget({ scope: "page", pageId: p.id })}>
                 {p.title || "제목 없음"}

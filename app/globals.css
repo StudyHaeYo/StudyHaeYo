@@ -316,3 +316,21 @@
     font-size: max(16px, 1em);
   }
 }
+
+/* Touch screens: a finger needs about 44px (WCAG 2.5.5, Apple HIG). `touch-hit` adds an invisible box at least 44px
+   wide and tall, centered on the control, so a 20px check box or a 32px bar button takes the tap without growing.
+   On a mouse nothing changes. Every `button()` (components/ui-styles.ts) has it; small controls outside it add it. */
+@utility touch-hit {
+  position: relative;
+  @media (pointer: coarse) {
+    &::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(100%, 44px);
+      height: max(100%, 44px);
+      transform: translate(-50%, -50%);
+    }
+  }
+}

@@ -20,11 +20,11 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
     <section aria-labelledby="records-title" className="flex flex-col gap-1">
       <SectionHeader
         id="records-title"
-        title="페이지 목록"
+        title="노트 목록"
         count={rows.length}
         action={
           <Link href={newPageHref} className={secondaryButton}>
-            <Plus />새 페이지
+            <Plus />새 노트
           </Link>
         }
       />
@@ -70,9 +70,9 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
         </div>
       ) : (
         <div className={`${emptyState} flex flex-col items-center gap-3`}>
-          <p>이 과목에는 아직 페이지가 없어요.</p>
+          <p>이 과목에는 아직 노트가 없어요.</p>
           <Link href={newPageHref} className={secondaryButton}>
-            <Plus />이 과목에 새 페이지 만들기
+            <Plus />이 과목에 새 노트 만들기
           </Link>
         </div>
       )}

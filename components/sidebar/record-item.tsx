@@ -94,7 +94,7 @@ export function RecordItem({
           <input
             autoFocus
             value={draft}
-            aria-label="페이지 이름"
+            aria-label="노트 이름"
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commitRename}
             onKeyDown={(e) => {
@@ -141,8 +141,8 @@ export function RecordItem({
           {addChildHref && (
             <Link
               href={addChildHref}
-              aria-label={`${record.title}에 하위 페이지`}
-              title="하위 페이지 추가"
+              aria-label={`${record.title}에 하위 노트`}
+              title="하위 노트 추가"
               className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 [@media(hover:none)]:opacity-100 transition-opacity hover:bg-border hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
             >
               <Plus className="size-3.5" />
@@ -168,7 +168,7 @@ export function RecordItem({
                 {addChildHref && (
                   <Link role="menuitem" href={addChildHref} className={`${menuItemClass} text-foreground`} onClick={close}>
                     <FilePlus className="size-4 text-muted-foreground" />
-                    하위 페이지 추가
+                    하위 노트 추가
                   </Link>
                 )}
                 {onAddSubgroup && (

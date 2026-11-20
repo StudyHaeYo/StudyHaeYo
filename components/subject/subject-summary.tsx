@@ -16,7 +16,7 @@ export function SubjectSummaryPanel({ subjectId }: { subjectId: string }) {
   const summary = subjectSummary(useWorkspace(), subjectId)
 
   const items = [
-    { label: "페이지", value: `${summary.pageCount}개` },
+    { label: "노트", value: `${summary.pageCount}개` },
     { label: "총 학습 시간", value: formatMinutes(summary.totalMinutes) },
     {
       label: "평균 이해도",

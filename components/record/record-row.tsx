@@ -68,7 +68,7 @@ export function RecordRow({
           <button
             type="button"
             onClick={() => setLinking(true)}
-            className="inline-flex h-6 items-center gap-1 rounded-md border border-dashed border-border px-2 font-semibold text-action-700 transition-colors hover:border-action-300 hover:bg-action-50"
+            className="touch-hit inline-flex h-6 items-center gap-1 rounded-md border border-dashed border-border px-2 font-semibold text-action-700 transition-colors hover:border-action-300 hover:bg-action-50"
           >
             <FilePlus2 className="size-3.5" aria-hidden="true" />
             복습 노트 만들기
@@ -100,7 +100,7 @@ export function RecordRow({
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex size-8 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100 aria-expanded:opacity-100 [@media(hover:none)]:opacity-100"
+            className="touch-hit flex size-8 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100 aria-expanded:opacity-100 [@media(hover:none)]:opacity-100"
           >
             <MoreHorizontal className="size-4" />
           </button>

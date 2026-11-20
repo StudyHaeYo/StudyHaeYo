@@ -85,7 +85,7 @@ export function PlanCard({
               type="button"
               onClick={onRemove}
               aria-label={`${plan.title} 계획 삭제`}
-              className="-mr-1.5 flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-60"
+              className="touch-hit -mr-1.5 flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-60"
             >
               <X className="size-3.5" />
             </button>

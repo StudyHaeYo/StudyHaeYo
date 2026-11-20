@@ -93,7 +93,7 @@ export function ExamRecheck({ examId, scope, examDate, today }: { examId: string
                           aria-label={item.resolved ? `${item.text} 해결 취소` : `${item.text} 해결함`}
                           title={item.resolved ? "해결 취소" : "해결했으면 눌러요 (원래 노트에도 해결로 표시돼요)"}
                           onClick={() => setChecked(page.id, item.id, !item.resolved)}
-                          className={`mt-[3px] flex size-[18px] shrink-0 items-center justify-center rounded-full border transition-colors ${
+                          className={`touch-hit mt-[3px] flex size-[18px] shrink-0 items-center justify-center rounded-full border transition-colors ${
                             item.resolved
                               ? "border-muted-foreground/40 bg-muted-foreground/40 text-white"
                               : "border-attention-500 text-attention-700 hover:bg-attention-50"

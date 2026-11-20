@@ -75,7 +75,7 @@ export function DataStatusNotice() {
             <Step n={2}>
               정리할 노트가 필요하면 종류(강의 · 오답 · 시험)를 골라 노트를 만들어요.{" "}
               <Link href="/new" className={stepLink}>
-                새 페이지
+                새 노트
               </Link>
             </Step>
           </>
@@ -84,7 +84,7 @@ export function DataStatusNotice() {
             <Step n={1}>
               공부할 내용으로 노트를 만들어요. 종류(강의 · 오답 · 시험)를 고르면 맞는 칸이 생겨요.{" "}
               <Link href="/new" className={stepLink}>
-                새 페이지
+                새 노트
               </Link>
             </Step>
             <Step n={2}>공부를 마치면 노트 위쪽 [기록]에서 시간과 이해도를 남겨요.</Step>
@@ -105,7 +105,7 @@ export function DataStatusNotice() {
             {importing && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
             {importing ? "가져오는 중…" : "예시 데이터 가져오기"}
           </button>
-          . 내 계정에 저장되고, 일반 페이지처럼 고치거나 지울 수 있어요.
+          . 내 계정에 저장되고, 다른 노트처럼 고치거나 지울 수 있어요.
         </p>
       )}
     </section>
