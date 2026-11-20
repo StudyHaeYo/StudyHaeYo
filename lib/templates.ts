@@ -37,7 +37,7 @@ export const pageStarters: PageStarter[] = [
   {
     id: "blank",
     name: "빈 노트",
-    tagline: "아무것도 없는 노트. / 로 원하는 블록을 넣어요",
+    tagline: "아무것도 없는 노트 · / 로 블록 추가",
     icon: FilePlus,
     templateId: "blank",
     createBlocks: () => [t("p")],
@@ -82,7 +82,7 @@ export const pageStarters: PageStarter[] = [
 // A faint hint on the empty line right under a template heading, so the note shows where to write without text
 // to delete first. Typing on the line hides it.
 export const starterSectionHints: Record<string, string> = {
-  필기: "수업을 들으며 적어요",
+  필기: "수업을 들으며 필기",
   "시험 직전 체크": "시험 전에 확인할 것",
   "시험 당일 챙길 것": "신분증, 계산기처럼 챙길 것",
 }
@@ -103,10 +103,10 @@ export interface NoteKindOption {
 }
 
 export const noteKinds: NoteKindOption[] = [
-  { kind: "lecture", starterId: "lecture", name: "강의 노트", does: "필기 옆에 질문을 달고, 질문만 보며 복습해요", icon: Presentation },
-  { kind: "wrong-answers", starterId: "wrong-answers", name: "오답 노트", does: "내 답은 두고 정답만 가려 다시 풀어요", icon: XCircle },
-  { kind: "exam", starterId: "exam", name: "시험 정리", does: "시험 범위 노트를 모아 얼마나 확인했는지 봐요", icon: ClipboardCheck },
-  { kind: null, starterId: "blank", name: "빈 노트", does: "모양 없이 자유롭게 써요", icon: FileText },
+  { kind: "lecture", starterId: "lecture", name: "강의 노트", does: "필기 옆에 질문을 달고 질문만 보며 복습", icon: Presentation },
+  { kind: "wrong-answers", starterId: "wrong-answers", name: "오답 노트", does: "내 답은 두고 정답만 가려 다시 풀기", icon: XCircle },
+  { kind: "exam", starterId: "exam", name: "시험 정리", does: "시험 범위 노트를 모아 확인 상태 보기", icon: ClipboardCheck },
+  { kind: null, starterId: "blank", name: "빈 노트", does: "모양 없이 자유롭게", icon: FileText },
 ]
 
 export function noteKindOption(kind: PageKind | null) {

@@ -119,7 +119,7 @@ export async function loadUserData() {
   try {
     const { data, error } = await db().auth.getUser()
     if (seq !== loadSeq) return
-    if (error || !data.user) throw error ?? new Error("로그인 정보를 확인하지 못했어요.")
+    if (error || !data.user) throw error ?? new Error("로그인 정보를 확인하지 못했습니다.")
     const userId = data.user.id
     setCurrentUserId(userId)
 
@@ -201,7 +201,7 @@ function clearUserData() {
 }
 
 setWriteFailureHandler((error) => {
-  toast.error(`변경 내용을 저장하지 못했어요. 저장된 내용으로 다시 불러올게요. (${messageOf(error)})`)
+  toast.error(`변경 내용을 저장하지 못했습니다. 저장된 내용으로 다시 불러옵니다. (${messageOf(error)})`)
   void loadUserData()
 })
 

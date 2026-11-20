@@ -75,7 +75,7 @@ export function LectureMaterialPane({
         open && <PdfPages url={source.url} />
       ) : (
         <p className="p-4 text-sm text-muted-foreground">
-          {source.status === "missing" ? "파일을 찾지 못했어요. 본문에서 PDF를 다시 올려 주세요." : "불러오는 중…"}
+          {source.status === "missing" ? "파일을 찾지 못했습니다. 본문에서 PDF를 다시 올려 주세요." : "불러오는 중…"}
         </p>
       )}
       <button
@@ -125,7 +125,7 @@ function PdfPages({ url }: { url: string }) {
   return (
     <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto bg-muted/50 px-3 py-3">
       {error ? (
-        <p className="text-sm text-danger-600">PDF를 열지 못했어요.</p>
+        <p className="text-sm text-danger-600">PDF를 열지 못했습니다.</p>
       ) : !doc || width === 0 ? (
         <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />

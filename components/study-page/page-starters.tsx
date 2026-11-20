@@ -27,7 +27,7 @@ export function PageStarters({
   return (
     <section aria-labelledby="starters-heading" className="-mx-2 mt-5 print:hidden">
       <p id="starters-heading" className="px-2 pb-1 text-sm text-muted-foreground">
-        {kinds.length === 0 ? "비어 있는 노트예요" : hasKind ? "고르지 않고 바로 써도 돼요. 다른 종류로 시작하려면" : "그냥 쓰면 빈 노트가 돼요. 종류를 고르면 맞는 칸이 생겨요"}
+        {kinds.length === 0 ? "빈 노트" : hasKind ? "다른 종류로 시작" : "종류 고르기 · 그냥 쓰면 빈 노트"}
       </p>
       <ul>
         {kinds.map((k) => (
@@ -42,12 +42,12 @@ export function PageStarters({
           </li>
         ))}
         <li className={kinds.length > 0 ? "mt-1 border-t border-border pt-1" : ""}>
-          <button type="button" onClick={onAi} title="제목을 주제로 AI가 정리 노트나 문제를 만들어 줘요" className={row}>
+          <button type="button" onClick={onAi} title="제목을 주제로 AI가 정리 노트나 문제 작성" className={row}>
             <span className={`${icon} text-action-700`}>
               <Sparkles className="size-4" aria-hidden="true" />
             </span>
             <span className="w-20 shrink-0 text-sm font-medium text-action-700">AI로 채우기</span>
-            <span className="min-w-0 text-pretty text-sm text-muted-foreground sm:truncate">제목을 주제로 정리 노트를 만들어요</span>
+            <span className="min-w-0 text-pretty text-sm text-muted-foreground sm:truncate">제목을 주제로 정리 노트 작성</span>
           </button>
         </li>
       </ul>

@@ -63,7 +63,7 @@ export function PdfAnnotator({
         else setDoc(opened.doc)
       })
       .catch(() => {
-        if (!cancelled) setError("PDF를 열지 못했어요. 파일이 손상됐거나 PDF가 아닐 수 있어요.")
+        if (!cancelled) setError("PDF를 열지 못했습니다. 파일이 손상됐거나 PDF가 아닐 수 있습니다.")
       })
     return () => {
       cancelled = true
@@ -163,7 +163,7 @@ export function PdfAnnotator({
             <p className="truncate text-sm font-semibold text-foreground">{block.name}</p>
             <p className="text-xs text-muted-foreground">
               {doc ? `${currentPage} / ${doc.numPages}쪽` : "불러오는 중"}
-              {annotatedPages > 0 ? ` · 필기 ${annotatedPages}쪽` : ""} · 필기는 자동 저장돼요
+              {annotatedPages > 0 ? ` · 필기 ${annotatedPages}쪽` : ""} · 자동 저장
             </p>
           </div>
           <button
@@ -198,7 +198,7 @@ export function PdfAnnotator({
         ) : !doc || width === 0 ? (
           <p role="status" className="mt-10 flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-            PDF를 여는 중이에요…
+            PDF 여는 중…
           </p>
         ) : (
           <div className="mx-auto flex flex-col items-center gap-4" style={{ width }}>

@@ -193,10 +193,10 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
           <div className="flex flex-col gap-3">
             <p className="text-sm leading-relaxed text-muted-foreground">
               {hasBody || picked.length > 0
-                ? "이 노트 내용으로 정리하거나 문제를 만들어요. 문제를 풀고 답을 보내면 채점해요."
+                ? "이 노트 내용으로 정리 · 확인 문제 · 채점"
                 : topic
-                  ? "아직 본문이 없어서 노트 내용 대신 일반 지식으로 만들어요."
-                  : "공부할 주제나 궁금한 것을 보내 보세요. 노트 제목을 적으면 확인 문제도 만들어요."}
+                  ? "본문이 없어 일반 지식으로 작성"
+                  : "공부할 주제나 질문 입력"}
             </p>
             {(hasBody || picked.length > 0 || topic) && (
               <QuizStarter page={page} withPdf={picked.length > 0} hasBody={hasBody} onAsk={(prompt) => void send(prompt)} />
@@ -238,7 +238,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
         {pending && (
           <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-            {picked.length > 0 ? "PDF를 읽고 생각하는 중이에요…" : "생각하는 중이에요…"}
+            {picked.length > 0 ? "PDF 읽는 중…" : "생각하는 중…"}
           </p>
         )}
         {error && (
@@ -261,7 +261,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
                   disabled={!stored || pending}
                   aria-pressed={on}
                   onClick={() => togglePdf(block.id)}
-                  title={stored ? `질문할 때 "${block.name}"도 함께 보내요` : "저장되지 않은 PDF라 AI에 보낼 수 없어요. 다시 올려 주세요"}
+                  title={stored ? `질문할 때 "${block.name}"도 함께 보냄` : "저장되지 않은 PDF라 보낼 수 없음 · 다시 올려 주세요"}
                   className={`inline-flex max-w-48 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                     on
                       ? "border-action-300 bg-action-50 text-action-700"
@@ -289,7 +289,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
             }}
             rows={1}
             maxLength={2000}
-            placeholder={messages.length > 0 ? "답이나 질문을 보내세요 (예: 1번 ②, 2번 ④)" : "무엇을 도와줄까요?"}
+            placeholder={messages.length > 0 ? "답이나 질문 (예: 1번 ②, 2번 ④)" : "질문 입력…"}
             aria-label="AI에게 질문"
             className="max-h-40 min-h-9 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 [field-sizing:content]"
           />
@@ -302,7 +302,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
             <ArrowUp className="size-4" />
           </button>
         </form>
-        <p className="mt-1.5 text-xs text-muted-foreground">AI 답은 틀릴 수 있어요. 중요한 내용은 교재로 확인하세요.</p>
+        <p className="mt-1.5 text-xs text-muted-foreground">AI 답은 틀릴 수 있음 · 중요한 내용은 교재로 확인</p>
       </div>
     </aside>
   )
@@ -340,7 +340,7 @@ function QuizStarter({
           {`확인 문제 ${plan.total}개`}
         </h3>
         <p className="text-xs text-muted-foreground">
-          {`${basis}${plan.confusions > 0 ? ` + 헷갈린 점 ${plan.confusions}개` : ""}에 맞췄어요`}
+          {`${basis}${plan.confusions > 0 ? ` + 헷갈린 점 ${plan.confusions}개` : ""}에 맞춤`}
         </p>
       </div>
       <button
@@ -435,17 +435,17 @@ function AssistantMessage({
     )
     const id = result?.noteId ?? result?.mergedInto ?? null
     if (!result || !id) {
-      toast.error("오답 노트를 만들지 못했어요. 새로고침한 뒤 다시 시도해 주세요.")
+      toast.error("오답 노트를 만들지 못했습니다. 새로고침한 뒤 다시 시도해 주세요.")
       return
     }
     setWrongNoteId(id)
     // One line either way (D-39): a problem already in a 오답 노트 of this subject gets a wrong try, not a copy.
     const message =
       result.added > 0 && result.merged > 0
-        ? `새 오답 노트에 ${result.added}문제, 이미 있는 문제 ${result.merged}개에 틀림을 더했어요.`
+        ? `새 오답 노트에 ${result.added}문제, 이미 있는 문제 ${result.merged}개에 틀림을 더했습니다.`
         : result.added > 0
-          ? `틀린 ${result.added}문제로 오답 노트를 만들었어요. 내일 다시 풀기에 나와요.`
-          : `이미 있는 문제 ${result.merged}개에 틀림을 더했어요.`
+          ? `틀린 ${result.added}문제로 오답 노트를 만들었습니다. 내일 다시 풀기에 나옵니다.`
+          : `이미 있는 문제 ${result.merged}개에 틀림을 더했습니다.`
     toast.success(message, { action: { label: "열기", onClick: () => router.push(`/record/${id}`) } })
   }
 
@@ -453,15 +453,15 @@ function AssistantMessage({
     const pageBlocks = answerToPageBlocks(content)
     if (pageBlocks.length === 0) return
     onInsert([{ id: pageBlocks[0].id + "-h", type: "h3", text: "AI 정리" }, ...pageBlocks])
-    toast.success("본문 끝에 추가했어요")
+    toast.success("본문 끝에 추가했습니다")
   }
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(content)
-      toast.success("복사했어요")
+      toast.success("복사했습니다")
     } catch {
-      toast.error("복사하지 못했어요")
+      toast.error("복사하지 못했습니다")
     }
   }
 
@@ -540,7 +540,7 @@ function AssistantMessage({
             onClick={() => {
               onAddConfusions(confusions)
               setConfusionsAdded(true)
-              toast.success(`헷갈린 점 ${confusions.length}개를 노트에 추가했어요`)
+              toast.success(`헷갈린 점 ${confusions.length}개를 노트에 추가했습니다`)
             }}
             className={button("ghost", "sm", "px-2.5 text-attention-700 hover:bg-attention-50 hover:text-attention-700")}
           >

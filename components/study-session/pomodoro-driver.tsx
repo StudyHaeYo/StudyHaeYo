@@ -24,13 +24,11 @@ export function PomodoroDriver() {
       chime()
       if (next === "break") {
         const done = pomodoro.completed + 1
-        toast.success(`집중 ${FOCUS_MINUTES}분 끝! ${breakMinutesAfter(done)}분 쉬어요`, {
-          description: "쉬는 동안의 시간은 학습 시간에 넣지 않아요.",
+        toast.success(`집중 ${FOCUS_MINUTES}분 끝 · ${breakMinutesAfter(done)}분 휴식`, {
+          description: "휴식 시간은 학습 시간에서 제외",
         })
       } else {
-        toast(`다시 집중할 시간이에요 (${(pomodoro.completed % LONG_BREAK_EVERY) + 1}/${LONG_BREAK_EVERY})`, {
-          description: `${FOCUS_MINUTES}분 동안 한 가지에만 집중해 보세요.`,
-        })
+        toast(`다시 집중 (${(pomodoro.completed % LONG_BREAK_EVERY) + 1}/${LONG_BREAK_EVERY})`)
       }
     }
     const id = window.setTimeout(fire, Math.max(0, endsAt - Date.now()))

@@ -44,17 +44,13 @@ export function ChecklistBody() {
   }
 
   if (status === "unavailable") {
-    return <p className="px-2 py-1 text-xs leading-relaxed text-muted-foreground">할 일을 저장할 곳을 준비하고 있어요.</p>
+    return <p className="px-2 py-1 text-xs leading-relaxed text-muted-foreground">할 일 준비 중</p>
   }
   if (!ready || today === null) return <div className="h-10" aria-hidden="true" />
 
   return (
     <>
-      {items.length === 0 ? (
-        <p className="px-2 pb-1 text-xs leading-relaxed text-muted-foreground">
-          오늘 할 일을 적어 두세요. 못 끝낸 일은 다음 날에도 보여요.
-        </p>
-      ) : (
+      {items.length === 0 ? null : (
         <ul className="mb-1 space-y-0.5">
           {items.map((todo) => (
             <TodoRow key={todo.id} todo={todo} today={today} />
@@ -156,7 +152,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
           onClick={() => {
             // A to-do goes with one tap, so it comes back with one tap too (no confirm dialog for something this light).
             removeTodo(todo.id)
-            toast(`"${todo.title}" 할 일을 지웠어요`, {
+            toast(`"${todo.title}" 할 일을 지웠습니다`, {
               duration: 5000,
               action: { label: "되돌리기", onClick: () => restoreTodo(todo) },
             })

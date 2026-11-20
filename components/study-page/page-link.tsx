@@ -88,7 +88,7 @@ export function PageLinkPicker({
       />
       <ul role="listbox" aria-label="노트 목록" className="mt-1 max-h-64 overflow-y-auto">
         {matches.length === 0 ? (
-          <li className="px-2.5 py-2 text-sm text-muted-foreground">맞는 노트가 없어요</li>
+          <li className="px-2.5 py-2 text-sm text-muted-foreground">맞는 노트 없음</li>
         ) : (
           matches.map((page, i) => (
             <li

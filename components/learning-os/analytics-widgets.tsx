@@ -22,7 +22,7 @@ export function WeakAreas() {
   return (
     <Panel title="취약 학습 영역">
       {items.length === 0 ? (
-        <Empty>이해도가 낮거나 헷갈린 점이 남은 노트가 없어요.</Empty>
+        <Empty>이해도가 낮거나 헷갈린 점이 남은 노트 없음</Empty>
       ) : (
         <ul className="flex flex-col divide-y divide-border">
           {items.map((item) => (

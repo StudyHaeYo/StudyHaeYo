@@ -82,7 +82,7 @@ function MissingCard({ block }: { block: AttachmentBlock }) {
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-medium text-muted-foreground">{block.name}</span>
-        <span className="text-xs text-muted-foreground">저장되지 않은 파일이라 열 수 없어요. 지우고 다시 올려 주세요.</span>
+        <span className="text-xs text-muted-foreground">저장되지 않은 파일이라 열 수 없습니다. 지우고 다시 올려 주세요.</span>
       </div>
     </div>
   )

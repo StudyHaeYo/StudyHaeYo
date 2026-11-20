@@ -22,7 +22,7 @@ const SYSTEM = `너는 학습 관리 서비스 "스터디 해요"의 AI 학습 �
 
 [근거]
 - <page> 안의 학습 페이지 내용과 첨부된 PDF를 근거로 답한다. 페이지에 없는 내용을 보충하면 그 문장 끝에 "(노트 밖 내용)"이라고 붙인다.
-- 페이지 본문이 비어 있고 PDF도 없으면, 제목과 질문을 주제로 일반 지식으로 답한다. 이때 답의 첫 줄은 정확히 "> 자료 없이 만든 내용이에요. 교재와 꼭 확인하세요."로 시작하고, 문장마다 "(노트 밖 내용)"은 붙이지 않는다.
+- 페이지 본문이 비어 있고 PDF도 없으면, 제목과 질문을 주제로 일반 지식으로 답한다. 이때 답의 첫 줄은 정확히 "> 자료 없이 만든 내용입니다. 교재와 꼭 확인해 주세요."로 시작하고, 문장마다 "(노트 밖 내용)"은 붙이지 않는다.
 - PDF에서 가져온 내용은 문장 끝에 (p.3)처럼 쪽 번호를 붙인다.
 
 [형식]
@@ -36,7 +36,7 @@ const SYSTEM = `너는 학습 관리 서비스 "스터디 해요"의 AI 학습 �
 - 문제마다 번호 뒤에 난이도를 붙인다(예: "1. [하] 해시 충돌이란?"). 요청한 개수와 난이도별 개수를 정확히 지키고, 하 → 중 → 상 순서로 낸다. 난이도를 정하지 않은 요청이면 하 40% · 중 40% · 상 20%로 섞는다(상은 최소 1개).
 - 헷갈린 점에서 내라고 하면 본문의 [헷갈린 점](해결하지 않은 것)으로 그 수만큼 만든다.
 - 정답과 해설은 맨 아래 "## 정답과 해설" 아래에만 모으고, 문제와 같은 번호를 쓴다(화면에서 접혀 보인다).
-- 마지막 줄에 "답을 보내 주면 채점해 드릴게요."라고 쓴다(이 줄만 예외로 허용한다).
+- 마지막 줄에 "답을 보내면 채점합니다."라고 쓴다(이 줄만 예외로 허용한다).
 
 [채점]
 - 사용자가 답을 보내면(예: "1번 ②, 2번 스택") 앞서 낸 문제나 PDF(문제집)의 정답을 근거로 채점한다. 근거가 없으면 일반 지식으로 채점하고 그렇다고 밝힌다.
@@ -103,15 +103,15 @@ async function loadPdfs(supabase: Supabase, userId: string, refs: PdfRef[]) {
   const docs: { name: string; data: string }[] = []
   let pages = 0
   for (const ref of refs) {
-    if (!ref.path.startsWith(`${userId}/`)) return { error: "다른 사람의 파일은 열 수 없어요." }
+    if (!ref.path.startsWith(`${userId}/`)) return { error: "다른 사람의 파일은 열 수 없습니다." }
     const { data, error } = await supabase.storage.from("attachments").download(ref.path)
-    if (error || !data) return { error: `"${ref.name}" 파일을 불러오지 못했어요.` }
-    if (data.size > MAX_PDF_BYTES) return { error: `"${ref.name}" 파일이 너무 커요.` }
+    if (error || !data) return { error: `"${ref.name}" 파일을 불러오지 못했습니다.` }
+    if (data.size > MAX_PDF_BYTES) return { error: `"${ref.name}" 파일이 너무 큽니다.` }
     const bytes = new Uint8Array(await data.arrayBuffer())
-    if (new TextDecoder("latin1").decode(bytes.subarray(0, 5)) !== "%PDF-") return { error: `"${ref.name}"은(는) PDF가 아니에요.` }
+    if (new TextDecoder("latin1").decode(bytes.subarray(0, 5)) !== "%PDF-") return { error: `"${ref.name}"은(는) PDF가 아닙니다.` }
     pages += countPdfPages(bytes)
     if (pages > MAX_PDF_PAGES)
-      return { error: `PDF가 너무 길어요. 한 번에 ${MAX_PDF_PAGES}쪽까지 읽을 수 있어요. 필요한 쪽만 따로 PDF로 만들어 올려 주세요.` }
+      return { error: `PDF가 너무 깁니다. 한 번에 ${MAX_PDF_PAGES}쪽까지 읽을 수 있습니다. 필요한 쪽만 따로 PDF로 만들어 올려 주세요.` }
     docs.push({ name: ref.name, data: Buffer.from(bytes).toString("base64") })
   }
   return { docs }
@@ -119,15 +119,15 @@ async function loadPdfs(supabase: Supabase, userId: string, refs: PdfRef[]) {
 
 export async function POST(request: Request) {
   const key = process.env.ANTHROPIC_API_KEY
-  if (!key) return Response.json({ error: "AI 키가 아직 설정되지 않았어요. (ANTHROPIC_API_KEY)" }, { status: 503 })
+  if (!key) return Response.json({ error: "AI 키가 아직 설정되지 않았습니다. (ANTHROPIC_API_KEY)" }, { status: 503 })
 
   const supabase = await createClient()
   const { data } = await supabase.auth.getUser()
-  if (!data.user) return Response.json({ error: "로그인이 필요해요." }, { status: 401 })
-  if (overLimit(data.user.id)) return Response.json({ error: "요청이 너무 많아요. 1분 뒤에 다시 시도해 주세요." }, { status: 429 })
+  if (!data.user) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 })
+  if (overLimit(data.user.id)) return Response.json({ error: "요청이 너무 많습니다. 1분 뒤에 다시 시도해 주세요." }, { status: 429 })
 
   const input = parseBody(await request.json().catch(() => null))
-  if (!input) return Response.json({ error: "요청 형식이 올바르지 않아요." }, { status: 400 })
+  if (!input) return Response.json({ error: "요청 형식이 올바르지 않습니다." }, { status: 400 })
 
   // PDFs ride on the first user message so the prompt prefix stays the same turn after turn;
   // cache_control lets follow-up questions reuse it instead of paying for the whole PDF again.
@@ -159,11 +159,11 @@ export async function POST(request: Request) {
     const detail = (await res.text()).slice(0, 500)
     console.error("AI request failed", res.status, detail)
     if (res.status === 413 || (input.pdfs.length > 0 && /pdf|page|document/i.test(detail)))
-      return Response.json({ error: "PDF가 너무 크거나 읽을 수 없는 형식이에요. 쪽수를 줄이거나 다른 PDF로 시도해 주세요." }, { status: 400 })
-    return Response.json({ error: "AI가 답하지 못했어요. 잠시 후 다시 시도해 주세요." }, { status: 502 })
+      return Response.json({ error: "PDF가 너무 크거나 읽을 수 없는 형식입니다. 쪽수를 줄이거나 다른 PDF로 시도해 주세요." }, { status: 400 })
+    return Response.json({ error: "AI가 답하지 못했습니다. 잠시 후 다시 시도해 주세요." }, { status: 502 })
   }
   const json = (await res.json()) as { content?: { type: string; text?: string }[] }
   const text = (json.content ?? []).filter((c) => c.type === "text").map((c) => c.text ?? "").join("").trim()
-  if (!text) return Response.json({ error: "AI가 빈 답을 보냈어요. 다시 시도해 주세요." }, { status: 502 })
+  if (!text) return Response.json({ error: "AI가 빈 답을 보냈습니다. 다시 시도해 주세요." }, { status: 502 })
   return Response.json({ text })
 }

@@ -50,10 +50,10 @@ export function WeeklyStats() {
           </div>
           <p className="mt-1.5 text-xs text-muted-foreground">
             {stats.perDayToGoal === 0 ? (
-              <span className="font-medium text-action-700">목표 {formatDuration(WEEKLY_GOAL_MINUTES)}를 채웠어요.</span>
+              <span className="font-medium text-action-700">목표 {formatDuration(WEEKLY_GOAL_MINUTES)} 달성</span>
             ) : total === 0 ? (
               // Nothing recorded this week (every new account): say what fills the bar, not a pace to keep up.
-              `목표 ${formatDuration(WEEKLY_GOAL_MINUTES)} · 기록을 남기면 여기에 쌓여요.`
+              `목표 ${formatDuration(WEEKLY_GOAL_MINUTES)}`
             ) : (
               <>
                 목표 {formatDuration(WEEKLY_GOAL_MINUTES)} · 남은 날 하루 <span className="font-medium text-foreground">{formatDuration(stats.perDayToGoal)}</span>씩

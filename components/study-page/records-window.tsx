@@ -103,7 +103,7 @@ export function RecordsWindow({
               {" "}· 다음 복습{" "}
               <b className={`font-semibold ${stats.status === "복습 필요" ? "text-attention-700" : "text-foreground"}`}>
                 {formatDate(stats.nextReviewAt)}
-                {late > 0 ? " · 다시 볼 때예요" : stats.status === "복습 필요" ? ", 오늘" : ""}
+                {late > 0 ? " · 다시 볼 때" : stats.status === "복습 필요" ? ", 오늘" : ""}
               </b>
             </>
           )}
@@ -114,9 +114,9 @@ export function RecordsWindow({
 
   const empty = scope
     ? scope.length === 0
-      ? "범위에 노트를 넣으면 그 노트들의 기록이 여기 모여요."
-      : "범위 노트에 아직 기록이 없어요. 각 노트에서 복습하거나 공부를 남기면 여기에 모여요."
-    : "아직 기록이 없어요. 복습을 마치거나 공부한 것을 남기면 여기에 쌓여요."
+      ? "범위에 넣은 노트 없음"
+      : "범위 노트의 기록 없음"
+    : "아직 기록 없음"
 
   return createPortal(
     <>

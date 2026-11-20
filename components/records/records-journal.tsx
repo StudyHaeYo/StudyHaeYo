@@ -133,10 +133,7 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
       ) : dayList.length === 0 ? (
         <div className="mt-8 rounded-xl border border-dashed border-border px-6 py-10 text-center">
           <p className="text-sm font-medium text-foreground">
-            {byNote && !q ? "이 노트에는 아직 기록이 없어요" : q || filter !== "all" ? "맞는 기록이 없어요" : "아직 학습 기록이 없어요"}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            공부를 마치면 [기록 남기기]로 남겨요. 노트에서 공부했다면 그 노트를 고르면 복습일이 잡혀요.
+            {byNote && !q ? "이 노트의 기록 없음" : q || filter !== "all" ? "맞는 기록 없음" : "아직 학습 기록 없음"}
           </p>
         </div>
       ) : (

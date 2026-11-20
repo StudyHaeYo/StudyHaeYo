@@ -31,7 +31,7 @@ export interface SidebarRecord {
 function PageIcon({ record }: { record: SidebarRecord }) {
   const Icon = record.icon ?? FileText
   return (
-    <span className="relative inline-flex shrink-0" title={record.due ? "복습할 때가 됐어요" : undefined}>
+    <span className="relative inline-flex shrink-0" title={record.due ? "복습할 때" : undefined}>
       <Icon className="size-3.5" aria-hidden="true" />
       {record.due && (
         <span className="absolute -right-0.5 -top-0.5 size-1.5 rounded-full bg-attention-500 ring-2 ring-sidebar">

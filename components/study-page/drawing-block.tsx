@@ -163,7 +163,7 @@ export function DrawingBlockView({ block, onChange, onRemove, onNavigate, onActi
           <StrokeLayer strokes={strokes} />
           {isEmpty && (
             <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-              {editing ? "펜이나 손가락으로 그려보세요" : "클릭해서 그리기"}
+              {editing ? "펜이나 손가락으로 그리기" : "클릭해서 그리기"}
             </p>
           )}
         </div>

@@ -106,7 +106,7 @@ export function Sidebar(_props: SidebarProps = {}) {
   const handleLogout = async () => {
     const result = await signOut()
     if (!result.ok) {
-      toast.error("로그아웃하지 못했어요", { description: result.message })
+      toast.error("로그아웃하지 못했습니다", { description: result.message })
       return
     }
     // Full page load so nothing of this account stays in memory or in the router cache.
@@ -516,8 +516,8 @@ function GroupRenameInput({
 }
 
 const groupKindOptions: { kind: GroupKind; label: string; hint: string }[] = [
-  { kind: "subject", label: "과목", hint: "학습 계획과 통계의 기준(과목 화면이 생겨요)" },
-  { kind: "folder", label: "폴더", hint: "과목을 묶거나 과목 안을 나눠요" },
+  { kind: "subject", label: "과목", hint: "학습 계획과 통계의 기준 · 과목 화면 생성" },
+  { kind: "folder", label: "폴더", hint: "과목 묶기 · 과목 안 나누기" },
 ]
 
 // A new group starts as a 과목, since records, plans and 학습 분석 all count by subject (a folder's notes land in

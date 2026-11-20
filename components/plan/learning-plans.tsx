@@ -53,7 +53,7 @@ export function LearningPlans({ initialSubjectId }: { initialSubjectId?: string 
             <PlanGrid items={groups.active} />
           ) : (
             <p className={emptyState}>
-              {plans.length === 0 ? "아직 만든 계획이 없어요. 기간과 목표를 정해 두면 오늘 화면에서 진행 상황을 보여 줘요." : "지금 진행 중인 계획이 없어요."}
+              {plans.length === 0 ? "아직 만든 계획 없음" : "진행 중인 계획 없음"}
             </p>
           )}
         </section>
@@ -109,7 +109,7 @@ function PlanGrid({ items }: { items: ActivePlan[] }) {
         open={removing !== null}
         title={removing?.title ?? ""}
         targetLabel="계획"
-        note="계획만 지워지고, 그동안 남긴 학습 기록은 그대로 남아요."
+        note="계획만 지워지고, 그동안 남긴 학습 기록은 그대로 남습니다."
         onCancel={() => setRemoving(null)}
         onConfirm={() => {
           if (removing) removePlan(removing.id)
@@ -277,7 +277,6 @@ function PlanForm({
             />
             <span className="shrink-0 font-normal text-muted-foreground">시간</span>
           </span>
-          <span className="text-xs font-normal text-muted-foreground">정하면 진행 막대가 이 시간 대비로 채워져요.</span>
         </label>
       )}
       <label className="flex flex-col gap-1.5 text-sm font-medium text-card-foreground">
@@ -295,7 +294,7 @@ function PlanForm({
         <fieldset className="flex flex-col gap-2 sm:col-span-2">
           <legend className="text-sm font-medium text-card-foreground">공부할 시각 (선택)</legend>
           <p className="text-xs text-muted-foreground">
-            노트마다 요일과 시각을 정하면, 계획 기간 동안 그 요일 시간표에 들어가요.
+            정한 요일 · 시각은 계획 기간 동안 시간표에 표시
           </p>
           {slots.length > 0 && (
             <ul className="flex flex-col gap-2">

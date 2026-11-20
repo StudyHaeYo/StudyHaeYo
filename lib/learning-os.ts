@@ -5,7 +5,7 @@ export const priorityStudy = {
   topic: "프로세스 스레드 차이",
   lastStudied: "2일 전",
   status: "복습 필요",
-  reason: "이해도 2/5 · 오늘 복습할 차례예요",
+  reason: "이해도 2/5 · 오늘 복습할 차례",
 }
 
 export const reviewQueue = [

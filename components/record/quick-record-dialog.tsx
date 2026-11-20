@@ -159,18 +159,18 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
   const missing = !validTarget
     ? ready
       ? "어디에 남길지 다시 골라 주세요."
-      : "지금은 노트를 골라야 저장돼요."
+      : "지금은 노트를 골라야 저장됩니다."
     : !minutesOk
       ? "공부한 시간을 적어 주세요."
       : understanding === null
         ? "이해도를 골라 주세요."
         : date > today
-          ? "앞으로의 날짜에는 남길 수 없어요."
+          ? "앞으로의 날짜에는 남길 수 없습니다."
           : null
   const result = page
     ? (
         <>
-          <b className="font-semibold text-foreground">{page.title || "제목 없음"}</b>에 남아요
+          <b className="font-semibold text-foreground">{page.title || "제목 없음"}</b>에 기록
           {understanding !== null && (
             <>
               {" · "}다음 복습 <b className="font-semibold text-success-700">{formatDate(nextReviewDate(date, understanding))}</b>
@@ -181,10 +181,10 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
     : subject
       ? (
           <>
-            <b className="font-semibold text-foreground">{subject.name}</b> 과목에 남아요 · 노트가 없어 복습일은 안 생겨요
+            <b className="font-semibold text-foreground">{subject.name}</b> 과목에 기록 · 노트가 없어 복습일 없음
           </>
         )
-      : "과목 없이 남아요 · 나중에 학습 기록에서 노트에 연결할 수 있어요"
+      : "과목 없이 기록 · 나중에 학습 기록에서 노트에 연결 가능"
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -220,8 +220,8 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
     const review = nextReviewDate(date, understanding)
     // Saved from the note itself: "보기" would go nowhere, so offer to put the review on that day's checklist.
     const here = typeof window !== "undefined" && window.location.pathname === href
-    toast.success(edit ? "기록을 고쳤어요" : "기록했어요", {
-      description: page ? `다음 복습은 ${formatDate(review)}이에요.` : undefined,
+    toast.success(edit ? "기록을 고쳤습니다" : "기록했습니다", {
+      description: page ? `다음 복습은 ${formatDate(review)}입니다.` : undefined,
       action:
         page && here && todosReady && !edit
           ? { label: "그날 할 일에 추가", onClick: () => addTodo(`${page.title || "제목 없음"} 복습`, review) }
@@ -241,7 +241,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
       updatePage(edit.pageId, (p) => ({ ...p, studyRecords: p.studyRecords.filter((r) => r.id !== edit.id) }))
     else deleteSubjectRecord(edit.id)
     closeQuickRecord()
-    toast.success("기록을 삭제했어요")
+    toast.success("기록을 삭제했습니다")
   }
 
   const pill =
@@ -302,7 +302,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
         )}
 
         <label htmlFor="qr-content" className="sr-only">
-          무엇을 공부했나요
+          공부한 내용
         </label>
         <textarea
           id="qr-content"
@@ -311,7 +311,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
           value={studyContent}
           onChange={(e) => setStudyContent(e.target.value)}
           rows={2}
-          placeholder="무엇을 공부했나요?"
+          placeholder="예: 트리 순회 강의 복습"
           className="w-full resize-none bg-transparent px-5 pb-2 pt-3 text-lg font-semibold leading-snug text-foreground outline-none [field-sizing:content] placeholder:font-medium placeholder:text-muted-foreground/60 sm:text-xl"
         />
 
@@ -402,7 +402,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
         {pickWhere ? (
         <div className="px-5 pt-4">
           <p id="qr-where-label" className="mb-1.5 text-xs text-muted-foreground">
-            어디에 남길까요 <span className="text-muted-foreground">· {ready ? "선택" : "노트"}</span>
+            남길 곳 <span className="text-muted-foreground">· {ready ? "선택" : "노트"}</span>
           </p>
           <WherePicker
             value={target}
@@ -449,7 +449,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               value={confusion}
               onChange={(e) => setConfusion(e.target.value)}
               rows={1}
-              placeholder="헷갈린 점. 노트의 헷갈린 점에 들어가요…"
+              placeholder="헷갈린 점 · 노트의 헷갈린 점에 추가…"
               className="w-full resize-none rounded-xl border border-attention-200 bg-attention-50/60 px-3 py-2 text-sm text-foreground outline-none [field-sizing:content] placeholder:text-attention-800/70 focus:border-attention-400"
             />
           )}
@@ -460,7 +460,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
               autoComplete="off"
               value={todo}
               onChange={(e) => setTodo(e.target.value)}
-              placeholder="내일 할 일. 체크리스트에 들어가요…"
+              placeholder="내일 할 일 · 체크리스트에 추가…"
               className="h-10 w-full rounded-xl border border-input px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-action-400"
             />
           )}
@@ -552,7 +552,7 @@ function WherePicker({
       group: "노트",
     })),
     ...subjects.map((g) => ({ target: { kind: "subject" as const, id: g.id }, label: g.name, hint: "노트 없이 과목에만", group: "과목" })),
-    ...(ready && !q ? [{ target: { kind: "none" as const }, label: "연결 안 함", hint: "과목 없이 남아요", group: "" }] : []),
+    ...(ready && !q ? [{ target: { kind: "none" as const }, label: "연결 안 함", hint: "과목 없이 기록", group: "" }] : []),
   ]
 
   const pick = (option: Option) => {
@@ -598,7 +598,7 @@ function WherePicker({
           </span>
         )}
         {locked ? (
-          <span className="text-xs text-muted-foreground">노트에 남긴 기록이에요</span>
+          <span className="text-xs text-muted-foreground">노트에 남긴 기록</span>
         ) : (
           <input
             role="combobox"
@@ -636,7 +636,7 @@ function WherePicker({
               }
             }}
             autoComplete="off"
-            placeholder={token ? "" : ready ? "노트나 과목 찾기… 안 고르면 과목 없이 남아요" : "노트 찾기…"}
+            placeholder={token ? "" : ready ? "노트나 과목 찾기… 안 고르면 과목 없이 기록" : "노트 찾기…"}
             className="min-w-24 flex-1 bg-transparent px-1 text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
           />
         )}
@@ -648,7 +648,7 @@ function WherePicker({
           aria-labelledby={labelledBy}
           className="absolute inset-x-0 top-full z-10 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-border bg-popover p-1.5 shadow-lg"
         >
-          {options.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">맞는 노트나 과목이 없어요.</li>}
+          {options.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">맞는 노트나 과목 없음</li>}
           {options.map((option, i) => (
             <li key={`${option.group}-${option.target.kind}-${"id" in option.target ? option.target.id : ""}`} role="presentation">
               {option.group && options[i - 1]?.group !== option.group && (

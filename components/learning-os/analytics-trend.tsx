@@ -119,7 +119,7 @@ export function AnalyticsTrend() {
         {insights === null ? (
           <div className="mb-4 h-10 animate-pulse rounded-lg bg-muted" aria-hidden="true" />
         ) : insights.length === 0 ? (
-          <p className="mb-4 text-sm text-muted-foreground">학습 기록이 쌓이면 여기에서 변화를 알려 드려요.</p>
+          null
         ) : (
           <ul className="mb-4 flex flex-col gap-1.5 rounded-lg bg-muted/60 px-3 py-2.5">
             {insights.map((insight) => {
@@ -139,9 +139,9 @@ export function AnalyticsTrend() {
         ) : !ready ? (
           <p className="text-sm text-muted-foreground text-pretty">
             {unit === "week"
-              ? "최근 8주 중 두 주 이상 공부한 기록이 쌓이면 주별 변화를 보여 드려요."
-              : "이번 주에 남긴 학습 기록이 아직 없어요."}
-            {unit === "week" && weeks!.at(-1)!.minutes > 0 && ` 이번 주는 지금까지 ${formatDuration(weeks!.at(-1)!.minutes)} 공부했어요.`}
+              ? "두 주 이상 기록이 쌓이면 주별 변화 표시"
+              : "이번 주 기록 없음"}
+            {unit === "week" && weeks!.at(-1)!.minutes > 0 && ` · 이번 주 ${formatDuration(weeks!.at(-1)!.minutes)}`}
           </p>
         ) : (
           <>

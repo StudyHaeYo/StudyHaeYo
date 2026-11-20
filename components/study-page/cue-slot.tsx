@@ -62,7 +62,7 @@ export function CueSlot({
         rows={1}
         maxLength={80}
         spellCheck={false}
-        aria-label="질문 (키워드도 돼요)"
+        aria-label="질문 (키워드도 가능)"
         placeholder="질문이나 키워드…"
         onMouseDown={(e) => e.stopPropagation()}
         onChange={(e) => onChange(e.target.value.replace(/\n/g, " "))}

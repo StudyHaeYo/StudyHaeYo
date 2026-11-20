@@ -33,35 +33,27 @@ export function ThemeSection({ initial }: { initial: ThemeChoice }) {
           화면
         </h2>
       </div>
-      <div className="flex flex-col gap-2 px-5 py-4 text-sm">
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <span id="settings-theme-label" className="text-muted-foreground">
-            테마
-          </span>
-          <div role="group" aria-labelledby="settings-theme-label" className="flex rounded-lg bg-muted p-0.5">
-            {THEME_CHOICES.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                aria-pressed={choice === option.value}
-                onClick={() => choose(option.value)}
-                className={`touch-hit rounded-md px-3 py-1.5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 ${
-                  choice === option.value
-                    ? "bg-background text-foreground ring-1 ring-border"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-5 py-4 text-sm">
+        <span id="settings-theme-label" className="text-muted-foreground">
+          테마
+        </span>
+        <div role="group" aria-labelledby="settings-theme-label" className="flex rounded-lg bg-muted p-0.5">
+          {THEME_CHOICES.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={choice === option.value}
+              onClick={() => choose(option.value)}
+              className={`touch-hit rounded-md px-3 py-1.5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 ${
+                choice === option.value
+                  ? "bg-background text-foreground ring-1 ring-border"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
-        <p className="text-xs text-muted-foreground text-pretty">
-          {choice === "system"
-            ? "휴대폰이나 컴퓨터가 어두운 모드일 때 어둡게 보여요. "
-            : ""}
-          이 브라우저에만 저장돼요. 인쇄는 테마와 상관없이 흰 종이에 나와요.
-        </p>
       </div>
     </section>
   )

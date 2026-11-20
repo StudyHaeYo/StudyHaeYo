@@ -6,7 +6,7 @@ import { AuthField, EMAIL_PATTERN, submitButtonClass } from "./auth-field"
 
 function validate(email: string) {
   if (!email.trim()) return "이메일을 입력해 주세요."
-  if (!EMAIL_PATTERN.test(email.trim())) return "이메일 형식이 올바르지 않아요."
+  if (!EMAIL_PATTERN.test(email.trim())) return "이메일 형식이 올바르지 않습니다."
   return undefined
 }
 
@@ -40,7 +40,7 @@ export function ForgotPasswordForm({ notice }: { notice?: string }) {
       <div role="status" className="flex flex-col gap-2 rounded-lg bg-action-50 px-4 py-4 text-sm leading-relaxed text-action-800">
         <p className="font-medium">메일을 확인해 주세요</p>
         <p>
-          <span className="font-medium">{sentTo}</span>이 가입된 이메일이면 비밀번호를 바꾸는 링크를 보냈어요. 메일이 안
+          <span className="font-medium">{sentTo}</span>이 가입된 이메일이면 비밀번호를 바꾸는 링크를 보냈습니다. 메일이 안
           보이면 스팸함도 확인해 주세요. 링크는 이 브라우저에서 열어 주세요.
         </p>
       </div>

@@ -67,10 +67,10 @@ export function ExamRecheck({ examId, scope, examDate, today }: { examId: string
           시험 전에 다시 볼 것
           {open > 0 && <span className="ml-1.5 text-sm font-medium tabular-nums text-muted-foreground">{open}</span>}
         </h2>
-        <p className="text-sm text-muted-foreground">범위 노트의 헷갈린 점 · 틀린 문제 · 지난 기록에서 모았어요</p>
+        <p className="text-sm text-muted-foreground">범위 노트의 헷갈린 점 · 틀린 문제 · 지난 기록</p>
       </div>
       {groups.length === 0 ? (
-        <p className="border-t border-border py-3 text-sm text-muted-foreground">현재 범위에서 다시 볼 항목이 없어요.</p>
+        <p className="border-t border-border py-3 text-sm text-muted-foreground">다시 볼 항목 없음</p>
       ) : (
         <ul className="flex flex-col border-t border-border">
           {groups.map(({ page, items }) => {
@@ -91,7 +91,7 @@ export function ExamRecheck({ examId, scope, examDate, today }: { examId: string
                           role="checkbox"
                           aria-checked={item.resolved}
                           aria-label={item.resolved ? `${item.text} 해결 취소` : `${item.text} 해결함`}
-                          title={item.resolved ? "해결 취소" : "해결했으면 눌러요 (원래 노트에도 해결로 표시돼요)"}
+                          title={item.resolved ? "해결 취소" : "해결 표시 (원래 노트에도 표시)"}
                           onClick={() => setChecked(page.id, item.id, !item.resolved)}
                           className={`touch-hit mt-[3px] flex size-[18px] shrink-0 items-center justify-center rounded-full border transition-colors ${
                             item.resolved

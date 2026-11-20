@@ -136,14 +136,14 @@ function KindMenu({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold text-foreground">{option.name}</span>
-                <span className="block text-xs text-muted-foreground">{waits ? "데이터 준비가 끝나면 쓸 수 있어요" : option.does}</span>
+                <span className="block text-xs text-muted-foreground">{waits ? "데이터 준비 후 사용 가능" : option.does}</span>
               </span>
               {checked && <Check className="size-4 shrink-0 text-action-600" aria-hidden="true" />}
             </button>
           )
         })}
         <p className="px-2.5 pb-1.5 pt-1 text-xs leading-relaxed text-muted-foreground">
-          쓴 내용은 그대로 두고 그 종류에 필요한 칸만 더해요.
+          쓴 내용은 그대로 · 필요한 칸만 추가
         </p>
       </div>
     </>,

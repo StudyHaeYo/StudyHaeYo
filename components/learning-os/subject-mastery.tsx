@@ -15,7 +15,7 @@ export function SubjectMastery({ title = "나의 학습 상태" }: { title?: str
     <section className="rounded-xl border border-border bg-card p-5">
       <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">{title}</h2>
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">아직 학습 기록이 없어요. 기록을 남기면 과목별 이해도가 보여요.</p>
+        <p className="text-sm text-muted-foreground">아직 학습 기록 없음</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {items.map((item) => {

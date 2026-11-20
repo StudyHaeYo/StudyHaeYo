@@ -41,7 +41,7 @@ export function TodayAgenda() {
           {reviews === null ? (
             <Skeleton />
           ) : reviews.length === 0 ? (
-            <Empty>오늘 복습할 노트가 없어요. 새로운 내용을 학습해 보세요.</Empty>
+            <Empty>오늘 복습할 노트 없음</Empty>
           ) : (
             <ReviewList reviews={reviews} />
           )}
@@ -52,7 +52,7 @@ export function TodayAgenda() {
             <Skeleton />
           ) : running.length === 0 ? (
             <Empty>
-              오늘 진행 중인 계획이 없어요.{" "}
+              진행 중인 계획 없음 ·{" "}
               <Link href="/plan" className="font-medium text-action-600 hover:underline">
                 계획 만들기
               </Link>

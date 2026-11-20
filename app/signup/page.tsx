@@ -11,10 +11,9 @@ export default function SignupPage() {
   return (
     <AuthShell
       title="회원가입"
-      description="학습 기록을 시작하려면 계정을 만들어 주세요."
       footer={
         <>
-          이미 계정이 있나요?{" "}
+          이미 계정이 있으면{" "}
           <Link href="/login" className="font-medium text-action-600 hover:text-action-700 hover:underline">
             로그인
           </Link>

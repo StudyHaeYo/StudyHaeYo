@@ -324,7 +324,7 @@ export function StudyPageView({
                       <button
                         role="menuitem"
                         type="button"
-                        title="끌어다 놓거나 이미지를 붙여넣어도 첨부돼요 · 파일당 10MB까지"
+                        title="끌어다 놓기 · 이미지 붙여넣기도 가능 · 파일당 10MB까지"
                         className={`${menuItemClass} text-foreground`}
                         onClick={() => {
                           close()
@@ -337,7 +337,7 @@ export function StudyPageView({
                       <button
                         role="menuitem"
                         type="button"
-                        title="펜과 형광펜으로 그릴 수 있는 블록을 넣어요"
+                        title="펜 · 형광펜 그림 블록 추가"
                         className={`${menuItemClass} text-foreground`}
                         onClick={() => {
                           close()
@@ -350,7 +350,7 @@ export function StudyPageView({
                       <button
                         role="menuitem"
                         type="button"
-                        title="본문만 인쇄해요. 인쇄 창에서 'PDF로 저장'을 고르면 PDF 파일이 돼요"
+                        title="본문만 인쇄 · 인쇄 창의 'PDF로 저장'으로 PDF 파일"
                         className={`${menuItemClass} text-foreground`}
                         onClick={() => {
                           close()
@@ -546,8 +546,8 @@ export function MissingPage() {
       <span className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
         <FileQuestion className="size-6" />
       </span>
-      <h1 className="text-base font-medium text-foreground">노트를 찾을 수 없어요</h1>
-      <p className="mt-1 text-sm text-muted-foreground">삭제되었거나 존재하지 않는 노트예요.</p>
+      <h1 className="text-base font-medium text-foreground">노트를 찾을 수 없습니다</h1>
+      <p className="mt-1 text-sm text-muted-foreground">삭제되었거나 존재하지 않는 노트입니다.</p>
       <Link
         href="/"
         className={button("primary", "md", "mt-5")}

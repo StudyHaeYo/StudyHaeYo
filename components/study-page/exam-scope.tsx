@@ -94,7 +94,6 @@ export function ExamScope({
 }) {
   const countdown = examCountdown(examDate, today)
   const past = !!examDate && !!today && examDate < today
-  const reviewBy = examReviewBy(examDate, today)
   const deadlines = useScopeDeadlines(today)
   const rows = scopeRows(scope, examDate, today, deadlines, examId)
   const counts = summaryOrder
@@ -130,7 +129,7 @@ export function ExamScope({
               onBlur={() => setEditing(false)}
               className="h-9 scroll-mt-24 rounded-lg border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:border-action-400 focus:ring-4 focus:ring-action-50"
             />
-            {!examDate && <span className="text-sm text-muted-foreground">정하면 범위 노트의 복습이 시험 전날까지 당겨져요</span>}
+            {!examDate && <span className="text-sm text-muted-foreground">정하면 범위 노트 복습을 시험 전날까지 당김</span>}
           </>
         ) : (
           <>
@@ -141,7 +140,7 @@ export function ExamScope({
                 <span className={past ? "text-base text-muted-foreground" : "text-base text-foreground"}>
                   {/* The tile is a picture; the date is said here for screen readers. */}
                   <span className="sr-only">{formatDate(examDate)} </span>
-                  {weekday(examDate)} 시험{past ? " · 끝났어요" : ""}
+                  {weekday(examDate)} 시험{past ? " · 끝남" : ""}
                 </span>
               </p>
               {rows.length > 0 && (
@@ -172,14 +171,9 @@ export function ExamScope({
         <h2 id="exam-scope-heading" className="text-base font-semibold text-foreground">
           범위 <span className="ml-1 text-sm font-medium text-muted-foreground">{rows.length}</span>
         </h2>
-        {rows.length > 0 && (
-          <p className="text-sm text-muted-foreground">
-            복습은 각 노트에서 해요{reviewBy ? " · 시험 전날까지 복습이 당겨져요" : ""}
-          </p>
-        )}
       </div>
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">시험에 나오는 노트를 넣으면, 노트마다 얼마나 확인했는지 보이고 시험 전에 복습이 와요.</p>
+        <p className="text-sm text-muted-foreground">시험 범위 노트를 넣으면 노트마다 확인 상태 표시</p>
       ) : (
         <ul className="flex flex-col divide-y divide-border border-y border-border">
           {rows.map(({ page, stats, next, pulled, pulledBy, due, state }) => {
@@ -205,7 +199,7 @@ export function ExamScope({
                     {due ? (
                       <span className="font-semibold text-action-700">{reviewActionLabel(page)}</span>
                     ) : next ? (
-                      <span className="text-muted-foreground" title={pulledBy ? `${pulledBy} 전날로 당겨졌어요` : undefined}>
+                      <span className="text-muted-foreground" title={pulledBy ? `${pulledBy} 전날로 당김` : undefined}>
                         <span className="hidden sm:inline">다음 복습 </span>
                         {formatDate(next)}
                         {pulled && <span className="hidden sm:inline">({pulledBy ? "앞 시험" : "시험"} 전날)</span>}
