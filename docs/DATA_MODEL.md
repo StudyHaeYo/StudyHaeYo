@@ -154,7 +154,7 @@
 - 옛 학습 노트의 `note` 컬럼(`{learned, concepts, confusions}`)은 **읽기만 한다.** `blocks`가 비어 있고 `note`가 있으면 불러올 때 블록으로 바꿔 보여준다(`withNoteBlocks`, id가 고정이라 매번 같은 결과). 편집하면 `blocks`만 저장되고 `note`는 그대로 남는다(이전 빌드로 되돌려도 옛 노트가 보이게)
 
 ### 없는 것
-User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유자를 가리키고, 앱은 `user_id`를 `auth.getUser()`로 검증한 값으로만 채운다. `profiles`는 아직 화면에서 쓰지 않는다. 사이드바와 설정 화면의 이름·이메일은 `lib/auth.ts`의 `useCurrentUser`(가입 때 넣은 `display_name`, 없으면 이메일 앞부분)에서 온다. 로그아웃(`signOut`)은 대기 중인 저장을 먼저 끝낸다(`settleWrites`).
+User는 Supabase Auth 사용자다. 모든 데이터 행은 `user_id`로 소유자를 가리키고, 앱은 `user_id`를 `auth.getUser()`로 검증한 값으로만 채운다. `profiles`는 아직 화면에서 쓰지 않는다. 사이드바와 설정 화면의 이름·이메일은 `lib/auth.ts`의 `useCurrentUser`(가입 때 넣은 `display_name`, 없으면 이메일 앞부분)에서 온다. 로그아웃(`signOut`)은 대기 중인 저장을 먼저 끝낸다(`settleWrites`). 탈퇴(`deleteAccount`, D-49)는 서버 경로 `POST /api/account/delete`(`{password}` → `{ok: true}` 또는 `{error}`)가 service_role 키로 첨부 파일 → `learning_plans` → 계정 순으로 지운다. 나머지 행은 `user_id`의 on delete cascade로 지워진다.
 
 ---
 
