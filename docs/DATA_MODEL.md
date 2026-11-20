@@ -106,10 +106,11 @@
 - 형제 순서는 `WorkspaceState.order`(그룹과 페이지 전체를 평면으로 편 id 배열)에 있다. 목록에 없는 id는 뒤로 간다.
 
 ### LearningPlan
-`{id, title, target, startDate, endDate, goal, goalMinutes?}`
+`{id, title, target, startDate, endDate, goal, goalMinutes?, slots?}`
 - `target`은 `{scope:"all"}` \| `{scope:"subject", subjectId}` \| `{scope:"page", pageId}`
 - `goalMinutes`(선택): 목표 학습 시간(분). 있으면 진행 막대가 기간 대비가 아니라 목표 시간 대비로 채워진다. DB `learning_plans.goal_minutes`(`supabase/migrations/20261025_plan_goal_minutes.sql`). 컬럼이 없으면 읽지 않고, 입력 칸을 숨기고, 저장할 때도 보내지 않는다(`usePlanGoalsReady`)
 - `goal`은 자유 메모("목표 메모")다
+- `slots`(선택, D-46): 노트마다 공부할 시각 `[{pageId, days, startMin, durationMin}]`. `days`는 0=월 ~ 6=일, `startMin`은 0시부터 분(0~1439), `durationMin`은 10~720. 계획 기간 안의 그 요일이면 시간표에 그 노트 블록이 나온다(`slotsOn`). 진행도 계산에는 쓰지 않는다. DB `learning_plans.slots`(jsonb, `supabase/migrations/20261120_plan_slots.sql`). 읽을 때 모양이 틀린 줄은 버린다(`toPlanSlots`). 컬럼이 없으면 읽지 않고 시각 칸을 숨긴다(`usePlanSlotsReady`). 고치기는 `updatePlan`(컬럼이 있을 때만 `goal_minutes` · `slots`를 보내고, 비우면 null)
 
 ### Todo (오늘의 체크리스트, `lib/todos.ts`, 테이블 `todos`)
 `{id, title, dueOn, doneAt, position, startMin, durationMin}`
@@ -126,6 +127,10 @@
 - 넣기 · 지우기만 있다(고치기 없음). 지운 직후 되돌리기는 같은 id로 다시 넣는다(`restoreDday`)
 - 남은 날 표시는 `ddayLabel`: 그날은 "D-day", 전은 "D-n", 지나면 "D+n"
 - 테이블 정의와 RLS는 `supabase/migrations/20261119_ddays.sql`(select · insert · delete 본인 행만). 실행 전에는 읽기가 실패해 상태가 `unavailable`이고 D-day 화면이 숨는다(`lib/db/sync.ts` `loadDdays`)
+
+### 노트 탭 (브라우저 전용, localStorage `studyhaeyo:note-tabs`, D-45)
+- `{ids: 노트 id[], active: number}`. 학습 데이터가 아니라 이 기기의 편의라 DB에 없다. 읽기 실패(사생활 보호 창 등)면 탭 없이 시작한다
+- 최대 10개, 지운 노트의 id는 노트를 불러온 뒤 빠진다(`pruneTabs`)
 
 ### 세션 (브라우저 전용, localStorage `studyhaeyo:study-session`)
 - `startedAt`, `segments[{pageId,start,end}]`, `openSegment`, `lastActiveAt`, `log: FinishedSession[]`

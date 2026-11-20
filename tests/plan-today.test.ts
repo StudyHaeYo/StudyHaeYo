@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { planToday } from "@/lib/study-stats"
-import type { LearningPlan } from "@/lib/plans"
+import { slotsOn, type LearningPlan } from "@/lib/plans"
+import { toPlanSlots } from "@/lib/db/rows"
 
 const plan = (goalMinutes?: number): LearningPlan => ({
   id: "p",
@@ -28,5 +29,36 @@ describe("계획 → 오늘 시간표에 넣을 만큼", () => {
 
   it("시간 목표가 없는 계획은 이름만", () => {
     expect(planToday({ plan: plan(), studiedMinutes: 30, daysLeft: 3 })).toEqual({ title: "자료구조 집중", minutes: null })
+  })
+})
+
+// 공부할 시각 (D-46): only well-formed slots are kept, and a slot shows on its weekdays while the plan runs.
+describe("계획의 공부할 시각", () => {
+  it("이상한 값은 버린다", () => {
+    expect(
+      toPlanSlots([
+        { pageId: "p1", days: [0, 2, 2], startMin: 1140, durationMin: 60 },
+        { pageId: "p2", days: [], startMin: 600, durationMin: 60 },
+        { pageId: "p3", days: [1], startMin: 1500, durationMin: 60 },
+        "nope",
+      ]),
+    ).toEqual([{ pageId: "p1", days: [0, 2], startMin: 1140, durationMin: 60 }])
+    expect(toPlanSlots(null)).toEqual([])
+  })
+
+  it("계획 기간 안의 그 요일에만", () => {
+    const plan = {
+      id: "x",
+      title: "중간고사 대비",
+      target: { scope: "all" as const },
+      startDate: "2026-11-16",
+      endDate: "2026-11-22",
+      goal: "",
+      slots: [{ pageId: "p1", days: [0, 2], startMin: 1140, durationMin: 60 }],
+    }
+    expect(slotsOn(plan, "2026-11-16")).toHaveLength(1) // 월
+    expect(slotsOn(plan, "2026-11-17")).toHaveLength(0) // 화
+    expect(slotsOn(plan, "2026-11-18")).toHaveLength(1) // 수
+    expect(slotsOn(plan, "2026-11-23")).toHaveLength(0) // 기간 뒤 월요일
   })
 })

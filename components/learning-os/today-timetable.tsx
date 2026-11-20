@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { Check } from "lucide-react"
+import Link from "next/link"
+import { CalendarRange, Check } from "lucide-react"
 import { useNowMinutes, useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
 import { useStudySession } from "@/lib/study-session"
 import { useTimeSlots } from "@/lib/time-slots"
 import { addTodo, todayChecklist, todoStartMin, toggleTodo, useTodos, useTodosStatus, type Todo } from "@/lib/todos"
-import { usePlans } from "@/lib/plans"
+import { slotsOn, usePlans, usePlanSlotsReady, type LearningPlan } from "@/lib/plans"
 import { activePlans, planToday } from "@/lib/study-stats"
 import { clockLabel, layoutLanes, MIN_DRAWN_MINUTES, planRange, rangeLabel } from "@/lib/timetable"
 import { TimePicker } from "@/components/time-picker"
@@ -26,6 +27,14 @@ const DAY_START = 6 // the first hour drawn, unless something is earlier
 const HOUR = 40 // px per hour: half an hour still fits one line of text
 const WINDOW_HOURS = 7
 const EDGE = 8 // px above the first hour line
+
+// Where the window opens (data-open). Near the end of the day the window can't scroll that far, and stopping at the
+// bottom put an hour line right on the top edge with its label cut in half; stop on the line above it instead.
+export function openScroll(el: HTMLElement, hourPx: number) {
+  const want = Number(el.dataset.open ?? 0)
+  const max = el.scrollHeight - el.clientHeight
+  return want <= max ? want : Math.max(0, Math.floor((max + 4) / hourPx) * hourPx - 4)
+}
 
 // Minutes of today: [start, end)
 export type Span = { key: string; start: number; end: number; title: string }
@@ -58,7 +67,32 @@ export function studySpans(workspace: WorkspaceState, today: string): Span[] {
   return spans.sort((a, b) => a.start - b.start)
 }
 
-type GridItem = { key: string; start: number; end: number } & ({ kind: "plan"; todo: Todo } | { kind: "study"; title: string })
+type GridItem = { key: string; start: number; end: number } & (
+  | { kind: "plan"; todo: Todo }
+  | { kind: "study"; title: string }
+  | { kind: "slot"; title: string; pageId: string; plan: string }
+)
+
+// A plan's 공부할 시각 on one day (D-46): the note at that time, while the plan runs.
+export function planSlotSpans(plans: LearningPlan[], pages: { id: string; title: string }[], day: string) {
+  return plans.flatMap((plan) =>
+    slotsOn(plan, day).flatMap((slot, i) => {
+      const page = pages.find((p) => p.id === slot.pageId)
+      if (!page) return []
+      return [
+        {
+          key: `${plan.id}-${i}`,
+          kind: "slot" as const,
+          title: page.title || "제목 없음",
+          pageId: page.id,
+          plan: plan.title,
+          start: slot.startMin,
+          end: Math.min(1440, slot.startMin + slot.durationMin),
+        },
+      ]
+    }),
+  )
+}
 
 // `bare`: shown as the [일] view of the 시간표 card (D-44), whose head names the view, so no head of its own.
 export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
@@ -69,6 +103,7 @@ export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
   const todosStatus = useTodosStatus()
   const session = useStudySession()
   const allPlans = usePlans()
+  const slotsReady = usePlanSlotsReady()
   const { todoTimes, recordTimes, todoDurations } = useTimeSlots()
 
   // Scrolled once, when the grid first shows — not every minute, or it would pull the grid back while someone is
@@ -77,7 +112,7 @@ export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
   const gridReady = today !== null && now !== null && todosStatus !== "loading" && (todoTimes || recordTimes)
   useEffect(() => {
     const el = windowRef.current
-    if (gridReady && el) el.scrollTop = Number(el.dataset.open ?? 0)
+    if (gridReady && el) el.scrollTop = openScroll(el, HOUR)
   }, [gridReady])
 
   const heading = (aside: string | null) =>
@@ -111,7 +146,10 @@ export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
       ? [{ key: "running", start: minutesOfDay(session.startedAt), end: Math.max(now, minutesOfDay(session.startedAt) + 1), title: "공부 중" }]
       : []),
   ]
-  const items: GridItem[] = [...plans, ...studied.map((s) => ({ kind: "study" as const, ...s }))].sort((a, b) => a.start - b.start)
+  const slotItems: GridItem[] = slotsReady ? planSlotSpans(allPlans, workspace.pages, today) : []
+  const items: GridItem[] = [...plans, ...slotItems, ...studied.map((s) => ({ kind: "study" as const, ...s }))].sort(
+    (a, b) => a.start - b.start,
+  )
 
   // What is drawn: nothing shorter than a line of text. Lanes are worked out on the drawn size, so blocks never cover
   // each other.
@@ -129,11 +167,13 @@ export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
   const openAt = Math.max(0, y(openFrom) - EDGE - 4)
   const empty = items.length === 0
 
-  // Running plans not on today's checklist yet (a to-do made from a plan starts with the plan's title).
+  // Running plans not on the timetable yet: no to-do made from the plan's share (named after the plan), and no
+  // 공부할 시각 today (D-46, those are drawn above already).
   const fromPlans = todoTimes
     ? activePlans(workspace, allPlans, today).flatMap((item) => {
         const ask = planToday(item)
-        return ask && !checklist.some((t) => t.title.startsWith(item.plan.title)) ? [{ id: item.plan.id, ...ask }] : []
+        const scheduled = checklist.some((t) => t.title.startsWith(item.plan.title)) || (slotsReady && slotsOn(item.plan, today).length > 0)
+        return ask && !scheduled ? [{ id: item.plan.id, ...ask }] : []
       })
     : []
 
@@ -188,6 +228,28 @@ export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
               const twoLines = height >= 36
               // A tall block reads from its top (where it starts); a short one centres its single line.
               const align = height >= 56 ? "justify-start pt-1.5" : "justify-center"
+              if (it.kind === "slot") {
+                // A plan's 공부할 시각 (D-46): the note to study then; it opens the note.
+                return (
+                  <li key={it.key} className="absolute" style={style}>
+                    <Link
+                      href={`/record/${it.pageId}`}
+                      title={`${range} ${it.title} (${it.plan})`}
+                      className={`flex h-full flex-col overflow-hidden rounded-md bg-action-50 px-1.5 text-foreground ring-1 ring-inset ring-action-300 transition-colors hover:bg-action-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 ${align}`}
+                    >
+                      <span className="flex min-w-0 items-center gap-1.5 leading-none">
+                        <CalendarRange className="size-3.5 shrink-0 text-action-700" aria-hidden="true" />
+                        <span className="truncate text-sm">{it.title}</span>
+                      </span>
+                      {twoLines ? (
+                        <span className="mt-1 truncate pl-5 text-xs leading-none tabular-nums text-muted-foreground">{`${range} · ${it.plan}`}</span>
+                      ) : (
+                        <span className="sr-only">{`${range} · ${it.plan}`}</span>
+                      )}
+                    </Link>
+                  </li>
+                )
+              }
               if (it.kind === "study") {
                 return (
                   <li

@@ -30,7 +30,7 @@ export function PageFooter({ page, today }: { page: StudyPage; today: string | n
   if (exams.length === 0 && plansHere.length === 0) return null
   return (
     <section aria-label="노트 정보" className="flex flex-wrap items-center gap-2 border-t border-border py-3 text-sm">
-      <span className="w-20 shrink-0 text-muted-foreground">들어간 곳</span>
+      <span className="shrink-0 pr-2 text-muted-foreground">이 노트가 들어간 곳</span>
       {exams.map((exam) => {
         const Icon = noteIcon(exam)
         return (

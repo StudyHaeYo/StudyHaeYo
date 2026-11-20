@@ -15,7 +15,7 @@ export default function DashboardPage() {
   return (
     <PageShell width="wide">
       {/* No count line under the title: every count it gave is the first thing in a section below (2026-11-15). */}
-      <PageHeader eyebrow={todayLabel} title="오늘의 학습 현황" actions={<SessionIndicator />} />
+      <PageHeader eyebrow={todayLabel} title="오늘" actions={<SessionIndicator />} />
       <DataStatusNotice />
 
       <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
