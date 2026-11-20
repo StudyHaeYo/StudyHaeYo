@@ -4,6 +4,7 @@ import { useRef, useState, type PointerEvent, type ReactNode } from "react"
 import { Eraser, Hand, Highlighter, PenLine, Redo2, Trash2, Undo2 } from "lucide-react"
 import {
   DRAWING_COLORS,
+  inkColor,
   HIGHLIGHTER_OPACITY,
   STROKE_WIDTHS,
   hitStrokeIndex,
@@ -95,7 +96,7 @@ export function DrawingToolbar({
             >
               <span
                 className={`size-4 rounded-full ${selected ? "ring-2 ring-foreground ring-offset-2 ring-offset-card" : ""}`}
-                style={{ backgroundColor: c.value }}
+                style={{ backgroundColor: inkColor(c.value) }}
               />
             </button>
           )
@@ -156,7 +157,7 @@ export function StrokeLayer({ strokes }: { strokes: DrawingStroke[] }) {
           key={i}
           d={strokePath(stroke.points)}
           fill="none"
-          stroke={stroke.color}
+          stroke={inkColor(stroke.color)}
           strokeWidth={stroke.width}
           strokeOpacity={stroke.tool === "highlighter" ? HIGHLIGHTER_OPACITY : 1}
           strokeLinecap="round"

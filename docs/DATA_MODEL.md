@@ -133,6 +133,10 @@
 - `{ids: 노트 id[], active: number}`. 학습 데이터가 아니라 이 기기의 편의라 DB에 없다. 읽기 실패(사생활 보호 창 등)면 탭 없이 시작한다
 - 최대 10개, 지운 노트의 id는 노트를 불러온 뒤 빠진다(`pruneTabs`)
 
+### 화면 테마 (브라우저 전용, 쿠키 `studyhaeyo-theme`, D-48)
+- `"light"` | `"dark"` | `"system"`, 없거나 모르는 값이면 `"light"`(`lib/theme.ts` `parseTheme`). 1년, 사이트 전체 경로. 학습 데이터가 아니라 DB에 없다
+- 서버가 읽어 `<html data-theme>`로 그린다(첫 렌더가 서버와 같아야 해서 localStorage가 아니라 쿠키)
+
 ### 세션 (브라우저 전용, localStorage `studyhaeyo:study-session`)
 - `startedAt`, `segments[{pageId,start,end}]`, `openSegment`, `lastActiveAt`, `log: FinishedSession[]`
 - `FinishedSession = {id, startedAt, endedAt, segments, subjectId?, autoEnded?}`

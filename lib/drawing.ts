@@ -13,6 +13,14 @@ export const DRAWING_COLORS = [
   { value: "#9333ea", label: "보라" },
 ] as const
 
+// 어두운 모드(D-48): the black pen would vanish on the dark page, so it is drawn with --ink-black (app/globals.css),
+// which is this black on paper and a light gray on the dark page. The stored color stays "#1f2937". PDF pages are
+// white paper in every theme, so the PDF screen sets --ink-black back to black (pdf-annotator.tsx).
+export const PAPER_INK = DRAWING_COLORS[0].value
+export function inkColor(color: string) {
+  return color === PAPER_INK ? "var(--ink-black)" : color
+}
+
 export const STROKE_WIDTHS: Record<DrawingTool, [number, number, number]> = {
   pen: [2, 4, 8],
   highlighter: [12, 20, 32],

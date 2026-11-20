@@ -1,11 +1,13 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
+import { cookies } from 'next/headers'
 import { Toaster } from 'sonner'
 import { DataSync } from '@/components/data-sync'
 import { SessionTracker } from '@/components/study-session/session-tracker'
 import { PomodoroDriver } from '@/components/study-session/pomodoro-driver'
 import { StudySessionLayer } from '@/components/study-session/session-summary-modal'
 import { QuickRecordLayer } from '@/components/record/quick-record-dialog'
+import { parseTheme, THEME_COOKIE } from '@/lib/theme'
 // Pretendard: 한국어 글꼴. 페이지에 쓰인 글자 묶음만 내려받는다(dynamic subset). 우리 서버에서 함께 배포된다.
 import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css'
 import './globals.css'
@@ -35,21 +37,34 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: '스터디 해요', statusBarStyle: 'default' },
 }
 
-export const viewport: Viewport = {
-  colorScheme: 'light dark',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
-  ],
+// The browser chrome (address bar, scrollbars, form controls) follows the chosen theme (D-48). Colors are the
+// page background of each theme (app/globals.css --background).
+const LIGHT_BAR = '#ffffff'
+const DARK_BAR = '#13151b'
+
+export async function generateViewport(): Promise<Viewport> {
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value)
+  if (theme === 'light') return { colorScheme: 'light', themeColor: LIGHT_BAR }
+  if (theme === 'dark') return { colorScheme: 'dark', themeColor: DARK_BAR }
+  return {
+    colorScheme: 'light dark',
+    themeColor: [
+      { media: '(prefers-color-scheme: light)', color: LIGHT_BAR },
+      { media: '(prefers-color-scheme: dark)', color: DARK_BAR },
+    ],
+  }
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // 화면 테마(D-48): the cookie the settings screen writes. Rendering it here keeps the server HTML and the first client
+  // render the same (no flash, no hydration mismatch); app/globals.css switches the colors on data-theme.
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value)
   return (
-    <html lang="ko">
+    <html lang="ko" data-theme={theme}>
       <body className="antialiased">
         {/* First Tab stop: skip the sidebar's tree straight to the screen's content (WCAG 2.4.1). */}
         <a
@@ -64,7 +79,7 @@ export default function RootLayout({
         <PomodoroDriver />
         <StudySessionLayer />
         <QuickRecordLayer />
-        <Toaster position="bottom-center" richColors closeButton />
+        <Toaster position="bottom-center" richColors closeButton theme={theme} />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

@@ -82,7 +82,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-foreground/30 px-4 pt-[12vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-scrim/30 px-4 pt-[12vh]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
