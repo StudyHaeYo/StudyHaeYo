@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from "react"
 
-// 노트 탭 (D-45): open notes as tabs above the note, the Notion way — going to another note changes the tab you are
-// on; only "open in a new tab" (Ctrl/⌘ + click, middle click, ⋯ > 새 탭으로 열기, the tab bar's +) adds one.
+// 노트 탭 (D-45): open notes as tabs above the note. Every note opened gets a tab right after the current one (2026-11-20,
+// 이재윤: tabs used to be replaced the Notion way and only "open in a new tab" added one); a note already open goes to
+// its tab.
 // Kept in this browser only (localStorage): which notes someone has open is a per-device convenience, not study data,
 // so nothing is saved to the DB. A read that fails (private window, blocked storage) just starts with no tabs.
 
@@ -16,8 +17,6 @@ const EMPTY: NoteTabsState = { ids: [], active: 0 }
 
 let state: NoteTabsState = EMPTY
 let loaded = false
-// Set by openNewNoteInNewTab: the next note opened (the one /new creates) goes into a new tab.
-let nextIsNewTab = false
 const listeners = new Set<() => void>()
 
 function load() {
@@ -83,37 +82,15 @@ export function peekNoteTabs(): NoteTabsState {
   return state
 }
 
-// Called by the note screen whenever the note shown changes.
+// Called by the note screen whenever the note shown changes, and by the sidebar's Ctrl/⌘ + click before it navigates:
+// the note's tab if it is open already (no second tab for the same note), else a new tab right after the current one.
 export function visitNote(pageId: string) {
   load()
   const { ids, active } = state
   const at = ids.indexOf(pageId)
-  if (nextIsNewTab) {
-    nextIsNewTab = false
-    if (at === -1)
-      return set(capped([...ids.slice(0, active + 1), pageId, ...ids.slice(active + 1)], ids.length ? active + 1 : 0))
-  }
-  if (ids.length === 0) return set({ ids: [pageId], active: 0 })
-  // Already open in some tab: go to that tab (no second tab for the same note).
   if (at !== -1) return at === active ? undefined : set({ ids, active: at })
-  // Otherwise the tab you are on now shows this note.
-  set({ ids: ids.map((id, i) => (i === active ? pageId : id)), active })
-}
-
-// Ctrl/⌘ + click, middle click or ⋯ > 새 탭으로 열기 on a note: a tab right after the current one (or that note's tab
-// if it is open already). The caller then navigates to the note.
-export function openInNewTab(pageId: string) {
-  load()
-  const { ids, active } = state
-  const at = ids.indexOf(pageId)
-  if (at !== -1) return set({ ids, active: at })
   if (ids.length === 0) return set({ ids: [pageId], active: 0 })
   set(capped([...ids.slice(0, active + 1), pageId, ...ids.slice(active + 1)], active + 1))
-}
-
-// The tab bar's +: the note /new is about to create opens in a new tab.
-export function openNewNoteInNewTab() {
-  nextIsNewTab = true
 }
 
 // Closes a tab. Returns the note to show next when the closed tab was the one being looked at (the tab to its right,
