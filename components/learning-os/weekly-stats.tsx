@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useTodayISO } from "@/hooks/use-today"
 import { formatDuration } from "@/lib/study-pages"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
@@ -7,9 +8,8 @@ import { weeklyStats } from "@/lib/study-stats"
 import { useWorkspace } from "@/lib/workspace"
 import { RuledHeader } from "@/components/page-shell"
 
-const DAY_NAMES = ["월", "화", "수", "목", "금", "토", "일"]
-
-// This week (Monday to today): total against the weekly goal, minutes per day, and minutes per subject.
+// This week (Monday to today) in one line: the total against the weekly goal and, while it isn't met, how much a day
+// fills it (UI 개선 1번 ③, 2026-11-18). Minutes per day and per subject are on 학습 분석 (이번 주 그래프, 과목별 학습 상태).
 export function WeeklyStats() {
   const workspace = useWorkspace()
   const today = useTodayISO()
@@ -17,90 +17,49 @@ export function WeeklyStats() {
 
   const total = stats?.totalMinutes ?? 0
   const percent = Math.min(Math.round((total / WEEKLY_GOAL_MINUTES) * 100), 100)
-  const maxDay = Math.max(...(stats?.days.map((d) => d.minutes) ?? []), 1)
-  const maxSubject = Math.max(...(stats?.subjects.map((s) => s.minutes) ?? []), 1)
 
   return (
     <section aria-labelledby="weekly-stats-title">
-      <RuledHeader id="weekly-stats-title" title="이번 주 학습" aside={stats ? `목표 ${formatDuration(WEEKLY_GOAL_MINUTES)}` : null} />
+      <RuledHeader
+        id="weekly-stats-title"
+        title="이번 주 학습"
+        aside={
+          <Link href="/analytics" className="font-medium text-action-700 hover:underline">
+            학습 분석
+          </Link>
+        }
+      />
 
       {stats === null ? (
-        <div className="mt-4 flex flex-col gap-3" aria-hidden="true">
-          <div className="h-8 w-32 animate-pulse rounded bg-muted" />
-          <div className="h-2 animate-pulse rounded bg-muted" />
-          <div className="h-16 animate-pulse rounded bg-muted" />
-        </div>
+        <div className="mt-3 h-6 animate-pulse rounded bg-muted" aria-hidden="true" />
       ) : (
         <>
-          <p className="mt-3 flex items-baseline justify-between gap-2">
-            <span className="text-2xl font-semibold tracking-tight tabular-nums text-foreground">{formatDuration(total)}</span>
-            <span className="text-sm font-medium tabular-nums text-muted-foreground">{percent}%</span>
-          </p>
-          <div
-            className="mt-2 h-2 overflow-hidden rounded-full bg-muted"
-            role="progressbar"
-            aria-valuenow={percent}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="이번 주 목표 달성률"
-          >
-            <div className="h-full rounded-full bg-action-600 transition-[width] duration-500 ease-out" style={{ width: `${percent}%` }} />
+          <div className="mt-3 flex items-center gap-3">
+            <span className="text-base font-semibold tabular-nums text-foreground">{formatDuration(total)}</span>
+            <div
+              className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
+              role="progressbar"
+              aria-valuenow={percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`이번 주 목표 ${formatDuration(WEEKLY_GOAL_MINUTES)} 중 ${percent}%`}
+            >
+              <div className="h-full rounded-full bg-action-600 transition-[width] duration-500 ease-out" style={{ width: `${percent}%` }} />
+            </div>
+            <span className="text-sm tabular-nums text-muted-foreground">{percent}%</span>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted-foreground">
             {stats.perDayToGoal === 0 ? (
-              <span className="font-medium text-action-700">이번 주 목표를 채웠어요.</span>
+              <span className="font-medium text-action-700">목표 {formatDuration(WEEKLY_GOAL_MINUTES)}를 채웠어요.</span>
             ) : total === 0 ? (
               // Nothing recorded this week (every new account): say what fills the bar, not a pace to keep up.
-              "이번 주 기록이 아직 없어요. 기록을 남기면 여기에 쌓여요."
+              `목표 ${formatDuration(WEEKLY_GOAL_MINUTES)} · 기록을 남기면 여기에 쌓여요.`
             ) : (
               <>
-                남은 날 하루 <span className="font-medium text-foreground">{formatDuration(stats.perDayToGoal)}</span>씩이면 채워요.
+                목표 {formatDuration(WEEKLY_GOAL_MINUTES)} · 남은 날 하루 <span className="font-medium text-foreground">{formatDuration(stats.perDayToGoal)}</span>씩
               </>
             )}
           </p>
-
-          {/* The label carries the values (ui-ux-pro-max screen-reader-summary): bars alone say nothing to a screen reader. */}
-          <div
-            className="mt-5 flex items-end gap-1.5"
-            role="img"
-            aria-label={`요일별 학습 시간: ${stats.days
-              .map((d, i) => (d.future ? null : `${DAY_NAMES[i]} ${d.minutes > 0 ? formatDuration(d.minutes) : "없음"}`))
-              .filter(Boolean)
-              .join(", ")}`}
-          >
-            {stats.days.map((day, i) => (
-              <div key={day.date} className="flex flex-1 flex-col items-center gap-1">
-                <div className="flex h-14 w-full items-end">
-                  <div
-                    title={`${DAY_NAMES[i]} · ${day.minutes > 0 ? formatDuration(day.minutes) : "기록 없음"}`}
-                    className={`w-full rounded-sm ${
-                      day.future ? "bg-transparent" : day.minutes === 0 ? "bg-muted" : day.isToday ? "bg-action-600" : "bg-action-300"
-                    }`}
-                    style={{ height: day.future ? 0 : Math.max(day.minutes === 0 ? 3 : 6, Math.round((day.minutes / maxDay) * 56)) }}
-                  />
-                </div>
-                <span className={`text-xs ${day.isToday ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
-                  {DAY_NAMES[i]}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {stats.subjects.length > 0 && (
-            <ul className="mt-5 flex flex-col gap-2.5 border-t border-border pt-4">
-              {stats.subjects.map((s) => (
-                <li key={s.subject}>
-                  <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="text-foreground">{s.subject}</span>
-                    <span className="tabular-nums text-muted-foreground">{formatDuration(s.minutes)}</span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-action-400" style={{ width: `${(s.minutes / maxSubject) * 100}%` }} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
         </>
       )}
     </section>

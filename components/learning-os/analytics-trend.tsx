@@ -79,7 +79,9 @@ export function AnalyticsTrend() {
   }
 
   return (
-    <section aria-labelledby="trend-title" className="grid gap-4 rounded-xl border border-border bg-card p-5 lg:grid-cols-[1fr_280px]">
+    // One column (2026-11-19): with 학습 달력 moved to 오늘's 시간표 (D-44), the side column held only 한눈에 보기 and
+    // stood mostly empty, so those few sentences sit above the chart and the chart gets the full width.
+    <section aria-labelledby="trend-title" className="rounded-xl border border-border bg-card p-5">
       <div className="min-w-0">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <div className="flex items-baseline gap-3">
@@ -103,7 +105,7 @@ export function AnalyticsTrend() {
                 aria-pressed={unit === value}
                 onClick={() => switchUnit(value)}
                 className={`touch-hit rounded-md px-2.5 py-1 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500 ${
-                  unit === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  unit === value ? "bg-background text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {label}
@@ -111,6 +113,26 @@ export function AnalyticsTrend() {
             ))}
           </div>
         </div>
+
+        {/* 한눈에 보기: up to three plain sentences about the records, before the bars they explain. */}
+        <h3 className="sr-only">한눈에 보기</h3>
+        {insights === null ? (
+          <div className="mb-4 h-10 animate-pulse rounded-lg bg-muted" aria-hidden="true" />
+        ) : insights.length === 0 ? (
+          <p className="mb-4 text-sm text-muted-foreground">학습 기록이 쌓이면 여기에서 변화를 알려 드려요.</p>
+        ) : (
+          <ul className="mb-4 flex flex-col gap-1.5 rounded-lg bg-muted/60 px-3 py-2.5">
+            {insights.map((insight) => {
+              const { icon: Icon, className } = insightIcon[insight.tone]
+              return (
+                <li key={insight.text} className="flex gap-2 text-sm leading-relaxed text-foreground">
+                  <Icon className={`mt-0.5 size-4 shrink-0 ${className}`} aria-hidden="true" />
+                  {insight.text}
+                </li>
+              )
+            })}
+          </ul>
+        )}
 
         {data === null ? (
           <div className="animate-pulse rounded-lg bg-muted" style={{ height: CHART_HEIGHT + 60 }} aria-hidden="true" />
@@ -227,26 +249,6 @@ export function AnalyticsTrend() {
         )}
       </div>
 
-      <div className="border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-        <h3 className="mb-3 text-base font-semibold text-foreground">한눈에 보기</h3>
-        {insights === null ? (
-          <div className="h-24 animate-pulse rounded-lg bg-muted" aria-hidden="true" />
-        ) : insights.length === 0 ? (
-          <p className="text-sm text-muted-foreground">학습 기록이 쌓이면 여기에서 변화를 알려 드려요.</p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {insights.map((insight) => {
-              const { icon: Icon, className } = insightIcon[insight.tone]
-              return (
-                <li key={insight.text} className="flex gap-2 text-sm leading-relaxed text-foreground">
-                  <Icon className={`mt-0.5 size-4 shrink-0 ${className}`} aria-hidden="true" />
-                  {insight.text}
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </div>
     </section>
   )
 }

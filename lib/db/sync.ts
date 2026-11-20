@@ -1,8 +1,9 @@
 import { toast } from "sonner"
 import { createStore } from "@/lib/create-store"
-import { replacePlans, setPlanGoalsReady } from "@/lib/plans"
+import { replacePlans, setPlanGoalsReady, setPlanSlotsReady } from "@/lib/plans"
 import { replaceWorkspace, setPagePropsReady, setSubjectRecordsReady } from "@/lib/workspace"
 import { replaceTodos } from "@/lib/todos"
+import { replaceDdays } from "@/lib/ddays"
 import { setTimeSlots } from "@/lib/time-slots"
 import { db, resetWrites, setCurrentUserId, setWriteFailureHandler } from "@/lib/db/queue"
 import {
@@ -14,8 +15,11 @@ import {
   RECORD_COLUMNS_NO_TIMES,
   NODE_COLUMNS,
   PLAN_COLUMNS,
+  PLAN_COLUMNS_SLOTS,
   RECORD_COLUMNS,
   TODO_COLUMNS,
+  DDAY_COLUMNS,
+  toDday,
   toPlan,
   toTodo,
   toWorkspaceState,
@@ -23,6 +27,7 @@ import {
   type PlanRow,
   type RecordRow,
   type TodoRow,
+  type DdayRow,
 } from "@/lib/db/rows"
 
 export type DataStatus = { phase: "loading" } | { phase: "ready" } | { phase: "error"; message: string }
@@ -65,15 +70,23 @@ async function selectNodes(userId: string) {
   }
 }
 
-// Same for learning_plans.goal_minutes.
+// Same for learning_plans.goal_minutes and .slots (newest first; each missing one turns off only what needs it).
 async function selectPlans(userId: string) {
+  const order = ["created_at", "id"]
+  const missingColumn = (error: unknown) => (error as { code?: string } | null)?.code === "42703"
   try {
-    const rows = await selectAll<PlanRow>("learning_plans", PLAN_COLUMNS, userId, ["created_at", "id"])
-    return { rows, goals: true }
+    const rows = await selectAll<PlanRow>("learning_plans", PLAN_COLUMNS_SLOTS, userId, order)
+    return { rows, goals: true, slots: true }
   } catch (error) {
-    if ((error as { code?: string } | null)?.code !== "42703") throw error
-    const rows = await selectAll<PlanRow>("learning_plans", LEGACY_PLAN_COLUMNS, userId, ["created_at", "id"])
-    return { rows, goals: false }
+    if (!missingColumn(error)) throw error
+  }
+  try {
+    const rows = await selectAll<PlanRow>("learning_plans", PLAN_COLUMNS, userId, order)
+    return { rows, goals: true, slots: false }
+  } catch (error) {
+    if (!missingColumn(error)) throw error
+    const rows = await selectAll<PlanRow>("learning_plans", LEGACY_PLAN_COLUMNS, userId, order)
+    return { rows, goals: false, slots: false }
   }
 }
 
@@ -124,9 +137,11 @@ export async function loadUserData() {
       new Map(nodes.map((n) => [n.id, { parentId: n.parent_id, position: n.position }])),
     )
     setPlanGoalsReady(plans.goals)
+    setPlanSlotsReady(plans.slots)
     replacePlans(plans.rows.map(toPlan))
     statusStore.set(() => ({ phase: "ready" }))
     void loadTodos(userId, seq)
+    void loadDdays(userId, seq)
   } catch (error) {
     if (seq !== loadSeq) return
     statusStore.set(() => ({ phase: "error", message: messageOf(error) }))
@@ -162,6 +177,16 @@ async function loadTodos(userId: string, seq: number) {
   }
 }
 
+// D-days load separately too: before 20261119_ddays.sql the table is missing, and only the D-day parts hide.
+async function loadDdays(userId: string, seq: number) {
+  try {
+    const rows = await selectAll<DdayRow>("ddays", DDAY_COLUMNS, userId, ["on_date", "created_at", "id"])
+    if (seq === loadSeq) replaceDdays(rows.map(toDday), "ready")
+  } catch {
+    if (seq === loadSeq) replaceDdays([], "unavailable")
+  }
+}
+
 // Clears everything the previous user left in memory: cached data, pending writes, and the user id.
 function clearUserData() {
   loadSeq += 1
@@ -170,6 +195,7 @@ function clearUserData() {
   replaceWorkspace(null)
   replacePlans([])
   replaceTodos([], "loading")
+  replaceDdays([], "loading")
   setTimeSlots({ todoTimes: false, recordTimes: false, todoDurations: false })
   statusStore.set(() => ({ phase: "loading" }))
 }

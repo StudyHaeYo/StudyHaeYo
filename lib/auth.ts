@@ -27,6 +27,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   email_address_invalid: "사용할 수 없는 이메일 주소예요.",
   over_email_send_rate_limit: "메일을 너무 자주 보냈어요. 잠시 후 다시 시도해 주세요.",
   same_password: "지금 쓰는 비밀번호와 다른 비밀번호를 입력해 주세요.",
+  reauthentication_needed: "보안을 위해 로그아웃했다가 다시 로그인한 뒤 바꿔 주세요.",
   over_request_rate_limit: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
   signup_disabled: "지금은 회원가입을 받지 않고 있어요.",
 }
@@ -82,6 +83,17 @@ export async function requestPasswordReset(email: string): Promise<AuthResult> {
 export async function updatePassword(password: string): Promise<AuthResult> {
   try {
     const { error } = await createClient().auth.updateUser({ password })
+    return error ? { ok: false, message: toMessage(error) } : { ok: true }
+  } catch {
+    return { ok: false, message: FALLBACK_MESSAGE }
+  }
+}
+
+// 설정 > 이름 바꾸기(2026-11-19). 가입 때 넣은 display_name(로그인 계정 정보)을 바꾼다. 새 저장 칸은 없다.
+// 바꾸면 onAuthStateChange(USER_UPDATED)로 사이드바 이름도 바로 바뀐다.
+export async function updateDisplayName(name: string): Promise<AuthResult> {
+  try {
+    const { error } = await createClient().auth.updateUser({ data: { display_name: name } })
     return error ? { ok: false, message: toMessage(error) } : { ok: true }
   } catch {
     return { ok: false, message: FALLBACK_MESSAGE }

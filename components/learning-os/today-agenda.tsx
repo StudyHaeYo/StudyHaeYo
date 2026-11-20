@@ -7,7 +7,8 @@ import { useTodayISO } from "@/hooks/use-today"
 import { reviewCandidates, reviewHref, type StudyCandidate } from "@/lib/study-candidates"
 import { dueToneClass, formatDuration } from "@/lib/study-pages"
 import { activePlans, type ActivePlan } from "@/lib/study-stats"
-import { usePlans } from "@/lib/plans"
+import { slotsOn, usePlans, usePlanSlotsReady } from "@/lib/plans"
+import { clockLabel } from "@/lib/timetable"
 import { useWorkspace } from "@/lib/workspace"
 import { UnresolvedBadge } from "@/components/study-page/unresolved-badge"
 import { ChecklistBody, useChecklistCount } from "@/components/checklist-widget"
@@ -59,7 +60,7 @@ export function TodayAgenda() {
           ) : (
             <ul className="flex flex-col gap-1">
               {running.map((item) => (
-                <PlanRow key={item.plan.id} item={item} />
+                <PlanRow key={item.plan.id} item={item} today={today} />
               ))}
             </ul>
           )}
@@ -166,15 +167,25 @@ function ReviewList({ reviews }: { reviews: StudyCandidate[] }) {
   )
 }
 
-function PlanRow({ item }: { item: ActivePlan }) {
+function PlanRow({ item, today }: { item: ActivePlan; today: string | null }) {
   const { plan } = item
+  const pages = useWorkspace().pages
+  const slotsReady = usePlanSlotsReady()
+  // 공부할 시각 today (D-46): "오늘 19:00 해시테이블 정리".
+  const todaySlots = slotsReady && today ? slotsOn(plan, today) : []
+  const slotText = todaySlots
+    .map((s) => `${clockLabel(s.startMin)} ${pages.find((p) => p.id === s.pageId)?.title || "지운 노트"}`)
+    .join(", ")
   const left = item.daysLeft === 0 ? "오늘 마감" : `${item.daysLeft}일 남음`
   const body = (
     <>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium text-foreground">{plan.title}</span>
         {/* One fact under the name; the dates and the goal note are on 학습 계획. */}
-        <span className="block truncate text-xs text-muted-foreground">{item.targetLabel}</span>
+        <span className="block truncate text-xs text-muted-foreground">
+          {item.targetLabel}
+          {slotText && <span className="text-action-700">{` · 오늘 ${slotText}`}</span>}
+        </span>
       </span>
       <span className="flex shrink-0 flex-col items-end">
         <span className="text-sm font-semibold tabular-nums text-foreground">

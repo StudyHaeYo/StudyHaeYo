@@ -1,12 +1,20 @@
 import { createStore } from "@/lib/create-store"
 import { check, db, enqueueWrite } from "@/lib/db/queue"
-import { newId, planInsertRow } from "@/lib/db/rows"
+import { newId, planInsertRow, planUpdateRow } from "@/lib/db/rows"
 
 // A plan can cover all study, one subject, or one page — it never has to pick a leaf page.
 export type PlanTarget =
   | { scope: "all" }
   | { scope: "subject"; subjectId: string }
   | { scope: "page"; pageId: string }
+
+// 노트마다 공부할 시각(D-46): on these weekdays, while the plan runs, this note is on the timetable at this time.
+export interface PlanSlot {
+  pageId: string
+  days: number[] // 0 = 월 … 6 = 일
+  startMin: number // minutes from 00:00
+  durationMin: number
+}
 
 export interface LearningPlan {
   id: string
@@ -17,6 +25,8 @@ export interface LearningPlan {
   goal: string
   // 목표 학습 시간(분). Progress is measured against it; without it, against the days of the period.
   goalMinutes?: number
+  // 노트마다 공부할 시각(D-46, learning_plans.slots). Empty or missing: the plan has no set times.
+  slots?: PlanSlot[]
 }
 
 // Example plans for "예시 데이터 가져오기" (importExampleData in lib/workspace.ts). Targets are seed ids from
@@ -62,6 +72,15 @@ export function setPlanGoalsReady(ready: boolean) {
   goalsReadyStore.set(() => ready)
 }
 export const getPlans = store.get
+
+// False while learning_plans has no slots column (20261120_plan_slots.sql not run): the form hides 공부할 시각 and
+// the timetable draws no plan blocks.
+const slotsReadyStore = createStore<boolean>(false)
+export const usePlanSlotsReady = slotsReadyStore.useStore
+export const planSlotsReady = slotsReadyStore.get
+export function setPlanSlotsReady(ready: boolean) {
+  slotsReadyStore.set(() => ready)
+}
 
 export function replacePlans(plans: LearningPlan[]) {
   store.set(() => plans)
@@ -112,6 +131,27 @@ export function reattachPlans(plans: LearningPlan[]) {
 export async function deletePlanRows(ids: string[], userId: string) {
   if (ids.length === 0) return
   check(await db().from("learning_plans").delete().in("id", ids).eq("user_id", userId).select("id"), ids.length)
+}
+
+// 계획 고치기: everything but the id. A to-do made from the plan's share keeps its old name (D-38: plans and to-dos
+// are matched by name only).
+export function updatePlan(id: string, fields: Omit<LearningPlan, "id">) {
+  const current = store.get().find((p) => p.id === id)
+  if (!current) return
+  const next: LearningPlan = { ...fields, id }
+  store.set((plans) => plans.map((p) => (p.id === id ? next : p)))
+  const row = planUpdateRow(next, { goals: goalsReadyStore.get(), slots: slotsReadyStore.get() })
+  enqueueWrite(async (userId) => {
+    check(await db().from("learning_plans").update(row).eq("id", id).eq("user_id", userId).select("id"), 1)
+  })
+}
+
+// The plan's slots on one day (weekday 0 = 월), while the plan runs that day.
+export function slotsOn(plan: LearningPlan, day: string): PlanSlot[] {
+  if (!plan.slots || day < plan.startDate || day > plan.endDate) return []
+  const [y, m, d] = day.split("-").map(Number)
+  const weekday = (new Date(y, m - 1, d).getDay() + 6) % 7
+  return plan.slots.filter((s) => s.days.includes(weekday))
 }
 
 export function removePlan(id: string) {
