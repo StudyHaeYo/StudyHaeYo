@@ -68,7 +68,8 @@ export function RecordRow({
           <button
             type="button"
             onClick={() => setLinking(true)}
-            className="touch-hit inline-flex h-6 items-center gap-1 rounded-md border border-dashed border-border px-2 font-semibold text-action-700 transition-colors hover:border-action-300 hover:bg-action-50"
+            // Quiet on purpose (design-critique 2026-11-19): it sits on many rows, so it reads as a link, not a button.
+            className="touch-hit inline-flex items-center gap-1 rounded-sm font-medium text-action-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
           >
             <FilePlus2 className="size-3.5" aria-hidden="true" />
             복습 노트 만들기

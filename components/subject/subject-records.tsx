@@ -58,9 +58,14 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
                       {stats.lastStudiedAt ? formatDate(stats.lastStudiedAt) : "—"}
                     </span>
                     {/* The one colour in the row: a note that is due (D-25, 줄마다 색 신호 하나). */}
-                    <span className={`whitespace-nowrap ${due ? "font-medium text-attention-700" : "tabular-nums text-muted-foreground"}`}>
+                    {/* A due note: an amber dot and plain text, like the sidebar's dot — the words repeated in orange on
+                        every row were louder than the list (design-critique 2026-11-19). */}
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap tabular-nums text-muted-foreground">
+                      {due && <span className="size-1.5 shrink-0 rounded-full bg-attention-500" aria-hidden="true" />}
                       <span className={!due && stats.nextReviewAt ? "sm:sr-only" : "sr-only"}>다음 복습 </span>
-                      {due ? "다시 볼 때예요" : stats.nextReviewAt ? formatDate(stats.nextReviewAt) : stats.status === "시작 전" ? "시작 전" : "—"}
+                      <span className={due ? "text-foreground" : undefined}>
+                        {due ? "다시 볼 때" : stats.nextReviewAt ? formatDate(stats.nextReviewAt) : stats.status === "시작 전" ? "시작 전" : "—"}
+                      </span>
                     </span>
                   </Link>
                 </li>

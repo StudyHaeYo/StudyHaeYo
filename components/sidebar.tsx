@@ -21,6 +21,7 @@ import {
   Search,
   Plus,
   X,
+  Settings,
 } from "lucide-react"
 import type { Category } from "@/lib/types"
 import type { StudyPage } from "@/lib/study-pages"
@@ -48,7 +49,7 @@ import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "
 import { button } from "@/components/ui-styles"
 
 const mainNav = [
-  { href: "/", label: "홈", icon: Home },
+  { href: "/", label: "오늘", icon: Home },
   // 오늘 → 모든 기록 → 통계 → 목표 (D-28)
   { href: "/records", label: "학습 기록", icon: NotebookText },
   { href: "/analytics", label: "학습 분석", icon: BarChart3 },
@@ -294,8 +295,15 @@ export function Sidebar(_props: SidebarProps = {}) {
               <span className="h-3 w-28 rounded bg-muted" />
             </div>
           )}
-          {/* No settings button (2026-11-15): the page could not change anything, and its profile rows are the name
-              and email right here. It comes back when there is a setting to change (주간 목표, D-25). */}
+          {/* 설정 (2026-11-19): 이름 · 비밀번호 바꾸기와 로그아웃이 생겨 다시 넣었다. */}
+          <Link
+            href="/settings"
+            aria-label="계정 설정"
+            title="계정 설정"
+            className="touch-hit flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-action-500"
+          >
+            <Settings className="size-4" aria-hidden="true" />
+          </Link>
           <button
             type="button"
             onClick={handleLogout}

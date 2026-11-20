@@ -3,10 +3,11 @@
 import Link from "next/link"
 import { daysBetween, formatDate, type PageKind, type PageStats } from "@/lib/study-pages"
 import { examCountdown } from "@/components/study-page/page-properties"
+import { button } from "@/components/ui-styles"
 
-// The one thing about this note's study that matters now, in the page's top bar (D-28). Same words and colors as
-// 홈의 복습할 노트 and 학습 분석의 복습 예정: amber "다시 볼 때예요" + navy [복습하기] (the same name as on
-// home, reviewActionLabel). Per template: 시험 D-day for 시험 정리, 틀린 문제 + [다시 풀기] for 오답 노트.
+// The one thing about this note's study that matters now, in the page's top bar (D-28). When it is time, one navy
+// button with the same name as on home (reviewActionLabel) and an amber dot for "다시 볼 때예요" — the label and the
+// button used to sit side by side as two things (D-42). Per template: 시험 D-day for 시험 정리, [다시 풀기 N] for 오답 노트.
 export function PageStatusChip({
   kind,
   stats,
@@ -28,9 +29,8 @@ export function PageStatusChip({
   canTryReview?: boolean
 }) {
   if (!today) return null
-  const due = "inline-flex h-8 items-center gap-2 rounded-lg border border-attention-200 bg-attention-50 pl-2.5 pr-[3px] text-sm font-semibold text-attention-800"
-  const calm = "hidden h-8 items-center rounded-lg px-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:inline-flex"
-  const button = "inline-flex h-[26px] items-center rounded-md bg-action-600 px-2.5 text-xs font-semibold text-action-foreground transition-colors hover:bg-action-700"
+  const calm = "hidden h-8 items-center rounded-lg px-2.5 text-sm text-muted-foreground sm:inline-flex"
+  const dot = <span className="size-1.5 shrink-0 rounded-full bg-attention-400" aria-hidden="true" />
 
   if (kind === "exam" && exam) {
     const countdown = examCountdown(exam.date, today)
@@ -41,7 +41,11 @@ export function PageStatusChip({
     return (
       <a
         href="#exam-scope"
-        className={near ? `${due} pr-2.5` : `${calm} font-medium text-foreground`}
+        className={
+          near
+            ? button("secondary", "sm", "border-attention-200 bg-attention-50 font-semibold text-attention-800 hover:bg-attention-100")
+            : button("ghost", "sm", "hidden text-foreground sm:inline-flex")
+        }
         title="시험 범위로 가기"
       >
         시험 {countdown}
@@ -53,12 +57,11 @@ export function PageStatusChip({
   if (kind === "wrong-answers") {
     if (problems.wrong === 0) return problems.total > 0 ? <span className={calm}>모두 맞혔어요</span> : null
     return (
-      <span className={due}>
-        <span className="hidden sm:inline">틀린 문제 {problems.wrong}</span>
-        <Link href={reviewHref} className={button}>
-          다시 풀기
-        </Link>
-      </span>
+      <Link href={reviewHref} aria-label={`틀린 문제 ${problems.wrong}개 다시 풀기`} className={button("primary", "sm")}>
+        {dot}
+        다시 풀기
+        <span className="tabular-nums text-action-200">{problems.wrong}</span>
+      </Link>
     )
   }
 
@@ -66,21 +69,20 @@ export function PageStatusChip({
   // Finishing this first try records it and starts the review days.
   if (!stats.nextReviewAt)
     return canTryReview ? (
-      <Link href={reviewHref} className={`${calm} !inline-flex border border-border font-medium text-foreground`}>
+      <Link href={reviewHref} className={button("secondary", "sm")}>
         복습해 보기
       </Link>
     ) : null
   if (stats.status === "복습 필요") {
     const late = daysBetween(stats.nextReviewAt, today)
+    const when = late > 0 ? "다시 볼 때예요" : "오늘 복습할 날이에요"
     return (
-      <span className={due}>
-        <span className="hidden sm:inline">{late > 0 ? "다시 볼 때예요" : "오늘 복습"}</span>
-        <Link href={reviewHref} className={button}>
-          {action}
-        </Link>
-      </span>
+      <Link href={reviewHref} title={when} aria-label={`${action} · ${when}`} className={button("primary", "sm")}>
+        {dot}
+        {action}
+      </Link>
     )
   }
-  // Just the state: the note's records open from [기록] right beside it (D-36).
-  return <span className="hidden h-8 items-center px-1.5 text-sm text-muted-foreground sm:inline-flex">다음 복습 {formatDate(stats.nextReviewAt)}</span>
+  // Just the state: the note's records open from ⋯ > 학습 기록 (D-36, D-42).
+  return <span className={calm}>다음 복습 {formatDate(stats.nextReviewAt)}</span>
 }

@@ -40,8 +40,8 @@ export function SubjectStudyLog({ subjectId }: { subjectId: string }) {
       {entries.length === 0 ? (
         <p className="border-y border-border py-5 text-sm leading-relaxed text-muted-foreground">
           {ready
-            ? "아직 기록이 없어요. 노트에서 공부했으면 노트 위쪽 [기록]에서, 수업이나 문제집처럼 노트 없이 공부했으면 [기록 남기기]로 남겨요."
-            : "아직 기록이 없어요. 노트를 열고 위쪽 [기록]에서 남겨요."}
+            ? "아직 기록이 없어요. 공부를 마치면 [기록 남기기]로 남겨요. 노트를 열고 누르면 그 노트에, 여기서 누르면 이 과목에 남아요."
+            : "아직 기록이 없어요. 노트를 열고 [기록 남기기]로 남겨요."}
         </p>
       ) : (
         <ul className="flex flex-col divide-y divide-border border-y border-border">

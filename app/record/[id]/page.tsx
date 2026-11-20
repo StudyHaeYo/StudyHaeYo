@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { StudyPageView } from "@/components/study-page/study-page-view"
+import { NoteTabs } from "@/components/study-page/note-tabs"
 
 export default async function StudyPageRoute({
   params,
@@ -21,6 +22,7 @@ export default async function StudyPageRoute({
     <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <Sidebar />
       <main id="main" tabIndex={-1} className="min-w-0 flex-1 outline-none md:h-screen md:overflow-y-auto print:h-auto print:overflow-visible">
+        <NoteTabs pageId={id} />
         <StudyPageView
           key={id}
           pageId={id}
