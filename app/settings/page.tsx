@@ -23,6 +23,8 @@ const sections = [
 
 export default async function SettingsPage() {
   const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value)
+  // 탈퇴(D-49) needs the server-only service_role key. Only whether it is set reaches the screen, never the key.
+  const deletable = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
   return (
     <PageShell>
       <PageHeader title="설정" />
@@ -49,7 +51,7 @@ export default async function SettingsPage() {
           </section>
         ))}
 
-        <AccountSection />
+        <AccountSection deletable={deletable} />
       </div>
     </PageShell>
   )

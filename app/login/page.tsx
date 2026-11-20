@@ -17,6 +17,8 @@ export default async function LoginPage({
   const notice =
     query.verified === "1"
       ? "이메일 인증이 끝났어요. 로그인해 주세요."
+      : query.deleted === "1"
+        ? "탈퇴했어요. 계정과 학습 기록을 모두 지웠어요."
       : query.error === "verification"
         ? "인증 링크가 만료됐거나 올바르지 않아요. 다시 가입하거나 받은 메일을 확인해 주세요."
         : undefined
@@ -34,7 +36,7 @@ export default async function LoginPage({
         </>
       }
     >
-      <LoginForm next={next} notice={notice} noticeTone={query.verified === "1" ? "success" : "error"} />
+      <LoginForm next={next} notice={notice} noticeTone={query.verified === "1" || query.deleted === "1" ? "success" : "error"} />
     </AuthShell>
   )
 }

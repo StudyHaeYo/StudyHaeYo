@@ -145,6 +145,38 @@ export async function signOut(): Promise<AuthResult> {
   }
 }
 
+// 탈퇴(D-49): 서버 경로가 비밀번호를 다시 확인하고 계정과 학습 데이터 · 첨부 파일을 지운다(app/api/account/delete).
+// 성공하면 이 브라우저에 남은 이 계정의 것(열린 노트 탭, 진행 중이던 타이머, 기억한 이메일 등)도 지운다.
+export async function deleteAccount(password: string): Promise<AuthResult> {
+  try {
+    const res = await fetch("/api/account/delete", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ password }),
+    })
+    const body = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null
+    if (!res.ok || !body?.ok) return { ok: false, message: body?.error || FALLBACK_MESSAGE }
+    clearLocalData()
+    return { ok: true }
+  } catch {
+    return { ok: false, message: FALLBACK_MESSAGE }
+  }
+}
+
+// Every key this app keeps in the browser starts with "studyhaeyo" (studyhaeyo:note-tabs, studyhaeyo.loginEmail …).
+function clearLocalData() {
+  try {
+    const keys: string[] = []
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i)
+      if (key?.startsWith("studyhaeyo")) keys.push(key)
+    }
+    keys.forEach((key) => window.localStorage.removeItem(key))
+  } catch {
+    // 저장소를 못 쓰면 지울 것도 없다.
+  }
+}
+
 // 로그인한 사용자. 서버 렌더와 첫 렌더에서는 null이고, 마운트 후에 채워진다(hydration 안전).
 export function useCurrentUser(): CurrentUser | null {
   const [user, setUser] = useState<CurrentUser | null>(null)
