@@ -34,6 +34,9 @@ export interface TextBlock {
   // toggle in a 오답 노트: the last try at this problem (D-27). Unset counts as wrong (it was added because it was missed).
   result?: "right" | "wrong"
   triedOn?: string
+  // Every try at this problem, one per day (the day's last mark), oldest first, the last MAX_ATTEMPTS (D-39).
+  // `result` · `triedOn` stay equal to the last one so older builds and readers keep working.
+  attempts?: ProblemAttempt[]
   // 오답 노트 problem (D-35): what I answered (one line, stays in sight when the answer is covered in review), and why
   // it went wrong (any number of reasons, or none). Both optional.
   myAnswer?: string
@@ -289,8 +292,51 @@ export function problemBlocks(blocks: Block[]) {
   )
 }
 
+export interface ProblemAttempt {
+  on: string
+  result: "right" | "wrong"
+}
+export const MAX_ATTEMPTS = 10
+
+// A problem's tries; an older problem without `attempts` has its last result as its one try.
+export function problemAttempts(block: TextBlock): ProblemAttempt[] {
+  if (block.attempts?.length) return block.attempts
+  return block.result && block.triedOn ? [{ on: block.triedOn, result: block.result }] : []
+}
+
+// Marks a try on `on`. A second mark the same day replaces that day's (a fixed mis-click, and "같은 자리에서 두 번
+// 눌러 빠지지 않게"). Without a date only the result changes.
+export function withAttempt(block: TextBlock, result: "right" | "wrong", on: string | null): TextBlock {
+  if (!on) return { ...block, result }
+  const prior = problemAttempts(block)
+  const next = prior.at(-1)?.on === on ? [...prior.slice(0, -1), { on, result }] : [...prior, { on, result }]
+  return { ...block, result, triedOn: on, attempts: next.slice(-MAX_ATTEMPTS) }
+}
+
+// Days in a row (counting back from the last try, up to the last wrong) the problem was answered right.
+export function rightDays(block: TextBlock) {
+  const days = new Set<string>()
+  for (const attempt of [...problemAttempts(block)].reverse()) {
+    if (attempt.result === "wrong") break
+    days.add(attempt.on)
+  }
+  return days.size
+}
+
+// Solved = right on two different days in a row (D-39). An older problem already marked right (no `attempts`) stays
+// solved: the rule changing doesn't reopen what was finished.
+export function problemSolved(block: TextBlock) {
+  if (!block.attempts?.length) return block.result === "right"
+  return rightDays(block) >= 2
+}
+
 export function wrongProblems(blocks: Block[]) {
-  return problemBlocks(blocks).filter((b) => b.result !== "right")
+  return problemBlocks(blocks).filter((b) => !problemSolved(b))
+}
+
+// Two problems are the same when their words are, spaces and punctuation aside (D-39). No meaning-matching.
+export function sameProblemKey(text: string) {
+  return text.normalize("NFKC").replace(/[\s\p{P}]/gu, "").toLowerCase()
 }
 
 // 오답 노트's head line (D-35): every reason picked on the note's problems, each counted once per problem, whatever
