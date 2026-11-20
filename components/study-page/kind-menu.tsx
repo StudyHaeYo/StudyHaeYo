@@ -6,6 +6,7 @@ import { Check, ChevronDown } from "lucide-react"
 import type { PageKind } from "@/lib/study-pages"
 import { noteKindOption, noteKinds } from "@/lib/templates"
 import { setPageKind } from "@/lib/workspace"
+import { button, dialogBackdrop, menuPanel } from "@/components/ui-styles"
 
 // 종류 칩 (D-30): what the note is, in the top bar where [속성] used to be. It only changes the kind; the body
 // stays as written (an empty body starts like the kind's button on a new note). Kinds are kept in props, so they
@@ -26,9 +27,7 @@ export function KindChip({ pageId, kind, propsReady }: { pageId: string; kind: P
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`노트 종류: ${current.name}. 바꾸기`}
-        className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2 text-[13px] font-semibold transition-colors sm:pl-2.5 ${
-          open ? "border-action-200 bg-action-50 text-foreground" : "border-border text-foreground hover:bg-accent"
-        }`}
+        className={button("secondary", "sm", "px-2 sm:pl-2.5 aria-expanded:bg-accent")}
       >
         <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
         <span className="hidden sm:inline">{current.name}</span>
@@ -120,14 +119,14 @@ function KindMenu({
 
   return createPortal(
     <>
-      <div className="fixed inset-0 z-40 bg-foreground/25 md:hidden" aria-hidden="true" />
+      <div className={`fixed inset-0 z-40 bg-foreground/25 md:hidden ${dialogBackdrop}`} aria-hidden="true" />
       <div
         ref={menuRef}
         role="menu"
         aria-label="노트 종류"
         onKeyDown={onKeyDown}
         style={anchor ? ({ "--top": `${anchor.top}px`, "--right": `${anchor.right}px` } as React.CSSProperties) : undefined}
-        className="fixed inset-x-2 bottom-2 z-50 max-h-[80dvh] overflow-y-auto overscroll-contain rounded-3xl border border-border bg-popover p-1.5 shadow-2xl md:bottom-auto md:left-auto md:right-[var(--right)] md:top-[var(--top)] md:w-80 md:rounded-2xl"
+        className={`${menuPanel} fixed inset-x-2 bottom-2 z-50 max-h-[80dvh] overflow-y-auto overscroll-contain p-1.5 md:bottom-auto md:left-auto md:right-[var(--right)] md:top-[var(--top)] md:w-80 md:origin-top-right`}
       >
         <div className="mx-auto mb-1 mt-1 h-1 w-9 rounded-full bg-border md:hidden" aria-hidden="true" />
         <p className="px-2.5 pb-1 pt-1.5 text-xs font-medium text-muted-foreground">종류</p>

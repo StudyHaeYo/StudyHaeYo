@@ -66,6 +66,7 @@ import { AttachmentBlockView } from "@/components/study-page/attachment-block"
 import { DrawingBlockView } from "@/components/study-page/drawing-block"
 import { TableBlockView } from "@/components/study-page/table-block"
 import { MathBlockView } from "@/components/study-page/math-block"
+import { menuPanel } from "@/components/ui-styles"
 
 // Typed at the start of an empty-ish paragraph (Notion's markdown shortcuts). "---" makes a divider (handled apart).
 const shortcuts: { prefix: string; type: BlockType; checked?: boolean }[] = [
@@ -199,11 +200,17 @@ const slashItems: SlashItem[] = [
   { label: "표", keywords: "표 테이블 table 비교", icon: Table, action: "table" },
   { label: "수식", keywords: "수식 수학 공식 latex math katex", icon: Sigma, action: "math" },
   { label: "구분선", keywords: "구분선 선 divider hr", icon: Minus, action: "divider" },
-  { label: "페이지 링크", keywords: "페이지링크 링크 연결 link page", icon: FileSymlink, action: "pagelink" },
+  { label: "노트 링크", keywords: "노트링크 페이지링크 링크 연결 link page", icon: FileSymlink, action: "pagelink" },
   { label: "코드", keywords: "코드 code", icon: Code, type: "code" },
   { label: "그림", keywords: "그림 필기 손글씨 드로잉 drawing draw pen", icon: PenLine, action: "drawing" },
   { label: "파일 첨부", keywords: "파일 첨부 이미지 사진 pdf file image attach", icon: Paperclip, action: "file" },
 ]
+
+// Every line's field gets a name (axe "label"): the first is the note body, the rest say what kind of line they are.
+const blockNames = Object.fromEntries(slashItems.flatMap((item) => ("type" in item ? [[item.type, item.label]] : []))) as Record<
+  BlockType,
+  string
+>
 
 function matchSlash(query: string, allowAttachments: boolean) {
   const q = query.trim().toLowerCase().replace(/\s+/g, "")
@@ -236,7 +243,7 @@ function blockText(block: Block) {
     return markdownPrefix[block.type] + block.text
   }
   if (isDividerBlock(block)) return "---"
-  if (isPageLinkBlock(block)) return "[페이지 링크]"
+  if (isPageLinkBlock(block)) return "[노트 링크]"
   if (isTableBlock(block))
     return block.rows.map((row, i) => `| ${row.join(" | ")} |` + (i === 0 ? `\n|${row.map(() => " --- |").join("")}` : "")).join("\n")
   if (isMathBlock(block)) return `$$\n${block.tex}\n$$`
@@ -710,7 +717,7 @@ export function BlockEditor({
         className={`relative flex flex-col gap-1 rounded-lg transition-colors ${selection ? "select-none" : ""} ${
           dragging ? "bg-action-50/60 ring-2 ring-action-300 ring-offset-4 ring-offset-background" : ""
         }`}
-        aria-label="페이지 본문"
+        aria-label="노트 본문"
       >
         {/* 코넬 노트: the margin is drawn from the start — its name and a rule down the page — so an empty 강의 노트
             already reads as a Cornell sheet instead of a blank page (2026-11-13). Only where the margin has room. */}
@@ -954,7 +961,7 @@ export function BlockEditor({
                     title={block.checked ? "해결함" : "헷갈린 점 · 해결하면 눌러요"}
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={() => onChange(blocks.map((b) => (b.id === block.id ? { ...block, checked: !block.checked } : b)))}
-                    className={`mt-1 flex size-[18px] shrink-0 items-center justify-center rounded-full border transition-colors ${
+                    className={`touch-hit mt-1 flex size-[18px] shrink-0 items-center justify-center rounded-full border transition-colors ${
                       block.checked
                         ? "border-muted-foreground/40 bg-muted-foreground/40 text-white"
                         : "border-attention-500 text-attention-700 hover:bg-attention-50"
@@ -1012,7 +1019,7 @@ export function BlockEditor({
                     else refs.current.delete(block.id)
                   }}
                   id={index === 0 ? "page-body" : undefined}
-                  aria-label={index === 0 ? "페이지 본문" : undefined}
+                  aria-label={index === 0 ? "노트 본문" : blockNames[block.type]}
                   aria-expanded={slashMatches.length > 0 ? true : undefined}
                   aria-controls={slashMatches.length > 0 ? `slash-${block.id}` : undefined}
                   value={block.text}
@@ -1319,7 +1326,7 @@ function BlockHandle({
         <GripVertical className="size-3.5" />
       </button>
       {open && (
-        <div role="menu" className="absolute left-0 top-7 w-40 rounded-xl border border-border bg-card p-1 shadow-lg">
+        <div role="menu" className={`${menuPanel} absolute left-0 top-7 w-40 origin-top-left p-1`}>
           <button role="menuitem" type="button" disabled={index === 0} onClick={() => onMove(-1)} className={`${item} hover:bg-accent`}>
             <ArrowUp className="size-4 text-muted-foreground" />
             위로 옮기기

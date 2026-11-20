@@ -26,6 +26,7 @@ import {
   usePagePropsReady,
   useWorkspace,
 } from "@/lib/workspace"
+import { menuPanel } from "@/components/ui-styles"
 
 // One study record, the same everywhere (D-28): what was done · where (note / subject / 과목 없음) · time · 이해도,
 // then 어려웠던 점 and 다음에 할 일. Actions sit in a small menu so the list stays a quiet log.
@@ -53,7 +54,7 @@ export function RecordRow({
 
   return (
     <div className="group/row relative grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 py-3.5 pr-9 sm:pr-10">
-      <p className="min-w-0 whitespace-pre-line text-[15px] leading-relaxed text-foreground">{recordText(entry)}</p>
+      <p className="min-w-0 whitespace-pre-line text-base leading-relaxed text-foreground">{recordText(entry)}</p>
       <div className="row-span-2 flex flex-col items-end gap-1 pt-0.5 text-right">
         <span className="text-sm font-medium tabular-nums text-foreground">{formatDuration(record.durationMinutes)}</span>
         <UnderstandingBars value={record.understanding} />
@@ -67,7 +68,7 @@ export function RecordRow({
           <button
             type="button"
             onClick={() => setLinking(true)}
-            className="inline-flex h-6 items-center gap-1 rounded-md border border-dashed border-border px-2 font-semibold text-action-700 transition-colors hover:border-action-300 hover:bg-action-50"
+            className="touch-hit inline-flex h-6 items-center gap-1 rounded-md border border-dashed border-border px-2 font-semibold text-action-700 transition-colors hover:border-action-300 hover:bg-action-50"
           >
             <FilePlus2 className="size-3.5" aria-hidden="true" />
             복습 노트 만들기
@@ -76,7 +77,7 @@ export function RecordRow({
         {when && <span className="tabular-nums">{when}</span>}
       </div>
       {(record.difficulties || record.nextSteps) && (
-        <div className="col-span-2 flex flex-col gap-0.5 text-[13px] leading-relaxed">
+        <div className="col-span-2 flex flex-col gap-0.5 text-sm leading-relaxed">
           {/* Labels carry the meaning; the text itself stays grey so a list of records is not striped with colour. */}
           {record.difficulties && (
             <p className="text-muted-foreground">
@@ -99,7 +100,7 @@ export function RecordRow({
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex size-8 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100 aria-expanded:opacity-100 [@media(hover:none)]:opacity-100"
+            className="touch-hit flex size-8 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover/row:opacity-100 aria-expanded:opacity-100 [@media(hover:none)]:opacity-100"
           >
             <MoreHorizontal className="size-4" />
           </button>
@@ -109,7 +110,7 @@ export function RecordRow({
               <div
                 role="menu"
                 onKeyDown={(e) => e.key === "Escape" && setMenuOpen(false)}
-                className="absolute right-0 top-9 z-30 w-44 rounded-xl border border-border bg-popover p-1 shadow-lg"
+                className={`${menuPanel} absolute right-0 top-9 z-30 w-44 origin-top-right p-1`}
               >
                 <MenuItem
                   autoFocus
@@ -289,7 +290,7 @@ function LinkToNote({ record, onClose }: { record: SubjectStudyRecord; onClose: 
           onClose()
         }
       }}
-      className="absolute left-0 right-0 top-full z-30 -mt-2 rounded-2xl border border-border bg-popover p-1.5 shadow-xl sm:left-auto sm:w-[22rem]"
+      className={`${menuPanel} absolute left-0 right-0 top-full z-30 -mt-2 origin-top-right p-1.5 sm:left-auto sm:w-[22rem]`}
     >
       <label className="flex h-9 items-center gap-2 rounded-lg bg-muted/70 px-2.5 text-sm text-muted-foreground">
         <Search className="size-4 shrink-0" aria-hidden="true" />

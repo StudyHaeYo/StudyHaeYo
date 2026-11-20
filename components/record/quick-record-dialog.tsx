@@ -33,6 +33,7 @@ import { recordShortcuts } from "@/lib/study-stats"
 import { addTodo, useTodosStatus } from "@/lib/todos"
 import { useTimeSlots } from "@/lib/time-slots"
 import { useFocusTrap } from "@/hooks/use-focus-trap"
+import { button, dialogBackdrop, dialogPanel } from "@/components/ui-styles"
 
 // 학습 기록 창 (D-24, D-28, D-30). What was studied comes first, then date · time, then 이해도 in words. Where it goes
 // (a note, a subject, or nothing = 과목 없음) is one optional search — not asked when opened from a note. What was
@@ -101,7 +102,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
   const todosReady = useTodosStatus() === "ready"
   const edit = request.edit
   const today = todayISO()
-  const dialogRef = useRef<HTMLFormElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLTextAreaElement>(null)
   useFocusTrap(dialogRef)
   // Start typing right away with a mouse/keyboard; on a phone the keyboard would cover the sheet, so focus the sheet.
@@ -249,24 +250,25 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/30 sm:items-center sm:p-4"
+      className={`fixed inset-0 z-50 flex items-end justify-center bg-foreground/30 sm:items-center sm:p-4 ${dialogBackdrop}`}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) closeQuickRecord()
       }}
     >
-      <form
+      {/* role="dialog" sits on a div: a <form> may not take it (axe aria-allowed-role). The form adds no box. */}
+      <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="quick-record-title"
         tabIndex={-1}
-        onSubmit={submit}
-        className="flex max-h-[92dvh] w-full max-w-xl flex-col overflow-y-auto overscroll-contain rounded-t-3xl bg-card shadow-2xl outline-none sm:rounded-2xl"
+        className={`${dialogPanel} flex max-h-[92dvh] w-full max-w-xl flex-col overflow-y-auto overscroll-contain rounded-b-none outline-none max-sm:border-x-0 max-sm:border-b-0 sm:rounded-b-xl`}
       >
+        <form onSubmit={submit} className="contents">
         <div className="mx-auto mt-2.5 h-1 w-9 rounded-full bg-border sm:hidden" aria-hidden="true" />
         <div className="flex items-center justify-between px-5 pt-3 sm:pt-4">
           <h2 id="quick-record-title" className="min-w-0 truncate text-sm font-semibold text-foreground">
-            {edit ? "학습 기록 고치기" : !pickWhere && page ? `${page.title || "제목 없음"}에 기록` : "학습 기록 남기기"}
+            {edit ? "기록 고치기" : !pickWhere && page ? `${page.title || "제목 없음"}에 기록` : "기록 남기기"}
           </h2>
           <button
             type="button"
@@ -400,7 +402,7 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
         {pickWhere ? (
         <div className="px-5 pt-4">
           <p id="qr-where-label" className="mb-1.5 text-xs text-muted-foreground">
-            어디에 남길까요 <span className="text-muted-foreground/70">· {ready ? "선택" : "노트"}</span>
+            어디에 남길까요 <span className="text-muted-foreground">· {ready ? "선택" : "노트"}</span>
           </p>
           <WherePicker
             value={target}
@@ -481,14 +483,14 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border bg-muted/30 px-5 py-3.5 sm:flex-nowrap">
-          <p role="status" className="min-w-0 flex-1 basis-full text-[13px] leading-relaxed text-muted-foreground sm:basis-auto">
+          <p role="status" className="min-w-0 flex-1 basis-full text-sm leading-relaxed text-muted-foreground sm:basis-auto">
             {missing ?? result}
           </p>
           {edit && (
             <button
               type="button"
               onClick={remove}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+              className={button("danger")}
             >
               <Trash2 className="size-4" aria-hidden="true" />
               {confirmDelete ? "한 번 더 누르면 삭제" : "삭제"}
@@ -497,12 +499,13 @@ function QuickRecordDialog({ request }: { request: QuickRecordRequest }) {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="h-10 flex-1 rounded-xl bg-action-600 px-5 text-sm font-semibold text-action-foreground transition-colors hover:bg-action-700 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
+            className={button("primary", "md", "flex-1 sm:flex-none")}
           >
             {edit ? "저장" : "기록 남기기"}
           </button>
         </div>
-      </form>
+        </form>
+      </div>
     </div>
   )
 }
@@ -643,7 +646,7 @@ function WherePicker({
           id={listId}
           role="listbox"
           aria-labelledby={labelledBy}
-          className="absolute inset-x-0 top-full z-10 mt-1.5 max-h-64 overflow-y-auto rounded-2xl border border-border bg-popover p-1.5 shadow-xl"
+          className="absolute inset-x-0 top-full z-10 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-border bg-popover p-1.5 shadow-lg"
         >
           {options.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">맞는 노트나 과목이 없어요.</li>}
           {options.map((option, i) => (

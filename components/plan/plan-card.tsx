@@ -37,8 +37,8 @@ export function PlanCard({
     <li className={`group relative py-4 ${ended ? "opacity-70" : ""}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1">
-          <h3 className="text-[15px] font-medium text-foreground">{plan.title}</h3>
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-muted-foreground">
+          <h3 className="text-base font-medium text-foreground">{plan.title}</h3>
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted-foreground">
             {showTarget &&
               (item.targetHref ? (
                 <Link href={item.targetHref} className="font-medium text-action-700 hover:underline">
@@ -85,7 +85,7 @@ export function PlanCard({
               type="button"
               onClick={onRemove}
               aria-label={`${plan.title} 계획 삭제`}
-              className="-mr-1.5 flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-60"
+              className="touch-hit -mr-1.5 flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-60"
             >
               <X className="size-3.5" />
             </button>

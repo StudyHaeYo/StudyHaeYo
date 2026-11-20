@@ -43,10 +43,11 @@ import {
 import { blocksPlainText, understandingLabel, unresolvedConfusionCount, type StudyPage, type TextBlock } from "@/lib/study-pages"
 import { createWrongAnswerNote, usePagePropsReady } from "@/lib/workspace"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
+import { button } from "@/components/ui-styles"
 
 const blockClass: Record<TextBlock["type"], string> = {
   h1: "text-base font-semibold pt-2",
-  h2: "text-[15px] font-semibold pt-2",
+  h2: "text-base font-semibold pt-2",
   h3: "text-sm font-semibold pt-1",
   p: "text-sm leading-relaxed",
   li: "text-sm leading-relaxed pl-4 relative before:absolute before:left-1 before:content-['•'] before:text-muted-foreground",
@@ -158,7 +159,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
       className={`fixed inset-0 z-40 flex-col print:hidden ${open ? "flex" : "hidden"} bg-card md:inset-y-0 md:left-auto md:w-[420px] md:border-l md:border-border md:shadow-xl`}
     >
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-foreground">
+        <h2 className="flex items-center gap-1.5 text-base font-semibold text-foreground">
           <Sparkles className="size-4 text-action-600" aria-hidden="true" />
           AI 학습 도우미
         </h2>
@@ -170,7 +171,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
                 setMessages([])
                 setError(null)
               }}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+              className={button("ghost", "sm", "px-2.5")}
             >
               <RotateCcw className="size-3.5" />
               새 대화
@@ -192,7 +193,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
           <div className="flex flex-col gap-3">
             <p className="text-sm leading-relaxed text-muted-foreground">
               {hasBody || picked.length > 0
-                ? "이 페이지 내용으로 정리하거나 문제를 만들어요. 문제를 풀고 답을 보내면 채점해요."
+                ? "이 노트 내용으로 정리하거나 문제를 만들어요. 문제를 풀고 답을 보내면 채점해요."
                 : topic
                   ? "아직 본문이 없어서 노트 내용 대신 일반 지식으로 만들어요."
                   : "공부할 주제나 궁금한 것을 보내 보세요. 노트 제목을 적으면 확인 문제도 만들어요."}
@@ -219,7 +220,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
 
         {messages.map((message, i) =>
           message.role === "user" ? (
-            <p key={i} className="max-w-[85%] self-end whitespace-pre-wrap rounded-2xl rounded-br-md bg-action-600 px-3.5 py-2 text-sm text-action-foreground">
+            <p key={i} className="max-w-[85%] self-end whitespace-pre-wrap rounded-xl rounded-br-sm bg-action-600 px-3.5 py-2 text-sm text-action-foreground">
               {message.content}
             </p>
           ) : (
@@ -296,7 +297,7 @@ export function AiPanel({ page, open, onClose, onInsert, onAddConfusions, reques
             type="submit"
             disabled={pending || !draft.trim()}
             aria-label="보내기"
-            className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-action-600 text-action-foreground transition-colors hover:bg-action-700 disabled:opacity-40"
+            className={button("primary", "icon")}
           >
             <ArrowUp className="size-4" />
           </button>
@@ -466,7 +467,7 @@ function AssistantMessage({
 
   return (
     <div className="flex flex-col gap-2 self-stretch">
-      <div className="flex flex-col gap-1.5 rounded-2xl rounded-bl-md bg-muted/60 px-4 py-3 text-foreground">
+      <div className="flex flex-col gap-1.5 rounded-xl rounded-bl-sm bg-muted/60 px-4 py-3 text-foreground">
         {visible.map((block, i, all) => (
           <p key={block.id} className={`whitespace-pre-wrap ${blockClass[block.type]}`}>
             {block.type === "ol" && <span className="tabular-nums text-muted-foreground">{olNumber(all, i)}. </span>}
@@ -478,7 +479,7 @@ function AssistantMessage({
             type="button"
             onClick={() => setShowAnswers((v) => !v)}
             aria-expanded={showAnswers}
-            className="mt-1 inline-flex items-center gap-1 self-start rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-accent"
+            className={button("secondary", "sm", "mt-1 self-start")}
           >
             <ChevronDown className={`size-3.5 transition-transform ${showAnswers ? "rotate-180" : ""}`} />
             {showAnswers ? "정답 접기" : "정답과 해설 보기"}
@@ -506,7 +507,7 @@ function AssistantMessage({
                 studyContent: `AI 문제 풀이 ${score.levels ? formatLevelScore(score.levels) : `${score.correct}/${score.total}`}`,
               })
             }
-            className="inline-flex items-center gap-1 rounded-md bg-action-600 px-2.5 py-1 text-xs font-medium text-action-foreground hover:bg-action-700"
+            className={button("primary", "sm")}
           >
             <NotebookPen className="size-3.5" />
             기록으로 남기기
@@ -517,7 +518,7 @@ function AssistantMessage({
           (wrongNoteId ? (
             <Link
               href={`/record/${wrongNoteId}`}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-danger-700 hover:bg-danger-50"
+              className={button("danger", "sm")}
             >
               <XCircle className="size-3.5" aria-hidden="true" />
               오답 노트 열기
@@ -526,7 +527,7 @@ function AssistantMessage({
             <button
               type="button"
               onClick={makeWrongNote}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-danger-700 hover:bg-danger-50"
+              className={button("danger", "sm")}
             >
               <XCircle className="size-3.5" aria-hidden="true" />
               {`틀린 ${wrong.length}문제를 오답 노트로`}
@@ -539,9 +540,9 @@ function AssistantMessage({
             onClick={() => {
               onAddConfusions(confusions)
               setConfusionsAdded(true)
-              toast.success(`헷갈린 점 ${confusions.length}개를 페이지에 추가했어요`)
+              toast.success(`헷갈린 점 ${confusions.length}개를 노트에 추가했어요`)
             }}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-attention-700 hover:bg-attention-50 disabled:opacity-50"
+            className={button("ghost", "sm", "px-2.5 text-attention-700 hover:bg-attention-50 hover:text-attention-700")}
           >
             <CircleHelp className="size-3.5" />
             {confusionsAdded ? "헷갈린 점에 추가함" : "헷갈린 점에 추가"}
@@ -550,7 +551,7 @@ function AssistantMessage({
         <button
           type="button"
           onClick={insert}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-action-700 hover:bg-action-50"
+          className={button("ghost", "sm", "px-2.5 text-action-700 hover:bg-action-50 hover:text-action-700")}
         >
           <FilePlus2 className="size-3.5" />
           본문에 추가
@@ -558,7 +559,7 @@ function AssistantMessage({
         <button
           type="button"
           onClick={() => void copy()}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+          className={button("ghost", "sm", "px-2.5")}
         >
           <Copy className="size-3.5" />
           복사

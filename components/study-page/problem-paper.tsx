@@ -48,13 +48,13 @@ export function MyAnswer({
 }) {
   if (readOnly)
     return value?.trim() ? (
-      <p className="text-[15px] leading-relaxed text-foreground">
+      <p className="text-base leading-relaxed text-foreground">
         <span className="mr-2 inline-block w-7 text-xs text-muted-foreground">내 답</span>
         {value}
       </p>
     ) : null
   return (
-    <label className="flex items-baseline gap-2 text-[15px] leading-relaxed">
+    <label className="flex items-baseline gap-2 text-base leading-relaxed">
       <span className="w-7 shrink-0 text-xs text-muted-foreground">내 답</span>
       <input
         value={value ?? ""}
@@ -101,19 +101,19 @@ export function WrongReasons({ value, onChange }: { value: WrongReason[] | undef
 export function ProblemFoldedLine({ block }: { block: TextBlock }) {
   if (problemSolved(block))
     return (
-      <p className="text-[13px] text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         맞힘{block.triedOn ? ` · ${formatDate(block.triedOn)}` : ""} · 눌러서 다시 보기
       </p>
     )
   // Right once (or more, the same day): solved only after another day (D-39).
   if (block.result === "right")
     return (
-      <p className="text-[13px] text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         한 번 맞힘{block.triedOn ? ` · ${formatDate(block.triedOn)}` : ""} · 다른 날 한 번 더 맞히면 끝나요
       </p>
     )
   const reasons = wrongReasons.filter((r) => block.reasons?.includes(r.id)).map((r) => r.label)
   const parts = [block.myAnswer?.trim() ? `내 답 ${block.myAnswer.trim()}` : "", ...reasons].filter(Boolean)
   if (parts.length === 0) return null
-  return <p className="truncate text-[13px] text-muted-foreground">{parts.join(" · ")}</p>
+  return <p className="truncate text-sm text-muted-foreground">{parts.join(" · ")}</p>
 }

@@ -42,6 +42,7 @@ import { LectureMaterialPane } from "@/components/study-page/lecture-material-pa
 import { starterSectionHints } from "@/lib/templates"
 import { withCues } from "@/lib/ai"
 import { useDocumentTitle } from "@/hooks/use-document-title"
+import { button } from "@/components/ui-styles"
 
 // The page on screen, so leaving and coming straight back (or a remount) isn't taken as leaving.
 let openPageId: string | null = null
@@ -213,7 +214,7 @@ export function StudyPageView({
       <header className="@container/bar sticky top-12 z-20 border-b border-border bg-background/90 backdrop-blur print:hidden md:top-0">
         <div className="flex h-14 items-center justify-between gap-3 px-4 md:px-6">
           <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-1.5 overflow-hidden text-sm">
-            <span className="hidden shrink-0 text-muted-foreground @min-[58rem]/bar:inline">내 페이지</span>
+            <span className="hidden shrink-0 text-muted-foreground @min-[58rem]/bar:inline">내 노트</span>
             {path.map((node, i) => (
               <Fragment key={node.id}>
                 <ChevronRight className={`size-3.5 shrink-0 text-muted-foreground ${i === 0 ? "hidden @min-[58rem]/bar:block" : "hidden @min-[48rem]/bar:block"}`} />
@@ -259,9 +260,7 @@ export function StudyPageView({
                 setMaterialOpen((v) => !v)
               }}
               aria-pressed={materialOpen}
-              className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
-                materialOpen ? "bg-action-50 text-action-700" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-              }`}
+              className={button("ghost", "sm", "px-2.5 aria-pressed:bg-action-50 aria-pressed:text-action-700")}
             >
               <BookOpen className="size-4" />
               <span className="hidden sm:inline">강의 자료</span>
@@ -271,9 +270,7 @@ export function StudyPageView({
             type="button"
             onClick={() => setAiOpen((v) => !v)}
             aria-pressed={aiOpen}
-            className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors ${
-              aiOpen ? "bg-action-50 text-action-700" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-            }`}
+            className={button("ghost", "sm", "px-2.5 aria-pressed:bg-action-50 aria-pressed:text-action-700")}
           >
             <Sparkles className="size-4" />
             <span className="hidden sm:inline">AI</span>
@@ -339,8 +336,10 @@ export function StudyPageView({
 
       <article className="mx-auto flex w-full max-w-3xl flex-col px-6 pb-24 pt-12 lg:px-10">
         <label htmlFor="page-title" className="sr-only">
-          페이지 제목
+          노트 제목
         </label>
+        {/* The title is the note's one h1, so a screen reader's heading list starts here (WCAG 1.3.1). */}
+        <h1>
         <input
           id="page-title"
           ref={titleRef}
@@ -356,6 +355,7 @@ export function StudyPageView({
           }}
           className="w-full bg-transparent text-4xl font-bold tracking-tight text-foreground outline-none placeholder:text-muted-foreground/40"
         />
+        </h1>
 
         {reviewing && review.session && (
           <div className="mt-6">
@@ -491,11 +491,11 @@ export function MissingPage() {
       <span className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
         <FileQuestion className="size-6" />
       </span>
-      <h1 className="text-base font-medium text-foreground">페이지를 찾을 수 없어요</h1>
-      <p className="mt-1 text-sm text-muted-foreground">삭제되었거나 존재하지 않는 페이지예요.</p>
+      <h1 className="text-base font-medium text-foreground">노트를 찾을 수 없어요</h1>
+      <p className="mt-1 text-sm text-muted-foreground">삭제되었거나 존재하지 않는 노트예요.</p>
       <Link
         href="/"
-        className="mt-5 rounded-lg bg-action-600 px-4 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
+        className={button("primary", "md", "mt-5")}
       >
         홈으로
       </Link>

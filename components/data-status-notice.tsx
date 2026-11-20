@@ -7,6 +7,7 @@ import { AlertCircle, Loader2 } from "lucide-react"
 import { openQuickRecord } from "@/components/record/quick-record-dialog"
 import { loadUserData, useDataStatus, type DataStatus } from "@/lib/db/sync"
 import { importExampleData, useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
+import { button } from "@/components/ui-styles"
 
 // Home banner for the data load: loading, a failed load with retry, or a first-step guide for an empty workspace.
 export function DataStatusNotice() {
@@ -46,7 +47,7 @@ export function DataStatusNotice() {
         <button
           type="button"
           onClick={() => void loadUserData()}
-          className="shrink-0 rounded-lg border border-danger-200 bg-background px-3 py-1.5 text-xs font-medium text-danger-700 transition-colors hover:bg-danger-100"
+          className={button("secondary", "sm")}
         >
           다시 시도
         </button>
@@ -74,7 +75,7 @@ export function DataStatusNotice() {
             <Step n={2}>
               정리할 노트가 필요하면 종류(강의 · 오답 · 시험)를 골라 노트를 만들어요.{" "}
               <Link href="/new" className={stepLink}>
-                새 페이지
+                새 노트
               </Link>
             </Step>
           </>
@@ -83,7 +84,7 @@ export function DataStatusNotice() {
             <Step n={1}>
               공부할 내용으로 노트를 만들어요. 종류(강의 · 오답 · 시험)를 고르면 맞는 칸이 생겨요.{" "}
               <Link href="/new" className={stepLink}>
-                새 페이지
+                새 노트
               </Link>
             </Step>
             <Step n={2}>공부를 마치면 노트 위쪽 [기록]에서 시간과 이해도를 남겨요.</Step>
@@ -104,7 +105,7 @@ export function DataStatusNotice() {
             {importing && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
             {importing ? "가져오는 중…" : "예시 데이터 가져오기"}
           </button>
-          . 내 계정에 저장되고, 일반 페이지처럼 고치거나 지울 수 있어요.
+          . 내 계정에 저장되고, 다른 노트처럼 고치거나 지울 수 있어요.
         </p>
       )}
     </section>
@@ -136,7 +137,7 @@ export function DataStatusView({ status }: { status: DataStatus }) {
           <button
             type="button"
             onClick={() => void loadUserData()}
-            className="mt-5 rounded-lg bg-action-600 px-4 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
+            className={button("primary", "md", "mt-5")}
           >
             다시 시도
           </button>

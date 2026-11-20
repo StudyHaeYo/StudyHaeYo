@@ -45,6 +45,7 @@ import { computePageStats, pageKind } from "@/lib/study-pages"
 import { examCountdown } from "@/components/study-page/page-properties"
 import { useTodayISO } from "@/hooks/use-today"
 import { dropIndicatorClass, RootDropZone, TreeDndProvider, useTreeDrag } from "@/components/sidebar/tree-dnd"
+import { button } from "@/components/ui-styles"
 
 const mainNav = [
   { href: "/", label: "홈", icon: Home },
@@ -97,8 +98,8 @@ export function Sidebar(_props: SidebarProps = {}) {
       ? (groups.find((g) => g.id === parentId)?.name ?? pages.find((p) => p.id === parentId)?.title ?? null)
       : null
     return parentId && name !== null
-      ? { href: `/new?parent=${parentId}`, label: `${name || "제목 없음"}에 새 페이지` }
-      : { href: "/new", label: "맨 위에 새 페이지" }
+      ? { href: `/new?parent=${parentId}`, label: `${name || "제목 없음"}에 새 노트` }
+      : { href: "/new", label: "맨 위에 새 노트" }
   })()
 
   const handleLogout = async () => {
@@ -137,7 +138,7 @@ export function Sidebar(_props: SidebarProps = {}) {
           aria-label="메뉴 열기"
           aria-expanded={mobileOpen}
           aria-controls="app-sidebar"
-          className="flex size-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent"
+          className="touch-hit flex size-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent"
         >
           <Menu className="size-5" />
         </button>
@@ -150,16 +151,16 @@ export function Sidebar(_props: SidebarProps = {}) {
         <button
           type="button"
           onClick={recordFromHere}
-          className="ml-auto inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          className={button("secondary", "sm", "ml-auto gap-1 px-2.5")}
         >
           <Plus className="size-4" />
-          기록
+          기록 남기기
         </button>
         <button
           type="button"
           onClick={openSearch}
           aria-label="노트 검색"
-          className={`flex size-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent`}
+          className="touch-hit flex size-9 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-accent"
         >
           <Search className="size-5" />
         </button>
@@ -197,7 +198,7 @@ export function Sidebar(_props: SidebarProps = {}) {
           type="button"
           onClick={() => setMobileOpen(false)}
           aria-label="메뉴 닫기"
-          className="-mr-2 flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
+          className="touch-hit -mr-2 flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
         >
           <X className="size-4" />
         </button>
@@ -213,7 +214,7 @@ export function Sidebar(_props: SidebarProps = {}) {
         className="mx-2 mb-2 hidden items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:flex"
       >
         <Plus className="size-4 shrink-0" aria-hidden="true" />
-        학습 기록 남기기
+        기록 남기기
       </button>
 
       {/* Top: main navigation */}
@@ -242,10 +243,10 @@ export function Sidebar(_props: SidebarProps = {}) {
       <div className="mx-4 border-t border-border" />
 
       {/* Bottom: page tree — scrolls on its own so the sidebar stays fixed */}
-      <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-3" aria-label="내 페이지">
+      <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-3" aria-label="내 노트">
         <div className="flex items-center justify-between px-3 pb-1">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            내 페이지
+            내 노트
           </p>
           <div className="flex items-center gap-0.5">
             <button
@@ -299,7 +300,7 @@ export function Sidebar(_props: SidebarProps = {}) {
             type="button"
             onClick={handleLogout}
             aria-label="로그아웃"
-            className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="touch-hit flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <LogOut className="size-4" />
           </button>
@@ -392,8 +393,8 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
       </button>
       <Link
         href={`/new?parent=${group.id}`}
-        aria-label={`${group.name}에 새 페이지`}
-        title={`${group.name}에 새 페이지`}
+        aria-label={`${group.name}에 새 노트`}
+        title={`${group.name}에 새 노트`}
         className={hoverAction}
       >
         <Plus className="size-3.5" />
@@ -457,7 +458,7 @@ function GroupNode({ group, ctx }: { group: WorkspaceGroup; ctx: TreeContext }) 
                 href={`/new?parent=${group.id}`}
                 className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <Plus className="size-3.5" />새 페이지
+                <Plus className="size-3.5" />새 노트
               </Link>
             </li>
           ) : (
@@ -507,7 +508,7 @@ function GroupRenameInput({
 }
 
 const groupKindOptions: { kind: GroupKind; label: string; hint: string }[] = [
-  { kind: "subject", label: "과목", hint: "학습 계획과 통계의 기준(과목 페이지가 생겨요)" },
+  { kind: "subject", label: "과목", hint: "학습 계획과 통계의 기준(과목 화면이 생겨요)" },
   { kind: "folder", label: "폴더", hint: "과목을 묶거나 과목 안을 나눠요" },
 ]
 

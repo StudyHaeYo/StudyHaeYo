@@ -5,6 +5,7 @@ import { Copy, FolderInput, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import { deletePage, duplicatePage, flattenTree, plansInSubtree, useWorkspace } from "@/lib/workspace"
 import { ConfirmDeleteModal } from "@/components/sidebar/confirm-delete-modal"
 import { MoveDialog } from "@/components/sidebar/move-dialog"
+import { button, menuPanel } from "@/components/ui-styles"
 
 // Confirmation line for deleting a page or group: what else goes with it.
 export function deleteNoteText(nestedCount: number, planCount: number, subjectRecordCount = 0) {
@@ -94,7 +95,7 @@ export function PageActionsMenu({
         aria-expanded={open}
         className={
           triggerClassName?.(open) ??
-          "flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          button("ghost", "icon-sm")
         }
       >
         <MoreHorizontal className="size-4" />
@@ -104,7 +105,7 @@ export function PageActionsMenu({
         <div
           role="menu"
           aria-label={`${title} 메뉴`}
-          className="absolute right-0 top-full z-30 mt-1 w-52 rounded-xl border border-border bg-card p-1 shadow-lg"
+          className={`${menuPanel} absolute right-0 top-full z-30 mt-1 w-52 origin-top-right p-1`}
         >
           <button
             role="menuitem"
@@ -165,6 +166,7 @@ export function PageActionsMenu({
         open={confirmOpen}
         title={title}
         note={deleteNote}
+        undoable
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
           setConfirmOpen(false)

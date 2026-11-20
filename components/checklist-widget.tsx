@@ -104,7 +104,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
         aria-checked={done}
         aria-label={`${todo.title} ${done ? "완료 취소" : "완료"}`}
         onClick={() => toggleTodo(todo.id)}
-        className={`relative flex size-5 shrink-0 items-center justify-center rounded-md border transition-[colors,transform] before:absolute before:-inset-2 active:scale-95 ${
+        className={`touch-hit flex size-5 shrink-0 items-center justify-center rounded-md border transition-[colors,transform] before:absolute before:-inset-2 active:scale-95 ${
           done ? "border-action-600 bg-action-600 text-action-foreground" : "border-border bg-background hover:border-action-400"
         }`}
       >
@@ -160,7 +160,7 @@ function TodoRow({ todo, today }: { todo: Todo; today: string }) {
             })
           }}
           aria-label={`${todo.title} 삭제`}
-          className="flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 [@media(hover:none)]:opacity-50 transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+          className="touch-hit flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 [@media(hover:none)]:opacity-50 transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
         >
           <X className="size-3.5" />
         </button>
@@ -182,7 +182,7 @@ function TodoTime({ todo, today }: { todo: Todo; today: string }) {
       withDuration={withDuration}
       label={shown === null ? `${todo.title} 시각 정하기` : `${todo.title} ${shown}, 시각 바꾸기`}
       className={(open) =>
-        `flex h-6 min-w-6 items-center justify-center rounded px-1 text-xs tabular-nums transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 ${
+        `touch-hit flex h-6 min-w-6 items-center justify-center rounded px-1 text-xs tabular-nums transition-opacity hover:bg-background hover:text-foreground focus-visible:opacity-100 ${
           shown === null
             ? `text-muted-foreground group-hover:opacity-100 [@media(hover:none)]:opacity-100 ${open ? "opacity-100" : "opacity-0"}`
             : "font-medium text-action-700"

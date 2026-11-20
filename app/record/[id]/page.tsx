@@ -20,7 +20,7 @@ export default async function StudyPageRoute({
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <Sidebar />
-      <main className="min-w-0 flex-1 md:h-screen md:overflow-y-auto print:h-auto print:overflow-visible">
+      <main id="main" tabIndex={-1} className="min-w-0 flex-1 outline-none md:h-screen md:overflow-y-auto print:h-auto print:overflow-visible">
         <StudyPageView
           key={id}
           pageId={id}

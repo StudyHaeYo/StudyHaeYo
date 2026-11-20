@@ -30,7 +30,7 @@ export default function AnalyticsPage() {
     {
       label: "학습 기록 수",
       value: `${records.length}개`,
-      hint: "페이지 · 과목 기록 전체",
+      hint: "노트 · 과목 기록 전체",
     },
     {
       label: "평균 이해도",

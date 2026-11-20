@@ -11,6 +11,7 @@ import { recordCreatedAt } from "@/lib/study-session"
 import { NO_SUBJECT, useSubjectRecordsReady, useWorkspace } from "@/lib/workspace"
 import { useTodayISO } from "@/hooks/use-today"
 import { PageHeader, primaryButton } from "@/components/page-shell"
+import { button } from "@/components/ui-styles"
 
 const PAGE_DAYS = 14
 const NONE = "none"
@@ -49,7 +50,7 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
   const weekMinutes = week.reduce((sum, e) => sum + e.record.durationMinutes, 0)
 
   const chip = (active: boolean) =>
-    `inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-3 text-[13px] transition-colors ${
+    `touch-hit inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-3 text-sm transition-colors ${
       active ? "border-foreground bg-foreground font-semibold text-background" : "border-border bg-background text-foreground hover:bg-accent"
     }`
 
@@ -87,7 +88,7 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
               </Link>
             </span>
             {onlyNote && (
-              <Link href={`/record/${onlyNote.id}`} className="text-[13px] font-medium text-action-700 hover:underline">
+              <Link href={`/record/${onlyNote.id}`} className="text-sm font-medium text-action-700 hover:underline">
                 노트로 돌아가기
               </Link>
             )}
@@ -130,7 +131,7 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
           <div className="h-16 animate-pulse rounded-xl bg-muted" />
         </div>
       ) : dayList.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-border px-6 py-10 text-center">
+        <div className="mt-8 rounded-xl border border-dashed border-border px-6 py-10 text-center">
           <p className="text-sm font-medium text-foreground">
             {byNote && !q ? "이 노트에는 아직 기록이 없어요" : q || filter !== "all" ? "맞는 기록이 없어요" : "아직 학습 기록이 없어요"}
           </p>
@@ -170,7 +171,7 @@ export function RecordsJournal({ noteIds = [] }: { noteIds?: string[] }) {
             <button
               type="button"
               onClick={() => setDays((d) => d + PAGE_DAYS)}
-              className="mx-auto mt-6 h-9 rounded-lg px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className={button("ghost", "md", "mx-auto mt-6 px-4")}
             >
               이전 기록 더 보기
             </button>
@@ -222,7 +223,7 @@ function SessionGroup({ entries: saved, when }: { entries: RecordEntry[]; when?:
         onClick={() => setOpen((v) => !v)}
         className="grid w-full grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 rounded-md py-3.5 pr-9 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 sm:pr-10"
       >
-        <span className="flex min-w-0 items-start gap-1.5 text-[15px] leading-relaxed text-foreground">
+        <span className="flex min-w-0 items-start gap-1.5 text-base leading-relaxed text-foreground">
           <ChevronRight
             className={`mt-1 size-4 shrink-0 text-muted-foreground transition-transform duration-150 ${open ? "rotate-90" : ""}`}
             aria-hidden="true"

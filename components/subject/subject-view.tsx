@@ -11,6 +11,7 @@ import { nodePath, useWorkspace } from "@/lib/workspace"
 import { useDataStatus } from "@/lib/db/sync"
 import { DataStatusView } from "@/components/data-status-notice"
 import { useDocumentTitle } from "@/hooks/use-document-title"
+import { button } from "@/components/ui-styles"
 
 export function SubjectView({ subjectId }: { subjectId: string }) {
   const workspace = useWorkspace()
@@ -47,7 +48,7 @@ function SubjectNotFound() {
       </p>
       <Link
         href="/"
-        className="mt-2 rounded-lg bg-action-600 px-4 py-2 text-sm font-medium text-action-foreground transition-colors hover:bg-action-700"
+        className={button("primary", "md", "mt-2")}
       >
         홈으로 가기
       </Link>

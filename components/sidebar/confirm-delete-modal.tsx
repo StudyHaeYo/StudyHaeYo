@@ -4,12 +4,21 @@ import { useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import { Trash2 } from "lucide-react"
 import { useFocusTrap } from "@/hooks/use-focus-trap"
+import { button, dialogBackdrop, dialogPanel } from "@/components/ui-styles"
+
+// 을 after a final consonant (계획을 · 기록을 · 과목을), 를 after a vowel (노트를 · 폴더를).
+function objectParticle(word: string) {
+  const code = word.charCodeAt(word.length - 1) - 0xac00
+  return code >= 0 && code <= 11171 && code % 28 !== 0 ? "을" : "를"
+}
 
 interface ConfirmDeleteModalProps {
   open: boolean
   title: string
   note?: string
   targetLabel?: string
+  // Notes and groups come back from the toast's [되돌리기] for a few seconds (lib/workspace.ts); plans and records don't.
+  undoable?: boolean
   onCancel: () => void
   onConfirm: () => void
 }
@@ -18,7 +27,8 @@ export function ConfirmDeleteModal({
   open,
   title,
   note,
-  targetLabel = "페이지",
+  targetLabel = "노트",
+  undoable = false,
   onCancel,
   onConfirm,
 }: ConfirmDeleteModalProps) {
@@ -40,7 +50,7 @@ export function ConfirmDeleteModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4"
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4 ${dialogBackdrop}`}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onCancel()
       }}
@@ -51,17 +61,16 @@ export function ConfirmDeleteModal({
         aria-modal="true"
         aria-labelledby="delete-modal-title"
         aria-describedby="delete-modal-desc"
-        className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-xl"
+        className={`${dialogPanel} w-full max-w-sm p-6`}
       >
         <div className="flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
           <Trash2 className="size-5" />
         </div>
         <h2 id="delete-modal-title" className="mt-4 text-base font-semibold text-foreground">
-          정말 삭제하시겠어요?
+          {`"${title}" ${targetLabel}${objectParticle(targetLabel)} 삭제할까요?`}
         </h2>
         <p id="delete-modal-desc" className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-          <span className="font-medium text-foreground">{`"${title}"`}</span> {targetLabel}을(를) 삭제합니다.
-          이 작업은 되돌릴 수 없습니다.
+          {undoable ? "지운 직후 아래 알림의 [되돌리기]로 되살릴 수 있어요." : "지우면 되돌릴 수 없어요."}
         </p>
         {note && <p className="mt-2 text-sm leading-relaxed text-destructive">{note}</p>}
         <div className="mt-6 flex justify-end gap-2">
@@ -69,14 +78,14 @@ export function ConfirmDeleteModal({
             ref={cancelRef}
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className={button("secondary")}
           >
             취소
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-destructive/90"
+            className={button("danger")}
           >
             삭제
           </button>

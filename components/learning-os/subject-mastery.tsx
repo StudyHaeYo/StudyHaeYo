@@ -13,7 +13,7 @@ export function SubjectMastery({ title = "나의 학습 상태" }: { title?: str
 
   return (
     <section className="rounded-xl border border-border bg-card p-5">
-      <h2 className="mb-4 text-[15px] font-semibold text-foreground">{title}</h2>
+      <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">{title}</h2>
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">아직 학습 기록이 없어요. 기록을 남기면 과목별 이해도가 보여요.</p>
       ) : (
@@ -41,7 +41,7 @@ export function SubjectMastery({ title = "나의 학습 상태" }: { title?: str
                         href={`/plan?subject=${id}`}
                         className="ml-2 whitespace-nowrap rounded text-xs font-medium text-action-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
                       >
-                        계획 세우기
+                        계획 만들기
                       </Link>
                     )}
                   </span>

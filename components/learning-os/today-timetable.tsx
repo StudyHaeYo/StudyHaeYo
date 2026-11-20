@@ -220,13 +220,13 @@ export function TodayTimetable() {
                       aria-checked={done}
                       aria-label={`${it.todo.title} ${done ? "완료 취소" : "완료"}`}
                       onClick={() => toggleTodo(it.todo.id)}
-                      className={`relative flex size-3.5 shrink-0 items-center justify-center rounded-[4px] border transition-[colors,transform] before:absolute before:-inset-2 active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 ${
+                      className={`touch-hit flex size-3.5 shrink-0 items-center justify-center rounded-[4px] border transition-[colors,transform] before:absolute before:-inset-2 active:scale-95 motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500 ${
                         done ? "border-action-600 bg-action-600 text-action-foreground" : "border-input bg-background hover:border-action-400"
                       }`}
                     >
                       {done && <Check className="size-2.5" aria-hidden="true" />}
                     </button>
-                    <span className={`truncate text-[13px] leading-none ${done ? "text-muted-foreground line-through" : "text-foreground"}`}>{it.todo.title}</span>
+                    <span className={`truncate text-sm leading-none ${done ? "text-muted-foreground line-through" : "text-foreground"}`}>{it.todo.title}</span>
                   </span>
                   {twoLines ? (
                     <span className="mt-1 pl-5 text-xs leading-none tabular-nums text-muted-foreground">{range}</span>
@@ -255,7 +255,7 @@ export function TodayTimetable() {
                   closeOnPick
                   label={`${p.title} 시간표에 넣기`}
                   className={() =>
-                    "h-7 rounded-md px-2 text-xs font-medium text-action-700 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
+                    "touch-hit h-7 rounded-md px-2 text-xs font-medium text-action-700 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action-500"
                   }
                 >
                   시간표에 넣기

@@ -16,6 +16,7 @@ import {
   type StudyPage,
 } from "@/lib/study-pages"
 import { recordBadge, recordText } from "@/lib/study-stats"
+import { button, dialogBackdrop, menuPanel } from "@/components/ui-styles"
 
 // 학습 기록 is a log of study, not part of the note (D-36): the note keeps its body, and its records open here from
 // the top bar. The window is a glance — the summary and the last record in one line (D-37); the full list, and
@@ -51,9 +52,7 @@ export function RecordsButton({
         aria-expanded={open}
         // The app bar on a phone has its own "+ 기록" (leave a record); this one opens the note's records.
         aria-label={scope ? "범위 노트 학습 기록" : "이 노트의 학습 기록"}
-        className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2 text-[13px] font-semibold transition-colors ${
-          open ? "bg-action-50 text-foreground" : "text-foreground hover:bg-accent"
-        }`}
+        className={button("ghost", "sm", "px-2 text-foreground")}
       >
         <History className="size-4 text-muted-foreground" aria-hidden="true" />
         {label}
@@ -168,7 +167,7 @@ function RecordsWindow({
 
   return createPortal(
     <>
-      <div className="fixed inset-0 z-40 bg-foreground/25 md:hidden" aria-hidden="true" />
+      <div className={`fixed inset-0 z-40 bg-foreground/25 md:hidden ${dialogBackdrop}`} aria-hidden="true" />
       <div
         ref={boxRef}
         role="dialog"
@@ -186,7 +185,7 @@ function RecordsWindow({
           if (next && !e.currentTarget.contains(next) && !next.closest("[data-records-toggle]")) onClose(false)
         }}
         style={anchor ? ({ "--top": `${anchor.top}px`, "--right": `${anchor.right}px` } as React.CSSProperties) : undefined}
-        className="fixed inset-x-2 bottom-2 z-50 flex max-h-[80dvh] flex-col overflow-y-auto overscroll-contain rounded-3xl border border-border bg-popover p-4 shadow-2xl outline-none md:bottom-auto md:left-auto md:right-[var(--right)] md:top-[var(--top)] md:w-[26rem] md:rounded-2xl"
+        className={`${menuPanel} fixed inset-x-2 bottom-2 z-50 flex max-h-[80dvh] flex-col overflow-y-auto overscroll-contain p-4 outline-none md:bottom-auto md:left-auto md:right-[var(--right)] md:top-[var(--top)] md:w-[26rem] md:origin-top-right`}
       >
         <div className="mx-auto -mt-1 mb-2 h-1 w-9 rounded-full bg-border md:hidden" aria-hidden="true" />
         <div className="flex items-baseline justify-between gap-3">
@@ -194,9 +193,9 @@ function RecordsWindow({
           {newest.length > 0 && <span className="text-xs tabular-nums text-muted-foreground">{newest.length}개</span>}
         </div>
         {summary ? (
-          <p className="mt-1.5 text-[13px] leading-relaxed tabular-nums text-muted-foreground">{summary}</p>
+          <p className="mt-1.5 text-sm leading-relaxed tabular-nums text-muted-foreground">{summary}</p>
         ) : (
-          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{empty}</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{empty}</p>
         )}
 
         {recent.length > 0 && (
@@ -210,7 +209,7 @@ function RecordsWindow({
                   <Link
                     href={`/records?note=${encodeURIComponent(note.id)}`}
                     title="학습 기록에서 보기 · 고치기"
-                    className="-mx-2 flex items-baseline gap-2.5 rounded-md px-2 py-2 text-[13px] transition-colors hover:bg-accent"
+                    className="-mx-2 flex items-baseline gap-2.5 rounded-md px-2 py-2 text-sm transition-colors hover:bg-accent"
                   >
                     <span className="w-[3.75rem] shrink-0 whitespace-nowrap tabular-nums text-muted-foreground">{when(record.date)}</span>
                     <span className="min-w-0 flex-1 truncate text-foreground">
@@ -236,14 +235,14 @@ function RecordsWindow({
                 onClose(false)
                 openQuickRecord({ pageId: page.id })
               }}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-[13px] font-semibold text-foreground transition-colors hover:border-action-300 hover:text-action-700"
+              className={button("secondary", "sm")}
             >
               <Plus className="size-3.5" aria-hidden="true" />
               기록 남기기
             </button>
           )}
           {newest.length > 0 && (
-            <Link href={allHref} className="text-[13px] font-semibold text-action-700 hover:underline">
+            <Link href={allHref} className="text-sm font-semibold text-action-700 hover:underline">
               {scope ? "범위 노트 기록 모두 보기 →" : "학습 기록에서 모두 보기 →"}
             </Link>
           )}

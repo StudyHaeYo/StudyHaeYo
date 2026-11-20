@@ -7,6 +7,7 @@ import { downloadAttachment, formatFileSize, previewKind, useAttachmentUrl } fro
 import type { AttachmentBlock } from "@/lib/study-pages"
 import { PdfAnnotator } from "@/components/study-page/pdf-annotator"
 import { useFocusTrap } from "@/hooks/use-focus-trap"
+import { dialogBackdrop, dialogPanel } from "@/components/ui-styles"
 
 interface AttachmentBlockViewProps {
   block: AttachmentBlock
@@ -175,7 +176,7 @@ function AttachmentViewer({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 p-4"
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 p-4 ${dialogBackdrop}`}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -185,7 +186,7 @@ function AttachmentViewer({
         role="dialog"
         aria-modal="true"
         aria-label={block.name}
-        className={`flex max-h-full flex-col overflow-hidden rounded-xl bg-card shadow-xl ${pdf ? "h-[85vh] w-full max-w-4xl" : "max-w-5xl"}`}
+        className={`${dialogPanel} flex max-h-full flex-col overflow-hidden ${pdf ? "h-[85vh] w-full max-w-4xl" : "max-w-5xl"}`}
       >
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
           <span className="truncate text-sm font-medium text-foreground">{block.name}</span>

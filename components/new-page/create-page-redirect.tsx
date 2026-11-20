@@ -26,7 +26,7 @@ export function CreatePageRedirect({ parentId }: { parentId?: string }) {
   if (status.phase !== "ready") return <DataStatusView status={status} />
   return (
     <p role="status" className="px-6 py-12 text-sm text-muted-foreground">
-      새 페이지를 만드는 중…
+      새 노트를 만드는 중…
     </p>
   )
 }

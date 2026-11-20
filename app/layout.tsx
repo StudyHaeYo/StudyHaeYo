@@ -51,6 +51,13 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="antialiased">
+        {/* First Tab stop: skip the sidebar's tree straight to the screen's content (WCAG 2.4.1). */}
+        <a
+          href="#main"
+          className="sr-only rounded-lg bg-background text-sm font-medium text-foreground shadow-lg focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:px-3 focus:py-2 focus:outline-2 focus:outline-action-500"
+        >
+          본문으로 건너뛰기
+        </a>
         <DataSync />
         {children}
         <SessionTracker />

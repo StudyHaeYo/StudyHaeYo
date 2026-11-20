@@ -7,7 +7,7 @@ import { useWorkspace } from "@/lib/workspace"
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl border border-border bg-card p-5">
-      <h2 className="mb-4 text-[15px] font-semibold text-foreground">{title}</h2>
+      <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground">{title}</h2>
       {children}
     </section>
   )
@@ -22,7 +22,7 @@ export function WeakAreas() {
   return (
     <Panel title="취약 학습 영역">
       {items.length === 0 ? (
-        <Empty>이해도가 낮거나 미해결 헷갈린 점이 있는 페이지가 없어요.</Empty>
+        <Empty>이해도가 낮거나 헷갈린 점이 남은 노트가 없어요.</Empty>
       ) : (
         <ul className="flex flex-col divide-y divide-border">
           {items.map((item) => (
@@ -37,7 +37,7 @@ export function WeakAreas() {
                 </span>
                 <span className="flex shrink-0 items-center gap-2 text-xs">
                   {item.unresolved > 0 && (
-                    <span className="font-medium text-attention-700">{`미해결 ${item.unresolved}개`}</span>
+                    <span className="font-medium text-attention-700">{`헷갈린 점 ${item.unresolved}개 남음`}</span>
                   )}
                   <span className="text-muted-foreground">
                     {item.understanding === null ? "이해도 -" : `이해도 ${item.understanding}/5`}
