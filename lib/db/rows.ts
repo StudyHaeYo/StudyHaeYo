@@ -1,4 +1,4 @@
-import type { LearningPlan, PlanTarget } from "@/lib/plans"
+import type { LearningPlan, PlanSlot, PlanTarget } from "@/lib/plans"
 import {
   pageStatuses,
   withNoteBlocks,
@@ -68,6 +68,8 @@ export interface PlanRow {
   goal: string | null
   // Added by supabase/migrations/20261025_plan_goal_minutes.sql; missing before it runs.
   goal_minutes?: number | null
+  // Added by supabase/migrations/20261120_plan_slots.sql (D-46); missing before it runs.
+  slots?: unknown
   target_scope: string
   target_node_id: string | null
   created_at: string
@@ -85,6 +87,23 @@ export const RECORD_COLUMNS = `${RECORD_COLUMNS_NO_TIMES}, started_at`
 export const LEGACY_RECORD_COLUMNS = RECORD_BASE_COLUMNS
 export const LEGACY_PLAN_COLUMNS = "id, user_id, title, start_date, end_date, goal, target_scope, target_node_id, created_at"
 export const PLAN_COLUMNS = `${LEGACY_PLAN_COLUMNS}, goal_minutes`
+export const PLAN_COLUMNS_SLOTS = `${PLAN_COLUMNS}, slots`
+
+// learning_plans.slots as stored: anything that isn't a well-formed slot is dropped rather than trusted.
+export function toPlanSlots(value: unknown): PlanSlot[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((v) => {
+    if (!v || typeof v !== "object") return []
+    const s = v as Record<string, unknown>
+    const days = Array.isArray(s.days) ? s.days.filter((d): d is number => Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6) : []
+    const ok =
+      typeof s.pageId === "string" &&
+      days.length > 0 &&
+      Number.isInteger(s.startMin) && (s.startMin as number) >= 0 && (s.startMin as number) < 1440 &&
+      Number.isInteger(s.durationMin) && (s.durationMin as number) >= 10 && (s.durationMin as number) <= 720
+    return ok ? [{ pageId: s.pageId as string, days: [...new Set(days)].sort(), startMin: s.startMin as number, durationMin: s.durationMin as number }] : []
+  })
+}
 
 export const PAGE_KIND = "page"
 const groupKinds: GroupKind[] = ["folder", "subject"]
@@ -187,6 +206,7 @@ export function toPlan(row: PlanRow): LearningPlan {
     endDate: row.end_date,
     goal: row.goal ?? "",
     ...(row.goal_minutes && row.goal_minutes > 0 ? { goalMinutes: row.goal_minutes } : {}),
+    ...(row.slots ? { slots: toPlanSlots(row.slots) } : {}),
   }
 }
 
@@ -297,8 +317,26 @@ export function planInsertRow(plan: LearningPlan, userId: string) {
     goal: plan.goal,
     // Only sent when set, so plans can still be saved before the goal_minutes column exists.
     ...(plan.goalMinutes ? { goal_minutes: Math.round(plan.goalMinutes) } : {}),
+    // Same for slots (20261120_plan_slots.sql).
+    ...(plan.slots && plan.slots.length > 0 ? { slots: plan.slots } : {}),
     target_scope: plan.target.scope,
     target_node_id: targetId,
+  }
+}
+
+// 계획 고치기: every editable column. goal_minutes / slots only once their columns exist; sent as null when cleared.
+export function planUpdateRow(plan: LearningPlan, ready: { goals: boolean; slots: boolean }) {
+  const targetId =
+    plan.target.scope === "subject" ? plan.target.subjectId : plan.target.scope === "page" ? plan.target.pageId : null
+  return {
+    title: plan.title,
+    start_date: plan.startDate,
+    end_date: plan.endDate,
+    goal: plan.goal,
+    target_scope: plan.target.scope,
+    target_node_id: targetId,
+    ...(ready.goals ? { goal_minutes: plan.goalMinutes ? Math.round(plan.goalMinutes) : null } : {}),
+    ...(ready.slots ? { slots: plan.slots && plan.slots.length > 0 ? plan.slots : null } : {}),
   }
 }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
+import Link from "next/link"
 import { Check, ChevronLeft, ChevronRight, X } from "lucide-react"
 import { toast } from "sonner"
 import { useNowMinutes, useTodayISO } from "@/hooks/use-today"
@@ -9,6 +10,7 @@ import { allRecords, shiftMonth, studyMonth, studyStreak, weekStart, type StudyD
 import { useStudySession } from "@/lib/study-session"
 import { useTimeSlots } from "@/lib/time-slots"
 import { useTodos, useTodosStatus } from "@/lib/todos"
+import { usePlans, usePlanSlotsReady } from "@/lib/plans"
 import { layoutLanes, planRange, rangeLabel } from "@/lib/timetable"
 import { useWorkspace } from "@/lib/workspace"
 import {
@@ -25,7 +27,14 @@ import {
 } from "@/lib/ddays"
 import { RuledHeader } from "@/components/page-shell"
 import { button } from "@/components/ui-styles"
-import { minutesOfDay, openScroll, sameLocalDay, studySpans, TodayTimetable } from "@/components/learning-os/today-timetable"
+import {
+  minutesOfDay,
+  openScroll,
+  planSlotSpans,
+  sameLocalDay,
+  studySpans,
+  TodayTimetable,
+} from "@/components/learning-os/today-timetable"
 
 // 시간표 (D-44): one card on 오늘 that shows time at three sizes — [일] today's time grid (D-38), [주] the week as seven
 // columns on the same kind of grid, [월] the month as a study calendar with the user's own D-days. One is shown at a
@@ -102,7 +111,9 @@ const W_DAY_START = 8
 const W_MIN_DRAWN = 40 // minutes: at 26px an hour, anything shorter can't hold a line of text
 
 type WeekItem = { key: string; start: number; end: number; title: string } & (
-  { kind: "todo"; done: boolean } | { kind: "study" }
+  | { kind: "todo"; done: boolean }
+  | { kind: "study" }
+  | { kind: "slot"; pageId: string; plan: string }
 )
 
 function minutesOn(records: { date: string; durationMinutes: number }[], day: string) {
@@ -117,6 +128,8 @@ function WeekTimetable() {
   const todosStatus = useTodosStatus()
   const session = useStudySession()
   const { todoTimes, recordTimes } = useTimeSlots()
+  const plans = usePlans()
+  const slotsReady = usePlanSlotsReady()
   const ddays = useDdays()
   const ddaysReady = useDdaysStatus() === "ready"
   const [offset, setOffset] = useState(0) // weeks from this one
@@ -155,6 +168,7 @@ function WeekTimetable() {
       }
     }
     if (recordTimes) for (const s of studySpans(workspace, day)) items.push({ ...s, kind: "study" })
+    if (slotsReady) items.push(...planSlotSpans(plans, workspace.pages, day))
     if (day === today && session.startedAt !== null && sameLocalDay(session.startedAt, today)) {
       const s = minutesOfDay(session.startedAt)
       items.push({ key: "running", kind: "study", title: "공부 중", start: s, end: Math.max(now, s + 1) })
@@ -299,6 +313,21 @@ function WeekTimetable() {
                   width: `calc(${100 / count}% - 2px)`,
                 }
                 const range = rangeLabel(it.start, it.end)
+                if (it.kind === "slot") {
+                  // A plan's 공부할 시각 (D-46): opens the note.
+                  return (
+                    <li key={it.key} className="absolute" style={style}>
+                      <Link
+                        href={`/record/${it.pageId}`}
+                        title={`${range} ${it.title} (${it.plan})`}
+                        className="block h-full overflow-hidden rounded-[4px] bg-action-50 px-0.5 pt-0.5 text-xs leading-tight text-foreground ring-1 ring-inset ring-action-300 hover:bg-action-100 focus-visible:outline-2 focus-visible:outline-action-500"
+                      >
+                        <span className="block truncate">{it.title}</span>
+                        <span className="sr-only">{`${range} 계획 ${it.plan}`}</span>
+                      </Link>
+                    </li>
+                  )
+                }
                 if (it.kind === "study") {
                   return (
                     <li
@@ -336,7 +365,7 @@ function WeekTimetable() {
       </div>
 
       {/* the two block kinds side by side, since the columns are too narrow to say it on each block */}
-      <div className="mt-2 flex items-center justify-end gap-3 text-xs text-muted-foreground" aria-hidden="true">
+      <div className="mt-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-muted-foreground" aria-hidden="true">
         <span className="inline-flex items-center gap-1.5">
           <span className="size-3 rounded-[3px] border-l-2 border-action-600 bg-action-100" />
           공부한 시간
@@ -344,6 +373,12 @@ function WeekTimetable() {
         <span className="inline-flex items-center gap-1.5">
           <span className="size-3 rounded-[3px] bg-background ring-1 ring-inset ring-action-200" />할 일
         </span>
+        {slotsReady && (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-3 rounded-[3px] bg-action-50 ring-1 ring-inset ring-action-300" />
+            계획
+          </span>
+        )}
       </div>
       {all.length === 0 && (
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
