@@ -20,6 +20,7 @@ import {
   reviewHref,
   reviewItems,
   reviewRecordText,
+  partialUnderstanding,
   reviewSummary,
   reviewUnderstanding,
   type JudgedItem,
@@ -70,14 +71,14 @@ function recordReview(session: Session, rows: JudgedItem[], understanding: numbe
   return { before: session.before, after: understanding, rows, recordId, total: session.items.length }
 }
 
-// Leaving before 복습 마치기 (D-51): the places marked so far still count, so the time is not lost. Nothing marked,
-// nothing to judge by: no record.
+// Leaving before 복습 마치기 (D-51): with at least half the places marked, those still count, so the time is not lost.
+// Fewer: not enough to judge by, no record (as before).
 function recordMarked(session: Session, marks: Record<string, Judgment>): ReviewOutcome | null {
   const rows: JudgedItem[] = session.items
     .filter((item) => marks[item.blockId])
     .map((item) => ({ item, judgment: marks[item.blockId], written: false }))
-  if (rows.length === 0) return null
-  return recordReview(session, rows, reviewUnderstanding(rows, session.before))
+  const understanding = partialUnderstanding(rows, session.items.length)
+  return understanding === null ? null : recordReview(session, rows, understanding)
 }
 
 export function useNoteReview({
@@ -212,7 +213,13 @@ export function ReviewBar({ marked, total, onFinish, exitHref }: { marked: numbe
         href={exitHref}
         replace
         scroll={false}
-        title={marked > 0 && left > 0 ? `고른 ${marked}곳까지 기록` : undefined}
+        title={
+          marked === 0 || left === 0
+            ? undefined
+            : marked * 2 >= total
+              ? `고른 ${marked}곳까지 기록`
+              : `${Math.ceil(total / 2)}곳 이상 고르면 기록`
+        }
         className={button("ghost", "sm", "px-2")}
       >
         그만두기

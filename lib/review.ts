@@ -129,6 +129,14 @@ function ladder(rows: JudgedItem[]) {
   return passed(high, isRightWritten) ? 5 : 4
 }
 
+// Left before marking every place (D-51): it counts as a review only when at least half the places were marked, and
+// by the ladder alone. "Never lower" (above) is for a whole review: a partial one does not keep a higher earlier value,
+// so the note comes back sooner instead of being pushed off by a few places. null: not enough to judge, no record.
+export function partialUnderstanding(rows: JudgedItem[], total: number): number | null {
+  if (rows.length === 0 || rows.length * 2 < total) return null
+  return reviewUnderstanding(rows, null)
+}
+
 // What the marks say: "떠올릴 곳 5개 중 4개 알았음" (a 오답 노트: "틀린 문제 2개 중 1개 맞힘").
 export function reviewSummary(rows: JudgedItem[], value: number) {
   const problems = rows.filter((r) => r.item.type === "problem")
