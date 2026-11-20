@@ -428,19 +428,25 @@ function AssistantMessage({
   const wrong = score && quiz ? wrongFromGrading(quiz, content) : []
 
   const makeWrongNote = () => {
-    const id = createWrongAnswerNote(
+    const result = createWrongAnswerNote(
       page.id,
       wrong.map((w) => ({ text: w.level ? `[${w.level}] ${w.text}` : w.text, answer: w.answer })),
       `AI 확인 문제 · ${page.title || "제목 없음"}`,
     )
-    if (!id) {
+    const id = result?.noteId ?? result?.mergedInto ?? null
+    if (!result || !id) {
       toast.error("오답 노트를 만들지 못했어요. 새로고침한 뒤 다시 시도해 주세요.")
       return
     }
     setWrongNoteId(id)
-    toast.success(`틀린 ${wrong.length}문제로 오답 노트를 만들었어요. 내일 다시 풀기에 나와요.`, {
-      action: { label: "열기", onClick: () => router.push(`/record/${id}`) },
-    })
+    // One line either way (D-39): a problem already in a 오답 노트 of this subject gets a wrong try, not a copy.
+    const message =
+      result.added > 0 && result.merged > 0
+        ? `새 오답 노트에 ${result.added}문제, 이미 있는 문제 ${result.merged}개에 틀림을 더했어요.`
+        : result.added > 0
+          ? `틀린 ${result.added}문제로 오답 노트를 만들었어요. 내일 다시 풀기에 나와요.`
+          : `이미 있는 문제 ${result.merged}개에 틀림을 더했어요.`
+    toast.success(message, { action: { label: "열기", onClick: () => router.push(`/record/${id}`) } })
   }
 
   const insert = () => {
