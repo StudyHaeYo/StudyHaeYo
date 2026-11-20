@@ -8,19 +8,19 @@ import { deleteAccountData } from "@/lib/account-delete"
 // 로그인 확인 → 비밀번호 다시 확인 → 지우기(순서와 이유는 lib/account-delete.ts) → 이 브라우저의 세션 쿠키 지우기.
 
 const FAILED: Record<string, string> = {
-  attachments: "첨부 파일을 지우지 못했어요. 잠시 후 다시 시도해 주세요.",
-  plans: "학습 계획을 지우지 못했어요. 잠시 후 다시 시도해 주세요.",
-  account: "계정을 지우지 못했어요. 잠시 후 다시 시도해 주세요.",
+  attachments: "첨부 파일을 지우지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  plans: "학습 계획을 지우지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  account: "계정을 지우지 못했습니다. 잠시 후 다시 시도해 주세요.",
 }
 
 export async function POST(request: Request) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!serviceKey) return Response.json({ error: "지금은 탈퇴할 수 없어요. 관리자에게 알려 주세요." }, { status: 503 })
+  if (!serviceKey) return Response.json({ error: "지금은 탈퇴할 수 없습니다. 관리자에게 알려 주세요." }, { status: 503 })
 
   const supabase = await createClient()
   const { data } = await supabase.auth.getUser()
   const user = data.user
-  if (!user?.email) return Response.json({ error: "로그인이 풀렸어요. 다시 로그인한 뒤 탈퇴해 주세요." }, { status: 401 })
+  if (!user?.email) return Response.json({ error: "로그인이 풀렸습니다. 다시 로그인한 뒤 탈퇴해 주세요." }, { status: 401 })
 
   const body = (await request.json().catch(() => null)) as { password?: unknown } | null
   const password = typeof body?.password === "string" ? body.password : ""
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   if (passwordError) {
     const tooMany = passwordError.status === 429 || passwordError.code === "over_request_rate_limit"
     return Response.json(
-      { error: tooMany ? "요청이 너무 많아요. 잠시 후 다시 시도해 주세요." : "비밀번호가 맞지 않아요. 다시 입력해 주세요." },
+      { error: tooMany ? "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." : "비밀번호가 맞지 않습니다. 다시 입력해 주세요." },
       { status: tooMany ? 429 : 403 },
     )
   }

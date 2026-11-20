@@ -30,7 +30,7 @@ export function SubjectPlans({ subjectId }: { subjectId: string }) {
         )
       ) : (
         <div className={`${emptyState} flex flex-col items-center gap-2`}>
-          <p>이 과목을 대상으로 한 학습 계획이 없어요.</p>
+          <p>이 과목의 학습 계획 없음</p>
           <Link href="/plan" className="text-sm font-medium text-action-600 hover:underline">
             계획 만들기
           </Link>

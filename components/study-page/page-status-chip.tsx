@@ -55,7 +55,7 @@ export function PageStatusChip({
   }
 
   if (kind === "wrong-answers") {
-    if (problems.wrong === 0) return problems.total > 0 ? <span className={calm}>모두 맞혔어요</span> : null
+    if (problems.wrong === 0) return problems.total > 0 ? <span className={calm}>모두 맞힘</span> : null
     return (
       <Link href={reviewHref} aria-label={`틀린 문제 ${problems.wrong}개 다시 풀기`} className={button("primary", "sm")}>
         {dot}
@@ -75,7 +75,7 @@ export function PageStatusChip({
     ) : null
   if (stats.status === "복습 필요") {
     const late = daysBetween(stats.nextReviewAt, today)
-    const when = late > 0 ? "다시 볼 때예요" : "오늘 복습할 날이에요"
+    const when = late > 0 ? "다시 볼 때" : "오늘 복습"
     return (
       <Link href={reviewHref} title={when} aria-label={`${action} · ${when}`} className={button("primary", "sm")}>
         {dot}

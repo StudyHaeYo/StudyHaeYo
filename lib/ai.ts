@@ -74,10 +74,10 @@ export async function askStudyAI(context: string, messages: ChatMessage[], pdfs:
       body: JSON.stringify(attachments.length > 0 ? { context, messages, attachments } : { context, messages }),
     })
     const data = (await res.json().catch(() => null)) as { text?: string; error?: string } | null
-    if (!res.ok || !data?.text) return { ok: false, message: data?.error ?? "AI가 답하지 못했어요. 잠시 후 다시 시도해 주세요." }
+    if (!res.ok || !data?.text) return { ok: false, message: data?.error ?? "AI가 답하지 못했습니다. 잠시 후 다시 시도해 주세요." }
     return { ok: true, text: data.text }
   } catch {
-    return { ok: false, message: "네트워크 문제로 AI에 연결하지 못했어요." }
+    return { ok: false, message: "네트워크 문제로 AI에 연결하지 못했습니다." }
   }
 }
 
@@ -206,17 +206,17 @@ export function ladderUnderstanding(levels: LevelScore): number | null {
 }
 
 const levelAdvice: Record<QuizLevel, string> = {
-  하: "용어와 정의부터 다시 보세요",
-  중: "예제에 적용해 보는 연습이 필요해요",
-  상: "비교하고 이유를 설명하는 연습이 필요해요",
+  하: "용어와 정의부터 다시 보기",
+  중: "예제에 적용해 보는 연습 필요",
+  상: "비교하고 이유를 설명하는 연습 필요",
 }
 
 // One line of feedback by level (no AI): where the climb stopped and what to practice.
 export function ladderFeedback(levels: LevelScore) {
   const asked = quizLevels.filter((l) => (levels[l]?.total ?? 0) > 0)
   const stuck = asked.find((l) => !passedLevel(levels[l]!))
-  if (!stuck) return asked.includes("상") ? "상까지 통과했어요. 설명할 수 있는 수준이에요." : `${asked.at(-1)}까지 통과했어요.`
-  return `${stuck}에서 막혔어요. ${levelAdvice[stuck]}.`
+  if (!stuck) return asked.includes("상") ? "상까지 통과 · 설명할 수 있는 수준" : `${asked.at(-1)}까지 통과`
+  return `${stuck}에서 막힘 · ${levelAdvice[stuck]}`
 }
 
 // 이해도 a score suggests for the record (the user can change it): the ladder when levels were marked,

@@ -43,7 +43,7 @@ export function MoveDialog({ pageId, title, onClose }: { pageId: string; title: 
     if (target.id === currentParent) return onClose()
     moveNode(pageId, target.id, "inside")
     // "안으로" reads right after any name (어학으로 / 자료구조로 would need the 조사 picked per word).
-    toast.success(target.id ? `${target.name || "제목 없음"} 안으로 옮겼어요` : "맨 위로 옮겼어요")
+    toast.success(target.id ? `${target.name || "제목 없음"} 안으로 옮겼습니다` : "맨 위로 옮겼습니다")
     onClose()
   }
 

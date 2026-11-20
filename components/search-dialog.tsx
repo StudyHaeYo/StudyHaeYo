@@ -109,7 +109,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
                 if (id) go(id)
               }
             }}
-            placeholder="제목, 내용, 핵심 개념으로 찾기 (초성도 돼요: ㅎㅅ)"
+            placeholder="제목, 내용, 핵심 개념으로 찾기 (초성: ㅎㅅ)"
             aria-label="검색어"
             className="h-12 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground/70"
           />
@@ -127,7 +127,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
               ))}
             </>
           ) : results.length === 0 ? (
-            <li className="px-3 py-6 text-center text-sm text-muted-foreground">“{query.trim()}”이 들어간 노트가 없어요</li>
+            <li className="px-3 py-6 text-center text-sm text-muted-foreground">“{query.trim()}”이 들어간 노트 없음</li>
           ) : (
             results.map((r, i) => (
               <ResultRow key={r.pageId} index={i} active={i === active} onHover={setActive} onPick={() => go(r.pageId)}>

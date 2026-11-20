@@ -29,16 +29,16 @@ export function WrongAnswersHead({
         id="wrong-source"
         value={source ?? ""}
         onChange={(e) => onChange({ source: e.target.value })}
-        placeholder="어디서 나온 문제인가요? (예: 2025년 실기 2회)…"
+        placeholder="출처 (예: 2025년 실기 2회)…"
         autoComplete="off"
         className="-mx-1 min-w-0 flex-1 rounded bg-transparent px-1 text-base font-semibold text-foreground outline-none placeholder:font-medium placeholder:text-muted-foreground focus-visible:bg-background focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-action-500"
       />
       {/* Wraps on a phone: with the reasons it no longer fits one line there. */}
       <p className="min-w-0 text-sm tabular-nums text-muted-foreground">
         {problems.total === 0 ? (
-          "아래에 틀린 문제를 적어 보세요"
+          "아래에 틀린 문제 입력"
         ) : problems.wrong === 0 ? (
-          `${problems.total}문제 모두 맞혔어요`
+          `${problems.total}문제 모두 맞힘`
         ) : (
           <>
             <span className="whitespace-nowrap">

@@ -9,9 +9,9 @@ type Values = { password: string; confirm: string }
 function validate({ password, confirm }: Values) {
   const errors: Partial<Values> = {}
   if (!password) errors.password = "새 비밀번호를 입력해 주세요."
-  else if (password.length < MIN_PASSWORD_LENGTH) errors.password = `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 해요.`
+  else if (password.length < MIN_PASSWORD_LENGTH) errors.password = `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`
   if (!confirm) errors.confirm = "새 비밀번호를 한 번 더 입력해 주세요."
-  else if (confirm !== password) errors.confirm = "비밀번호가 일치하지 않아요."
+  else if (confirm !== password) errors.confirm = "비밀번호가 일치하지 않습니다."
   return errors
 }
 

@@ -105,12 +105,12 @@ export function GroupActionsMenu({
           </button>
 
           {blockingPlans > 0 ? (
-            blockedNote("폴더로 바꿀 수 없어요")
+            blockedNote("폴더로 바꿀 수 없습니다")
           ) : subjectRecordCount > 0 ? (
             <div role="menuitem" aria-disabled="true" tabIndex={-1} className="flex items-start gap-2 px-2 py-1.5">
               <Lock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               <span className="text-xs leading-relaxed text-muted-foreground">
-                {`이 과목에 바로 남긴 학습 기록이 ${subjectRecordCount}개 있어서 폴더로 바꿀 수 없어요.`}
+                {`이 과목에 바로 남긴 학습 기록이 ${subjectRecordCount}개 있어서 폴더로 바꿀 수 없습니다.`}
               </span>
             </div>
           ) : (

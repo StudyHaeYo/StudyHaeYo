@@ -22,7 +22,7 @@ export function DataStatusNotice() {
     setImporting(false)
     if (result === "not-empty") {
       // The DB already has rows this screen hasn't loaded (another tab); show them instead of importing.
-      toast.info("이미 저장된 데이터가 있어서 예시 데이터를 가져오지 않았어요. 저장된 데이터를 다시 불러올게요.")
+      toast.info("이미 저장된 데이터가 있어 예시 데이터를 가져오지 않았습니다. 저장된 데이터를 다시 불러옵니다.")
       void loadUserData()
     }
   }
@@ -31,7 +31,7 @@ export function DataStatusNotice() {
     return (
       <p role="status" className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-        학습 데이터를 불러오는 중이에요…
+        학습 데이터 불러오는 중…
       </p>
     )
   }
@@ -41,7 +41,7 @@ export function DataStatusNotice() {
       <div role="alert" className="mb-4 flex items-start gap-3 rounded-xl border border-danger-200 bg-danger-50 p-4 text-sm text-danger-700">
         <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <div className="flex-1">
-          <p className="font-medium">학습 데이터를 불러오지 못했어요.</p>
+          <p className="font-medium">학습 데이터를 불러오지 못했습니다.</p>
           <p className="mt-0.5 text-xs text-danger-600/90">{status.message}</p>
         </div>
         <button
@@ -67,13 +67,13 @@ export function DataStatusNotice() {
         {canQuickRecord ? (
           <>
             <Step n={1}>
-              공부를 마치면 과목 · 시간 · 이해도를 기록해요.{" "}
+              공부를 마치면 과목 · 시간 · 이해도 기록{" "}
               <button type="button" onClick={() => openQuickRecord()} className={stepLink}>
                 + 기록 남기기
               </button>
             </Step>
             <Step n={2}>
-              정리할 노트가 필요하면 종류(강의 · 오답 · 시험)를 골라 노트를 만들어요.{" "}
+              정리할 노트는 종류(강의 · 오답 · 시험)를 골라 만들기{" "}
               <Link href="/new" className={stepLink}>
                 새 노트
               </Link>
@@ -82,15 +82,15 @@ export function DataStatusNotice() {
         ) : (
           <>
             <Step n={1}>
-              공부할 내용으로 노트를 만들어요. 종류(강의 · 오답 · 시험)를 고르면 맞는 칸이 생겨요.{" "}
+              공부할 내용으로 노트 만들기 · 종류(강의 · 오답 · 시험)에 맞는 칸 생성{" "}
               <Link href="/new" className={stepLink}>
                 새 노트
               </Link>
             </Step>
-            <Step n={2}>공부를 마치면 노트에서 [기록 남기기]로 시간과 이해도를 남겨요.</Step>
+            <Step n={2}>공부를 마치면 노트의 [기록 남기기]로 시간 · 이해도 기록</Step>
           </>
         )}
-        <Step n={3}>기록이 쌓이면 복습할 날과 이번 주 통계가 오늘 화면에 보여요.</Step>
+        <Step n={3}>기록이 쌓이면 복습할 날 · 이번 주 통계 표시</Step>
       </ol>
       {/* Only for a fully empty workspace; importExampleData re-checks the DB before writing. */}
       {groups.length === 0 && (
@@ -105,7 +105,6 @@ export function DataStatusNotice() {
             {importing && <Loader2 className="size-3 animate-spin" aria-hidden="true" />}
             {importing ? "가져오는 중…" : "예시 데이터 가져오기"}
           </button>
-          . 내 계정에 저장되고, 다른 노트처럼 고치거나 지울 수 있어요.
         </p>
       )}
     </section>
@@ -132,7 +131,7 @@ export function DataStatusView({ status }: { status: DataStatus }) {
       {status.phase === "error" ? (
         <>
           <AlertCircle className="mb-3 size-6 text-danger-600" aria-hidden="true" />
-          <p role="alert" className="text-base font-medium text-foreground">학습 데이터를 불러오지 못했어요</p>
+          <p role="alert" className="text-base font-medium text-foreground">학습 데이터를 불러오지 못했습니다</p>
           <p className="mt-1 text-sm text-muted-foreground">{status.message}</p>
           <button
             type="button"
@@ -145,7 +144,7 @@ export function DataStatusView({ status }: { status: DataStatus }) {
       ) : (
         <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          불러오는 중이에요…
+          불러오는 중…
         </p>
       )}
     </div>

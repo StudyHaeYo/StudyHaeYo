@@ -130,7 +130,7 @@ export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
     return (
       <section aria-labelledby={bare ? undefined : "today-timetable-title"}>
         {heading("준비 중")}
-        <p className="text-xs leading-relaxed text-muted-foreground">시간표를 저장할 곳을 준비하고 있어요.</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">시간표 준비 중</p>
       </section>
     )
   }
@@ -332,7 +332,7 @@ export function TodayTimetable({ bare = false }: { bare?: boolean } = {}) {
 
       {empty && todoTimes && (
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          체크리스트에서 할 일의 시계를 누르면 {todoDurations ? "시각과 길이를 정해" : "그 시각에"} 여기에 넣을 수 있어요.
+          체크리스트 할 일의 시계로 {todoDurations ? "시각 · 길이" : "시각"} 지정
         </p>
       )}
     </section>

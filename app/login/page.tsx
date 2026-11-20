@@ -16,20 +16,19 @@ export default async function LoginPage({
   const next = typeof query.next === "string" ? query.next : undefined
   const notice =
     query.verified === "1"
-      ? "이메일 인증이 끝났어요. 로그인해 주세요."
+      ? "이메일 인증이 끝났습니다. 로그인해 주세요."
       : query.deleted === "1"
-        ? "탈퇴했어요. 계정과 학습 기록을 모두 지웠어요."
+        ? "탈퇴했습니다. 계정과 학습 기록을 모두 지웠습니다."
       : query.error === "verification"
-        ? "인증 링크가 만료됐거나 올바르지 않아요. 다시 가입하거나 받은 메일을 확인해 주세요."
+        ? "인증 링크가 만료됐거나 올바르지 않습니다. 다시 가입하거나 받은 메일을 확인해 주세요."
         : undefined
 
   return (
     <AuthShell
       title="로그인"
-      description="이메일과 비밀번호로 로그인하세요."
       footer={
         <>
-          계정이 없나요?{" "}
+          계정이 없으면{" "}
           <Link href="/signup" className="font-medium text-action-600 hover:text-action-700 hover:underline">
             회원가입
           </Link>

@@ -8,7 +8,8 @@ export function AuthShell({
   footer,
 }: {
   title: string
-  description: string
+  // Only when it says something the title does not (비밀번호 찾기: a link will be mailed).
+  description?: string
   children: React.ReactNode
   footer: React.ReactNode
 }) {
@@ -27,7 +28,7 @@ export function AuthShell({
             <h1 className="text-xl font-semibold tracking-tight text-card-foreground text-balance">
               {title}
             </h1>
-            <p className="text-sm leading-relaxed text-muted-foreground text-pretty">{description}</p>
+            {description && <p className="text-sm leading-relaxed text-muted-foreground text-pretty">{description}</p>}
           </header>
           {children}
         </section>

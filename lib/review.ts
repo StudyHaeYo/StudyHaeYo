@@ -138,14 +138,14 @@ export function reviewSummary(rows: JudgedItem[], value: number) {
   if (problems.length) parts.push(`틀린 문제 ${problems.length}개 중 ${problems.filter(isRight).length}개 맞힘`)
   const hint =
     value <= 2
-      ? "헷갈리거나 몰랐던 곳을 지금 다시 읽어 두면 다음 복습에서 확인해요."
-      : "AI 창의 확인 문제에 답을 써서 맞히면 이해도 4 · 5까지 올라가요."
+      ? "헷갈리거나 몰랐던 곳은 지금 다시 읽어 두기 · 다음 복습에서 확인"
+      : "AI 창의 확인 문제를 맞히면 이해도 4 · 5까지"
   return { line: parts.join(" · "), hint }
 }
 
 // One line for the record (학습 기록): what was reviewed and how it went.
 export function reviewRecordText(rows: JudgedItem[]) {
-  if (rows.length === 0) return { studyContent: "복습: 노트를 다시 읽고 이해도를 골랐어요", difficulties: "" }
+  if (rows.length === 0) return { studyContent: "복습: 노트를 다시 읽고 이해도 선택", difficulties: "" }
   const count = (j: Judgment) => rows.filter((r) => r.judgment === j).length
   const missed = rows.filter((r) => r.judgment !== "right").map((r) => r.item.label)
   return {

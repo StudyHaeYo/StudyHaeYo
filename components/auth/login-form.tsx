@@ -8,7 +8,7 @@ import { AuthField, EMAIL_PATTERN, submitButtonClass } from "./auth-field"
 function validate(email: string, password: string) {
   const errors: { email?: string; password?: string } = {}
   if (!email.trim()) errors.email = "이메일을 입력해 주세요."
-  else if (!EMAIL_PATTERN.test(email.trim())) errors.email = "이메일 형식이 올바르지 않아요."
+  else if (!EMAIL_PATTERN.test(email.trim())) errors.email = "이메일 형식이 올바르지 않습니다."
   // 가입 규칙(8자 이상)은 회원가입에서만 검사한다. 규칙이 바뀌어도 기존 사용자가 로그인할 수 있게.
   if (!password) errors.password = "비밀번호를 입력해 주세요."
   return errors

@@ -34,7 +34,7 @@ export function enqueueWrite(task: (userId: string) => Promise<void>) {
   tail = tail.then(async () => {
     try {
       if (gen !== generation) return
-      if (!userId) throw new Error("로그인 정보가 없어요. 다시 로그인해 주세요.")
+      if (!userId) throw new Error("로그인 정보가 없습니다. 다시 로그인해 주세요.")
       await task(userId)
     } catch (error) {
       if (gen !== generation) return
@@ -122,5 +122,5 @@ export function resetWrites() {
 // so the UI never shows a save that didn't happen.
 export function check<T>(result: { data: T[] | null; error: PostgrestError | null }, expected: number) {
   if (result.error) throw result.error
-  if ((result.data?.length ?? 0) !== expected) throw new Error("저장 대상이 없거나 접근 권한이 없어요.")
+  if ((result.data?.length ?? 0) !== expected) throw new Error("저장 대상이 없거나 접근 권한이 없습니다.")
 }

@@ -21,6 +21,7 @@
 - PR 전에 `pnpm run build`가 통과해야 한다(타입 검사만으로는 서버/클라이언트 경계 오류를 못 잡는다). 빌드는 타입 오류가 있으면 멈춘다(2026-11-11부터 `ignoreBuildErrors`를 껐다).
 - 복습일 · 이해도처럼 틀리면 안 되는 계산을 바꾸면 `tests/`의 테스트도 같이 고치고 `pnpm test`를 돌린다. PR마다 GitHub Actions(`.github/workflows/check.yml`)가 타입 · 색 · 테스트를 돌린다.
 - 화면 코드에는 색 이름 클래스(`indigo-600`, `amber-50` 등)를 쓰지 않고 역할 토큰(`action` · `attention` · `danger` · `success`, `app/globals.css`)을 쓴다. 디자인을 바꾸거나 어두운 모드를 넣을 때 값을 한 곳에서만 바꾸기 위해서다. PR 전에 `pnpm run check:colors`.
+- 화면 문구는 D-50을 따른다: 설명 · 빈 안내 · 툴팁 · placeholder는 짧은 명사형, 알림 · 오류 · 확인 창은 합니다체. 제목이나 버튼이 이미 말하는 설명 문장은 붙이지 않는다.
 - 버튼 · 메뉴 · 창은 `components/ui-styles.ts`(`button()`, `menuPanel`, `dialogPanel`)를 쓴다. 글자 크기 · 모서리 · 그림자 단계는 그 파일 머리말과 D-40을 따른다.
 - 서버 컴포넌트(`page.tsx`, `layout.tsx` 등)에서는 `lib/workspace.ts`, `lib/plans.ts`, `lib/create-store.ts`, `lib/study-stats.ts`를 직접·간접으로 import하지 않는다. 서버와 클라이언트가 같이 쓰는 상수나 함수는 `lib/goals.ts`처럼 import가 없는 파일에 둔다.
 - v0의 Publish로 main에 바로 반영하지 않는다. PR의 Vercel 미리보기 빌드가 Ready인지 확인하고 merge한다.

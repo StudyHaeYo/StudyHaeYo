@@ -153,14 +153,14 @@ export function RecordRow({
         open={deleting}
         title={`${formatDate(record.date)} 학습 기록`}
         targetLabel="기록"
-        note="삭제하면 학습 시간과 복습 일정에서도 빠져요."
+        note="삭제하면 학습 시간과 복습 일정에서도 빠집니다."
         onCancel={() => setDeleting(false)}
         onConfirm={() => {
           setDeleting(false)
           if (pageRecord)
             updatePage(pageRecord.pageId, (p) => ({ ...p, studyRecords: p.studyRecords.filter((r) => r.id !== record.id) }))
           else deleteSubjectRecord(record.id)
-          toast.success("기록을 삭제했어요")
+          toast.success("기록을 삭제했습니다")
         }}
       />
     </div>
@@ -260,8 +260,8 @@ function LinkToNote({ record, onClose }: { record: SubjectStudyRecord; onClose: 
 
   const afterLink = (pageId: string, created: boolean) => {
     onClose()
-    toast.success(created ? "노트를 만들고 기록을 연결했어요" : "노트에 연결했어요", {
-      description: `다음 복습은 ${review}이에요.`,
+    toast.success(created ? "노트를 만들고 기록을 연결했습니다" : "노트에 연결했습니다", {
+      description: `다음 복습은 ${review}입니다.`,
       action: created ? undefined : { label: "보기", onClick: () => router.push(`/record/${pageId}`) },
     })
     if (created) router.push(`/record/${pageId}`)
@@ -325,7 +325,7 @@ function LinkToNote({ record, onClose }: { record: SubjectStudyRecord; onClose: 
           {query.trim() ? "찾은 노트" : inSubject.length > 0 ? `${subjectName}의 노트` : "최근 노트"}
         </p>
         {notes.length === 0 ? (
-          <p className="px-2.5 py-2 text-sm text-muted-foreground">맞는 노트가 없어요.</p>
+          <p className="px-2.5 py-2 text-sm text-muted-foreground">맞는 노트 없음</p>
         ) : (
           notes.map((p) => (
             <button
@@ -344,8 +344,8 @@ function LinkToNote({ record, onClose }: { record: SubjectStudyRecord; onClose: 
         )}
       </div>
       <p className="mt-1 border-t border-border px-2.5 pb-1 pt-2 text-xs leading-relaxed text-muted-foreground">
-        연결하면 이 기록으로 다음 복습({review})이 잡혀요.
-        {record.difficulties.trim() && " 새 노트를 만들면 어려웠던 점이 헷갈린 점으로 들어가요."}
+        연결하면 다음 복습 {review}
+        {record.difficulties.trim() && " · 새 노트에는 어려웠던 점이 헷갈린 점으로 추가"}
       </p>
     </div>
   )

@@ -149,7 +149,7 @@ export function ReviewBar({ marked, total, onFinish, exitHref }: { marked: numbe
             type="button"
             onClick={() => left === 0 && onFinish()}
             aria-disabled={left > 0}
-            title={left > 0 ? `${left}곳을 더 고르면 마칠 수 있어요` : "고른 결과로 학습 기록을 남겨요"}
+            title={left > 0 ? `${left}곳 남음` : "고른 결과로 학습 기록"}
             // aria-disabled, not disabled: a pointer still gets the title that says how many places are left.
             className={button(left === 0 ? "primary" : "secondary", "sm", left > 0 ? "text-muted-foreground active:scale-100" : undefined)}
           >
@@ -174,12 +174,12 @@ export function ReviewGuide({ total, onPick }: { total: number; onPick: (value: 
   if (total > 0)
     return (
       <p className="text-sm text-muted-foreground print:hidden">
-        가려진 곳을 먼저 떠올려 보고, 회색 줄을 눌러 맞춰 보세요. 다 고르면 [복습 마치기]로 기록해요.
+        가려진 곳을 떠올린 뒤 회색 줄을 눌러 확인 · 다 고르면 [복습 마치기]
       </p>
     )
   return (
     <div className="flex flex-col gap-2 print:hidden">
-      <p className="text-sm text-muted-foreground">가릴 내용이 아직 없어요. 지금 이해도를 골라 기록해 두세요.</p>
+      <p className="text-sm text-muted-foreground">가릴 내용 없음 · 지금 이해도를 골라 기록</p>
       <div role="group" aria-label="지금 이해도" className="flex flex-wrap gap-1">
         {understandingLevels.map((label, i) => (
           <button

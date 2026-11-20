@@ -146,7 +146,7 @@ function WeekTimetable() {
     return <div className="h-72 animate-pulse rounded-xl bg-muted" aria-hidden="true" />
   }
   if (!todoTimes && !recordTimes) {
-    return <p className="text-xs leading-relaxed text-muted-foreground">시간표를 저장할 곳을 준비하고 있어요.</p>
+    return <p className="text-xs leading-relaxed text-muted-foreground">시간표 준비 중</p>
   }
 
   const start = addDays(weekStart(today), offset * 7)
@@ -382,8 +382,7 @@ function WeekTimetable() {
       </div>
       {all.length === 0 && (
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          이 주에는 시각을 정한 할 일도, 시작 시각이 있는 기록도 없어요. 체크리스트에서 할 일의 시계를 누르면 시각을
-          정할 수 있어요.
+          이 주에 시각을 정한 할 일 · 기록 없음
         </p>
       )}
     </div>
@@ -543,7 +542,7 @@ function DdayPanel({ today }: { today: string }) {
   }
   const remove = (d: Dday) => {
     removeDday(d.id)
-    toast(`"${d.title}" D-day를 지웠어요.`, { action: { label: "되돌리기", onClick: () => restoreDday(d) } })
+    toast(`"${d.title}" D-day를 지웠습니다.`, { action: { label: "되돌리기", onClick: () => restoreDday(d) } })
   }
 
   const row = (d: Dday, past: boolean) => (
@@ -573,7 +572,7 @@ function DdayPanel({ today }: { today: string }) {
       <h3 className="mb-1 text-xs font-semibold text-muted-foreground">D-day</h3>
       {upcoming.length + past.length === 0 ? (
         <p className="text-xs leading-relaxed text-muted-foreground">
-          시험이나 마감처럼 세고 싶은 날을 넣으면 남은 날이 시간표 위와 달력에 보여요.
+          시험 · 마감 날짜를 넣으면 시간표와 달력에 남은 날 표시
         </p>
       ) : (
         <ul>

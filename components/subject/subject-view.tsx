@@ -42,9 +42,9 @@ function SubjectNotFound() {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-24 text-center">
       <SearchX className="size-8 text-muted-foreground" aria-hidden="true" />
-      <h1 className="text-xl font-semibold text-foreground">과목을 찾을 수 없어요</h1>
+      <h1 className="text-xl font-semibold text-foreground">과목을 찾을 수 없습니다</h1>
       <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
-        삭제되었거나 존재하지 않는 과목이에요.
+        삭제되었거나 존재하지 않는 과목입니다.
       </p>
       <Link
         href="/"

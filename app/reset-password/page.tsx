@@ -12,7 +12,6 @@ export default function ResetPasswordPage() {
   return (
     <AuthShell
       title="새 비밀번호"
-      description="앞으로 로그인할 때 쓸 비밀번호를 정해 주세요."
       footer={
         <Link href="/" className="font-medium text-action-600 hover:text-action-700 hover:underline">
           바꾸지 않고 홈으로

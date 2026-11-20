@@ -110,14 +110,14 @@ const placeholders: Record<BlockType, string> = {
   h1: "제목 1",
   h2: "제목 2",
   h3: "제목 3",
-  p: "내용을 입력하세요. # 제목, - 목록, ``` 코드",
+  p: "내용 입력 · # 제목, - 목록, ``` 코드",
   li: "목록",
   ol: "목록",
   todo: "할 일",
   toggle: "토글 제목 (예: 문제)",
   quote: "인용",
   callout: "강조할 내용",
-  code: "코드를 입력하세요",
+  code: "코드 입력",
   concept: "용어: 설명",
   confusion: "헷갈리는 것이나 다시 확인할 질문",
 }
@@ -872,9 +872,9 @@ export function BlockEditor({
             hintFor(index) ??
             (cues && block.type === "p" && block.text === ""
               ? block.cue?.trim() === "요약"
-                ? "이 강의를 두세 줄로 요약해요"
+                ? "이 강의를 두세 줄로 요약"
                 : index === 0
-                  ? "필기를 적어요 · 줄 왼쪽에 질문을 달면 복습할 때 그 줄만 가려져요"
+                  ? "필기 · 줄 왼쪽에 질문을 달면 복습 때 그 줄만 가림"
                   : undefined
               : undefined)
           const reviewEntry = review?.items.get(block.id)
@@ -948,7 +948,7 @@ export function BlockEditor({
                 )}
                 {/* Plain lines like the rest of the note (D-34): a small mark, no card. */}
                 {block.type === "concept" && (
-                  <span title="핵심 개념 · 복습할 때 설명이 가려져요" className="mt-[5px] shrink-0 select-none text-action-500">
+                  <span title="핵심 개념 · 복습 때 설명을 가림" className="mt-[5px] shrink-0 select-none text-action-500">
                     <KeyRound className="size-4" aria-hidden="true" />
                   </span>
                 )}
@@ -958,7 +958,7 @@ export function BlockEditor({
                     role="checkbox"
                     aria-checked={block.checked === true}
                     aria-label={block.checked ? "해결 취소" : "해결함"}
-                    title={block.checked ? "해결함" : "헷갈린 점 · 해결하면 눌러요"}
+                    title={block.checked ? "해결함" : "헷갈린 점 · 해결하면 누르기"}
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={() => onChange(blocks.map((b) => (b.id === block.id ? { ...block, checked: !block.checked } : b)))}
                     className={`touch-hit mt-1 flex size-[18px] shrink-0 items-center justify-center rounded-full border transition-colors ${
@@ -1046,9 +1046,9 @@ export function BlockEditor({
                   placeholder={
                     hint ??
                     (isProblem
-                      ? "틀린 문제를 적어요"
+                      ? "틀린 문제 입력"
                       : isSoleEmptyBlock
-                        ? "/ 를 누르면 제목, 목록, 토글 같은 메뉴가 나와요"
+                        ? "/ 로 제목, 목록, 토글 같은 블록 추가"
                         : block.type === "p"
                           ? undefined
                           : placeholders[block.type])
@@ -1239,7 +1239,7 @@ export function BlockEditor({
         })}
         {dragging && (
           <p className="pointer-events-none absolute inset-x-0 bottom-2 text-center text-xs font-medium text-action-700">
-            놓으면 첨부돼요 · 파일당 10MB까지
+            놓으면 첨부 · 파일당 10MB까지
           </p>
         )}
       </div>

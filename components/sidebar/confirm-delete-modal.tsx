@@ -67,10 +67,10 @@ export function ConfirmDeleteModal({
           <Trash2 className="size-5" />
         </div>
         <h2 id="delete-modal-title" className="mt-4 text-base font-semibold text-foreground">
-          {`"${title}" ${targetLabel}${objectParticle(targetLabel)} 삭제할까요?`}
+          {`"${title}" ${targetLabel}${objectParticle(targetLabel)} 삭제하시겠습니까?`}
         </h2>
         <p id="delete-modal-desc" className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-          {undoable ? "지운 직후 아래 알림의 [되돌리기]로 되살릴 수 있어요." : "지우면 되돌릴 수 없어요."}
+          {undoable ? "지운 직후 알림의 [되돌리기]로 되살릴 수 있습니다." : "지우면 되돌릴 수 없습니다."}
         </p>
         {note && <p className="mt-2 text-sm leading-relaxed text-destructive">{note}</p>}
         <div className="mt-6 flex justify-end gap-2">

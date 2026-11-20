@@ -74,7 +74,7 @@ export function MyAnswer({
 export function WrongReasons({ value, onChange }: { value: WrongReason[] | undefined; onChange: (value: WrongReason[]) => void }) {
   const picked = new Set(value ?? [])
   return (
-    <div role="group" aria-label="틀린 이유 (골라도 되고 안 골라도 돼요)" className="flex flex-wrap items-center gap-1">
+    <div role="group" aria-label="틀린 이유 (선택)" className="flex flex-wrap items-center gap-1">
       <span className="mr-1 text-xs text-muted-foreground">틀린 이유</span>
       {wrongReasons.map((r) => {
         const on = picked.has(r.id)
@@ -109,7 +109,7 @@ export function ProblemFoldedLine({ block }: { block: TextBlock }) {
   if (block.result === "right")
     return (
       <p className="text-sm text-muted-foreground">
-        한 번 맞힘{block.triedOn ? ` · ${formatDate(block.triedOn)}` : ""} · 다른 날 한 번 더 맞히면 끝나요
+        한 번 맞힘{block.triedOn ? ` · ${formatDate(block.triedOn)}` : ""} · 다른 날 한 번 더 맞히면 끝
       </p>
     )
   const reasons = wrongReasons.filter((r) => block.reasons?.includes(r.id)).map((r) => r.label)

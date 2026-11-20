@@ -575,7 +575,7 @@ function removeSubtree(rootId: string) {
     UNDO_DELETE_MS,
   )
 
-  toast(`“${name}” 삭제했어요`, {
+  toast(`“${name}” 삭제했습니다`, {
     duration: UNDO_DELETE_MS,
     action: { label: "되돌리기", onClick: () => undoDelete(key, snapshot) },
   })
@@ -594,7 +594,7 @@ function undoDelete(
   },
 ) {
   if (!cancelScheduled(key)) {
-    toast.error("이미 삭제가 저장돼서 되돌릴 수 없어요")
+    toast.error("이미 삭제가 저장되어 되돌릴 수 없습니다")
     return
   }
   store.set((state) => {
@@ -619,7 +619,7 @@ function undoDelete(
   })
   reattachPlans(snapshot.plans)
   syncPositions()
-  toast.success("되돌렸어요")
+  toast.success("되돌렸습니다")
 }
 
 // Removes the page and everything nested under it, including groups and the plans that target them.
@@ -804,7 +804,7 @@ export async function importExampleData(): Promise<ImportResult> {
     }
     const recordRows = pages.flatMap((p) => p.studyRecords.map((r) => recordInsertRow(r, userId)))
     enqueueWrite(async (uid) => {
-      if (uid !== userId) throw new Error("로그인한 계정이 바뀌었어요. 다시 시도해 주세요.")
+      if (uid !== userId) throw new Error("로그인한 계정이 바뀌었습니다. 다시 시도해 주세요.")
       for (const rows of levels) check(await db().from("workspace_nodes").insert(rows).select("id"), rows.length)
       check(await db().from("study_records").insert(recordRows).select("id"), recordRows.length)
     })
@@ -812,7 +812,7 @@ export async function importExampleData(): Promise<ImportResult> {
     return "imported"
   } catch (error) {
     const message = error && typeof error === "object" && "message" in error ? String(error.message) : String(error)
-    toast.error(`예시 데이터를 가져오지 못했어요. (${message})`)
+    toast.error(`예시 데이터를 가져오지 못했습니다. (${message})`)
     return "failed"
   } finally {
     importing = false

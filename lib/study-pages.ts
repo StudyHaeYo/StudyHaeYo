@@ -534,7 +534,7 @@ export type DueTone = "overdue" | "today" | "soon" | "later"
 export function dueLabel(dueISO: string, today: string): { label: string; tone: DueTone } {
   const diff = daysBetween(today, dueISO)
   // Overdue says it is time, not how late (원칙 8: a review that piled up should not read as a debt).
-  if (diff < 0) return { label: "다시 볼 때예요", tone: "overdue" }
+  if (diff < 0) return { label: "다시 볼 때", tone: "overdue" }
   if (diff === 0) return { label: "오늘", tone: "today" }
   if (diff === 1) return { label: "내일", tone: "soon" }
   return { label: `${diff}일 후`, tone: "later" }
@@ -775,18 +775,18 @@ const seedPages: StudyPage[] = [
     createdAt: "2026-09-20",
     tags: [],
     blocks: [
-      { id: "guide-1", type: "callout", text: "예시 데이터예요. 마음껏 고치고 지워도 돼요." },
+      { id: "guide-1", type: "callout", text: "예시 데이터입니다. 마음껏 고치고 지워도 됩니다." },
       { id: "guide-2", type: "h2", text: "1. 노트를 쓴다" },
-      { id: "guide-3", type: "p", text: "왼쪽 [+ 새 노트]로 빈 노트를 만들어요. 줄 맨 앞에서 / 를 누르면 제목 · 목록 · 토글 · 핵심 개념 같은 블록을 넣을 수 있어요." },
-      { id: "guide-4", type: "li", text: "강의 노트: 자료구조 > 트리 순회 강의 노트. 줄 왼쪽에 질문을 달아 두면 복습 때 그 줄만 가려져요" },
-      { id: "guide-5", type: "li", text: "오답 노트: 정보처리기사 > SQL · 정규화 오답. 내 답은 두고 정답만 가려 다시 풀어요" },
-      { id: "guide-6", type: "li", text: "시험 정리: 자료구조 > 자료구조 중간고사. 범위 노트마다 얼마나 확인했는지 보여요" },
+      { id: "guide-3", type: "p", text: "왼쪽 [+ 새 노트]로 빈 노트를 만듭니다. 줄 맨 앞에서 / 를 누르면 제목 · 목록 · 토글 · 핵심 개념 같은 블록을 넣을 수 있습니다." },
+      { id: "guide-4", type: "li", text: "강의 노트: 자료구조 > 트리 순회 강의 노트. 줄 왼쪽에 질문을 달아 두면 복습 때 그 줄만 가려집니다" },
+      { id: "guide-5", type: "li", text: "오답 노트: 정보처리기사 > SQL · 정규화 오답. 내 답은 두고 정답만 가려 다시 풉니다" },
+      { id: "guide-6", type: "li", text: "시험 정리: 자료구조 > 자료구조 중간고사. 범위 노트마다 얼마나 확인했는지 보입니다" },
       { id: "guide-7", type: "h2", text: "2. 공부한 것을 기록한다" },
-      { id: "guide-8", type: "p", text: "오늘 화면의 [공부 시작]으로 시간을 재거나, [기록 남기기]로 직접 남겨요. 기록의 이해도(1~5)가 다음 복습일을 정해요." },
+      { id: "guide-8", type: "p", text: "오늘 화면의 [공부 시작]으로 시간을 재거나, [기록 남기기]로 직접 남깁니다. 기록의 이해도(1~5)가 다음 복습일을 정합니다." },
       { id: "guide-9", type: "h2", text: "3. 때가 되면 복습한다" },
-      { id: "guide-10", type: "p", text: "오늘 화면의 \"복습할 노트\"에서 [복습하기]를 누르면 노트의 내용이 가려져요. 떠올려 보고 알았는지 고르면 이해도와 다음 복습일이 다시 잡혀요." },
+      { id: "guide-10", type: "p", text: "오늘 화면의 \"복습할 노트\"에서 [복습하기]를 누르면 노트의 내용이 가려집니다. 떠올려 보고 알았는지 고르면 이해도와 다음 복습일이 다시 잡힙니다." },
       { id: "guide-11", type: "h2", text: "4. 얼마나 했는지 본다" },
-      { id: "guide-12", type: "p", text: "학습 기록에는 남긴 기록이 날짜순으로, 학습 분석에는 과목별 이해도와 약한 곳이 모여요. 노트 위쪽 [AI]로 요약과 확인 문제도 만들 수 있어요." },
+      { id: "guide-12", type: "p", text: "학습 기록에는 남긴 기록이 날짜순으로, 학습 분석에는 과목별 이해도와 약한 곳이 모입니다. 노트 위쪽 [AI]로 요약과 확인 문제도 만들 수 있습니다." },
     ],
     studyRecords: [],
   },

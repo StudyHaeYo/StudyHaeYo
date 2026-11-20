@@ -57,7 +57,7 @@ function NameAndEmail() {
     setError(null)
     const result = await updateDisplayName(next)
     setPending(false)
-    if (result.ok) toast.success("이름을 바꿨어요.")
+    if (result.ok) toast.success("이름을 바꿨습니다.")
     else setError(result.message)
   }
 
@@ -118,11 +118,11 @@ function PasswordChange() {
       return
     }
     if (password.length < MIN_PASSWORD_LENGTH) {
-      setError({ field: "password", text: `새 비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 해요.` })
+      setError({ field: "password", text: `새 비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.` })
       return
     }
     if (confirm !== password) {
-      setError({ field: "confirm", text: "새 비밀번호가 서로 달라요. 한 번 더 같게 입력해 주세요." })
+      setError({ field: "confirm", text: "새 비밀번호가 서로 다릅니다. 한 번 더 같게 입력해 주세요." })
       return
     }
     setPending(true)
@@ -132,7 +132,7 @@ function PasswordChange() {
     if (result.ok) {
       setPassword("")
       setConfirm("")
-      toast.success("비밀번호를 바꿨어요.")
+      toast.success("비밀번호를 바꿨습니다.")
     } else setError({ field: "form", text: result.message })
   }
 
@@ -197,7 +197,7 @@ export function AccountSection({ deletable }: { deletable: boolean }) {
     const result = await signOut()
     if (!result.ok) {
       setPending(false)
-      toast.error("로그아웃하지 못했어요", { description: result.message })
+      toast.error("로그아웃하지 못했습니다", { description: result.message })
       return
     }
     // Full page load so nothing of this account stays in memory or in the router cache (same as the sidebar).
@@ -295,14 +295,14 @@ function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
           <UserX className="size-5" aria-hidden="true" />
         </div>
         <h2 id={`${id}-title`} className="mt-4 text-base font-semibold text-foreground">
-          탈퇴할까요?
+          탈퇴하시겠습니까?
         </h2>
         <p id={`${id}-desc`} className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-          노트, 학습 기록, 학습 계획, 할 일, D-day, 첨부 파일이 모두 지워지고 되돌릴 수 없어요.
+          노트, 학습 기록, 학습 계획, 할 일, D-day, 첨부 파일이 모두 지워지고 되돌릴 수 없습니다.
         </p>
         <form onSubmit={submit} noValidate className="mt-4 flex flex-col gap-1.5 text-sm">
           <label htmlFor={`${id}-password`} className="text-muted-foreground">
-            확인을 위해 비밀번호를 입력해 주세요
+            비밀번호
           </label>
           <input
             ref={inputRef}

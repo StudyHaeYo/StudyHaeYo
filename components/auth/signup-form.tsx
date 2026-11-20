@@ -11,12 +11,12 @@ function validate({ name, email, password, confirm }: Values) {
   const errors: Errors = {}
   if (!name.trim()) errors.name = "이름(닉네임)을 입력해 주세요."
   if (!email.trim()) errors.email = "이메일을 입력해 주세요."
-  else if (!EMAIL_PATTERN.test(email.trim())) errors.email = "이메일 형식이 올바르지 않아요."
+  else if (!EMAIL_PATTERN.test(email.trim())) errors.email = "이메일 형식이 올바르지 않습니다."
   if (!password) errors.password = "비밀번호를 입력해 주세요."
   else if (password.length < MIN_PASSWORD_LENGTH)
-    errors.password = `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 해요.`
+    errors.password = `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`
   if (!confirm) errors.confirm = "비밀번호를 한 번 더 입력해 주세요."
-  else if (confirm !== password) errors.confirm = "비밀번호가 일치하지 않아요."
+  else if (confirm !== password) errors.confirm = "비밀번호가 일치하지 않습니다."
   return errors
 }
 
@@ -58,9 +58,9 @@ export function SignupForm() {
   if (sentTo) {
     return (
       <div role="status" className="flex flex-col gap-2 rounded-lg bg-action-50 px-4 py-4 text-sm leading-relaxed text-action-800">
-        <p className="font-medium">인증 메일을 보냈어요</p>
+        <p className="font-medium">인증 메일을 보냈습니다</p>
         <p>
-          <span className="font-medium">{sentTo}</span>로 보낸 메일의 인증 링크를 누르면 가입이 끝나요. 메일이 안 보이면
+          <span className="font-medium">{sentTo}</span>로 보낸 메일의 인증 링크를 누르면 가입이 끝납니다. 메일이 안 보이면
           스팸함도 확인해 주세요.
         </p>
       </div>

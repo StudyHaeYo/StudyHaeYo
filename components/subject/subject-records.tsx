@@ -75,7 +75,7 @@ export function SubjectRecords({ subjectId }: { subjectId: string }) {
         </div>
       ) : (
         <div className={`${emptyState} flex flex-col items-center gap-3`}>
-          <p>이 과목에는 아직 노트가 없어요.</p>
+          <p>이 과목의 노트 없음</p>
           <Link href={newPageHref} className={secondaryButton}>
             <Plus />이 과목에 새 노트 만들기
           </Link>

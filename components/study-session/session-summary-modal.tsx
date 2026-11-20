@@ -130,7 +130,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
       else addSubjectRecord({ ...fields, subjectId })
     }
     closeSummary()
-    toast.success(`기록 ${chosen.length}개를 남겼어요`)
+    toast.success(`기록 ${chosen.length}개를 남겼습니다`)
   }
 
   return (
@@ -149,16 +149,15 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
       >
         <div className="flex items-start justify-between gap-3 px-5 pt-4">
           <div>
-            <p className="text-sm font-semibold text-foreground">학습 세션을 마쳤어요</p>
+            <p className="text-sm font-semibold text-foreground">학습 세션 종료</p>
             <h2 id="session-summary-title" className="mt-1 text-xl font-bold tracking-tight text-foreground">
-              {total} 공부했어요
+              {total} 공부
             </h2>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              {session.autoEnded
-                ? "30분 넘게 활동이 없어 마지막 활동 시각에 세션을 끝냈어요. "
-                : ""}
-              노트에서 공부한 시간은 노트별로, 앱 밖에서 공부한 시간은 따로 나눠 뒀어요.
-            </p>
+            {session.autoEnded && (
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                30분 넘게 활동이 없어 마지막 활동 시각에 세션을 끝냈습니다.
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -172,7 +171,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
 
         {rows.length === 0 ? (
           <p className="mx-5 mt-4 rounded-xl border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
-            이번 세션에 남길 시간이 없어요.
+            남길 시간 없음
           </p>
         ) : (
           <ul className="mx-5 mt-4 flex flex-col divide-y divide-border border-y border-border">
@@ -216,9 +215,9 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
                       <input
                         value={r.content}
                         onChange={(e) => update(r.key, { content: e.target.value, include: true })}
-                        aria-label={`${r.title}에서 무엇을 했나요`}
+                        aria-label={`${r.title}에서 한 것`}
                         autoComplete="off"
-                        placeholder={r.pageId ? "무엇을 했나요? (비워 둬도 돼요)" : "무엇을 했나요? 예: 문제집 3장, 학교 수업…"}
+                        placeholder={r.pageId ? "한 것 (선택)" : "한 것 · 예: 문제집 3장, 학교 수업…"}
                         className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/70 focus:border-action-400"
                       />
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -280,7 +279,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
               ? `${missing.title}의 이해도를 골라 주세요.`
               : plan && added > 0
                 ? `기록하면 “${plan.plan.title}” ${formatDuration(plan.studiedMinutes)} → ${formatDuration(plan.studiedMinutes + added)}${plan.plan.goalMinutes ? ` / ${formatDuration(plan.plan.goalMinutes)}` : ""}`
-                : "기록하면 오늘 · 학습 분석 · 계획에 바로 반영돼요."}
+                : null}
           </p>
           <button
             type="button"

@@ -34,10 +34,10 @@ function extensionOf(name: string) {
 type UploadFailure = "signed-out" | "no-bucket" | "denied" | "too-large" | "network" | "unknown"
 
 const FAILURE_HINTS: Record<UploadFailure, string> = {
-  "signed-out": "로그인 정보를 확인하지 못했어요. 다시 로그인한 뒤 올려 주세요.",
-  "no-bucket": "파일 저장소가 아직 설정되지 않았어요. 관리자에게 알려 주세요.",
-  denied: "파일을 올릴 권한이 없어요. 다시 로그인한 뒤 올려 주세요.",
-  "too-large": "저장소가 받을 수 있는 크기를 넘었어요.",
+  "signed-out": "로그인 정보를 확인하지 못했습니다. 다시 로그인한 뒤 올려 주세요.",
+  "no-bucket": "파일 저장소가 아직 설정되지 않았습니다. 관리자에게 알려 주세요.",
+  denied: "파일을 올릴 권한이 없습니다. 다시 로그인한 뒤 올려 주세요.",
+  "too-large": "저장소가 받을 수 있는 크기를 넘었습니다.",
   network: "인터넷 연결을 확인하고 다시 올려 주세요.",
   unknown: "잠시 뒤 다시 올려 주세요.",
 }
@@ -87,8 +87,8 @@ export type AttachmentStored = (blockId: string, path: string) => boolean
 function reportFailedUploads(pending: PendingUpload[], failures: UploadFailure[], onStored: AttachmentStored) {
   // Show the most specific reason: one that applies to every file, else the first one.
   const reason = failures.every((f) => f === failures[0]) ? failures[0] : "unknown"
-  toast.error(pending.length === 1 ? "파일을 저장하지 못했어요" : `파일 ${pending.length}개를 저장하지 못했어요`, {
-    description: `${FAILURE_HINTS[reason]} 지금 화면에서는 보이지만 새로고침하면 사라져요.`,
+  toast.error(pending.length === 1 ? "파일을 저장하지 못했습니다" : `파일 ${pending.length}개를 저장하지 못했습니다`, {
+    description: `${FAILURE_HINTS[reason]} 지금 화면에서는 보이지만 새로고침하면 사라집니다.`,
     duration: Infinity,
     action: { label: "다시 올리기", onClick: () => void retryUploads(pending, onStored) },
   })
@@ -115,7 +115,7 @@ async function retryUploads(pending: PendingUpload[], onStored: AttachmentStored
     if (onStored(item.block.id, result.path)) saved += 1
     else void db().storage.from(BUCKET).remove([result.path])
   })
-  if (saved > 0) toast.success(saved === 1 ? "파일을 저장했어요" : `파일 ${saved}개를 저장했어요`)
+  if (saved > 0) toast.success(saved === 1 ? "파일을 저장했습니다" : `파일 ${saved}개를 저장했습니다`)
   if (stillFailed.length > 0) reportFailedUploads(stillFailed, failures, onStored)
 }
 
@@ -124,9 +124,9 @@ export async function createAttachmentBlocks(files: File[], onStored: Attachment
   if (tooLarge.length > 0) {
     toast.error(
       tooLarge.length === 1
-        ? `"${tooLarge[0].name}" 파일이 너무 커요`
-        : `파일 ${tooLarge.length}개가 너무 커요`,
-      { description: `파일당 ${formatFileSize(MAX_ATTACHMENT_BYTES)}까지 첨부할 수 있어요.` },
+        ? `"${tooLarge[0].name}" 파일이 너무 큽니다`
+        : `파일 ${tooLarge.length}개가 너무 큽니다`,
+      { description: `파일당 ${formatFileSize(MAX_ATTACHMENT_BYTES)}까지 첨부할 수 있습니다.` },
     )
   }
 
@@ -217,7 +217,7 @@ export async function downloadAttachment(block: AttachmentBlock) {
   const local = block.path ? localUrls.get(block.path) : block.url
   const url = local ?? (block.path ? await signedUrl(block.path, block.name) : null)
   if (!url) {
-    toast.error("파일을 내려받지 못했어요")
+    toast.error("파일을 내려받지 못했습니다")
     return
   }
   const a = document.createElement("a")

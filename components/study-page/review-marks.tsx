@@ -36,7 +36,7 @@ export function ReviewMarks({
 }) {
   const options = (["right", "unsure", "wrong"] as const).filter((j) => labels[j])
   return (
-    <span role="group" aria-label="떠올렸나요?" className={`flex shrink-0 gap-0.5 print:hidden ${className}`}>
+    <span role="group" aria-label="떠올렸는지 선택" className={`flex shrink-0 gap-0.5 print:hidden ${className}`}>
       {options.map((j) => (
         <button
           key={j}

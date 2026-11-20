@@ -72,7 +72,7 @@ export function SessionTimerCard() {
               <>
                 <p className="text-xs text-muted-foreground">
                   {onBreak
-                    ? `휴식 중 · 쉬는 시간은 기록하지 않아요`
+                    ? `휴식 중 · 기록 안 함`
                     : `뽀모도로 집중 ${pomodoro.round}/${LONG_BREAK_EVERY}`}
                   {pomodoro.completed > 0 ? ` · 이번 세션 ${pomodoro.completed}번 완료` : ""}
                 </p>
@@ -114,14 +114,14 @@ export function SessionTimerCard() {
                 <SkipForward className="size-3.5" aria-hidden="true" />
                 {onBreak ? "휴식 건너뛰기" : "지금 쉬기"}
               </button>
-              <button type="button" onClick={stopPomodoro} title="뽀모도로만 끄고 공부 시간은 계속 재요" className={secondaryButton}>
+              <button type="button" onClick={stopPomodoro} title="뽀모도로만 끄기 · 공부 시간은 계속" className={secondaryButton}>
                 <X className="size-3.5" aria-hidden="true" />
                 뽀모도로 끄기
               </button>
             </>
           ) : (
             !running && (
-              <button type="button" onClick={startPomodoro} title={`${FOCUS_MINUTES}분 집중, 5분 휴식을 반복해요`} className={secondaryButton}>
+              <button type="button" onClick={startPomodoro} title={`${FOCUS_MINUTES}분 집중 · 5분 휴식 반복`} className={secondaryButton}>
                 <Timer className="size-3.5" aria-hidden="true" />
                 뽀모도로 {FOCUS_MINUTES}분
               </button>
@@ -136,7 +136,7 @@ export function SessionTimerCard() {
             <button
               type="button"
               onClick={startSession}
-              title={canPickSubject ? "노트에 머문 시간은 노트별로 모이고, 노트 밖 시간은 끝날 때 과목에 기록할 수 있어요" : "노트에 머문 시간이 노트별로 자동으로 모여요"}
+              title={canPickSubject ? "노트에 머문 시간은 노트별로, 노트 밖 시간은 끝날 때 과목에 기록" : "노트에 머문 시간을 노트별로 자동 기록"}
               className={secondaryButton}
             >
               <Play className="size-3.5" aria-hidden="true" />
@@ -144,7 +144,7 @@ export function SessionTimerCard() {
             </button>
           )}
           {running && !pomodoro && (
-            <button type="button" onClick={startPomodoro} title={`${FOCUS_MINUTES}분 집중, 5분 휴식을 반복해요`} className={secondaryButton}>
+            <button type="button" onClick={startPomodoro} title={`${FOCUS_MINUTES}분 집중 · 5분 휴식 반복`} className={secondaryButton}>
               <Timer className="size-3.5" aria-hidden="true" />
               뽀모도로로 하기
             </button>
@@ -169,10 +169,10 @@ function TodayStudied() {
   const workspace = useWorkspace()
   const today = useTodayISO()
   const minutes = today ? todayMinutes(workspace, today) : 0
-  if (minutes === 0) return <>오늘 아직 공부 기록이 없어요</>
+  if (minutes === 0) return <>오늘 공부 기록 없음</>
   return (
     <>
-      오늘 <span className="font-medium text-foreground">{formatDuration(minutes)}</span> 공부했어요
+      오늘 <span className="font-medium text-foreground">{formatDuration(minutes)}</span> 공부
     </>
   )
 }
@@ -215,7 +215,7 @@ export function SessionIndicator({ floating = false, withStart = false }: { floa
       <button
         type="button"
         onClick={startSession}
-        title="노트에 머문 시간이 노트별로 모여요"
+        title="노트에 머문 시간을 노트별로 기록"
         className={button("secondary", "sm", "max-sm:w-8 max-sm:px-0")}
       >
         <Play className="size-3" aria-hidden="true" />

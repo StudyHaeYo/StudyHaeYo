@@ -19,17 +19,17 @@ const FALLBACK_MESSAGE = "잠시 후 다시 시도해 주세요."
 
 // Supabase 오류 코드 → 사용자에게 보여줄 한국어 문구. 모르는 코드는 FALLBACK_MESSAGE.
 const ERROR_MESSAGES: Record<string, string> = {
-  invalid_credentials: "이메일 또는 비밀번호가 맞지 않아요.",
-  email_not_confirmed: "이메일 인증이 아직 끝나지 않았어요. 받은 메일의 인증 링크를 눌러 주세요.",
-  user_already_exists: "이미 가입된 이메일이에요.",
-  email_exists: "이미 가입된 이메일이에요.",
-  weak_password: "비밀번호가 너무 단순해요. 더 길거나 복잡하게 만들어 주세요.",
-  email_address_invalid: "사용할 수 없는 이메일 주소예요.",
-  over_email_send_rate_limit: "메일을 너무 자주 보냈어요. 잠시 후 다시 시도해 주세요.",
+  invalid_credentials: "이메일 또는 비밀번호가 맞지 않습니다.",
+  email_not_confirmed: "이메일 인증이 아직 끝나지 않았습니다. 받은 메일의 인증 링크를 눌러 주세요.",
+  user_already_exists: "이미 가입된 이메일입니다.",
+  email_exists: "이미 가입된 이메일입니다.",
+  weak_password: "비밀번호가 너무 단순합니다. 더 길거나 복잡하게 만들어 주세요.",
+  email_address_invalid: "사용할 수 없는 이메일 주소입니다.",
+  over_email_send_rate_limit: "메일을 너무 자주 보냈습니다. 잠시 후 다시 시도해 주세요.",
   same_password: "지금 쓰는 비밀번호와 다른 비밀번호를 입력해 주세요.",
   reauthentication_needed: "보안을 위해 로그아웃했다가 다시 로그인한 뒤 바꿔 주세요.",
-  over_request_rate_limit: "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.",
-  signup_disabled: "지금은 회원가입을 받지 않고 있어요.",
+  over_request_rate_limit: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+  signup_disabled: "지금은 회원가입을 받지 않고 있습니다.",
 }
 
 function toMessage(error: { code?: string } | null | undefined) {
