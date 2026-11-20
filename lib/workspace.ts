@@ -9,12 +9,14 @@ import {
   studyPages,
   pageKind,
   problemBlocks,
+  sameProblemKey,
   todayISO,
   type PageKind,
   type PageProps,
   type PageStudyRecord,
   type StudyPage,
   type SubjectStudyRecord,
+  withAttempt,
 } from "@/lib/study-pages"
 import { studyTree } from "@/lib/study-tree"
 import { getStarter, noteKindOption } from "@/lib/templates"
@@ -432,22 +434,67 @@ export function duplicatePage(id: string) {
 // [틀린 문제를 오답 노트로] (D-32): a new 오답 노트 right after the note the AI quiz was about (same subject), with
 // each wrong problem as a closed toggle (answer folded, so it can be retried) marked 틀림 (answer and explanation inside). Returns its id, or null
 // until the props column exists (a note can't be a 오답 노트 without props.kind).
-export function createWrongAnswerNote(sourceId: string, problems: { text: string; answer: string }[], source: string) {
+// Wrong problems from an AI quiz → 오답 노트 (D-39). A problem already in one of the same subject's 오답 노트 (same
+// words, spaces and punctuation aside) gets a wrong try there instead of a second copy; the rest go to a new note
+// beside the source, as before. Null when nothing could be done (props not ready, source gone, no problems).
+export function createWrongAnswerNote(
+  sourceId: string,
+  problems: { text: string; answer: string }[],
+  source: string,
+): { noteId: string | null; added: number; merged: number; mergedInto: string | null } | null {
   if (!pagePropsReady() || problems.length === 0) return null
+  const state = store.get()
+  const from = state.pages.find((p) => p.id === sourceId)
+  if (!from) return null
+  const today = todayISO()
+  const subject = nearestSubject(state, from.parentId)?.id ?? null
+  const notes = state.pages.filter(
+    (p) => p.id !== sourceId && pageKind(p) === "wrong-answers" && (nearestSubject(state, p.parentId)?.id ?? null) === subject,
+  )
+  // key → where that problem already is (the first one met).
+  const existing = new Map<string, { pageId: string; blockId: string }>()
+  for (const note of notes)
+    for (const b of problemBlocks(note.blocks)) {
+      const key = sameProblemKey(b.text)
+      if (key && !existing.has(key)) existing.set(key, { pageId: note.id, blockId: b.id })
+    }
+  const fresh: typeof problems = []
+  const hits = new Map<string, Set<string>>() // pageId → block ids to mark wrong
+  const seen = new Set<string>()
+  for (const p of problems) {
+    const key = sameProblemKey(p.text)
+    if (seen.has(key)) continue // the same problem twice in one quiz
+    seen.add(key)
+    const at = key ? existing.get(key) : undefined
+    if (!at) {
+      fresh.push(p)
+      continue
+    }
+    hits.set(at.pageId, (hits.get(at.pageId) ?? new Set()).add(at.blockId))
+  }
+  for (const [pageId, ids] of hits)
+    updatePage(pageId, (page) => ({
+      ...page,
+      blocks: page.blocks.map((b) => (isTextBlock(b) && ids.has(b.id) ? withAttempt(b, "wrong", today) : b)),
+    }))
+  const merged = [...hits.values()].reduce((n, ids) => n + ids.size, 0)
+  const mergedInto = hits.keys().next().value ?? null
+  if (fresh.length === 0) return { noteId: null, added: 0, merged, mergedInto }
+
   const pages = store.get().pages
   const index = pages.findIndex((p) => p.id === sourceId)
-  if (index === -1) return null
-  const from = pages[index]
   const starter = getStarter("wrong-answers")
   const blocks = starter.createBlocks()
   const first = blocks.findIndex((b) => isTextBlock(b) && b.type === "toggle")
-  const toggles = problems.map((p) => ({ id: newBlockId(), type: "toggle" as const, text: p.text, body: p.answer, open: false, result: "wrong" as const }))
+  const toggles = fresh.map((p) =>
+    withAttempt({ id: newBlockId(), type: "toggle" as const, text: p.text, body: p.answer, open: false }, "wrong", today),
+  )
   const note: StudyPage = {
     id: newId(),
     title: `${from.title || "제목 없음"} 오답`,
     parentId: from.parentId,
     templateId: starter.templateId,
-    createdAt: todayISO(),
+    createdAt: today,
     blocks: [...blocks.slice(0, first), ...toggles, ...blocks.slice(first + 1)],
     tags: [],
     studyRecords: [],
@@ -460,7 +507,7 @@ export function createWrongAnswerNote(sourceId: string, problems: { text: string
   })
   insertPage(note)
   syncPositions()
-  return note.id
+  return { noteId: note.id, added: fresh.length, merged, mergedInto }
 }
 
 function subtreeIds(s: TreeSource, rootId: string) {
