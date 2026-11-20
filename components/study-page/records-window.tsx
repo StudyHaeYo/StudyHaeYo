@@ -120,7 +120,7 @@ export function RecordsWindow({
 
   return createPortal(
     <>
-      <div className={`fixed inset-0 z-40 bg-foreground/25 md:hidden ${dialogBackdrop}`} aria-hidden="true" />
+      <div className={`fixed inset-0 z-40 bg-scrim/25 md:hidden ${dialogBackdrop}`} aria-hidden="true" />
       <div
         ref={boxRef}
         role="dialog"

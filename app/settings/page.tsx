@@ -1,8 +1,11 @@
 import type { Metadata } from "next"
+import { cookies } from "next/headers"
 import { PageHeader, PageShell, surface } from "@/components/page-shell"
 import { AccountSection, ProfileSection } from "@/components/settings/profile-section"
+import { ThemeSection } from "@/components/settings/theme-section"
 import { formatDuration } from "@/lib/study-pages"
 import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
+import { parseTheme, THEME_COOKIE } from "@/lib/theme"
 
 export const metadata: Metadata = {
   title: "설정 · 스터디 해요",
@@ -18,12 +21,14 @@ const sections = [
   },
 ]
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value)
   return (
     <PageShell>
       <PageHeader title="설정" />
       <div className="flex flex-col gap-6">
         <ProfileSection />
+        <ThemeSection initial={theme} />
 
         {sections.map((section) => (
           <section key={section.title} aria-labelledby={`settings-${section.title}`} className={surface}>

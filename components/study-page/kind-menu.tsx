@@ -104,7 +104,7 @@ function KindMenu({
 
   return createPortal(
     <>
-      <div className={`fixed inset-0 z-40 bg-foreground/25 md:hidden ${dialogBackdrop}`} aria-hidden="true" />
+      <div className={`fixed inset-0 z-40 bg-scrim/25 md:hidden ${dialogBackdrop}`} aria-hidden="true" />
       <div
         ref={menuRef}
         role="menu"

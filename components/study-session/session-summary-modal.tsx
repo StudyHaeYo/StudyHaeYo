@@ -135,7 +135,7 @@ function SummaryDialog({ session }: { session: FinishedSession }) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-end justify-center bg-foreground/30 sm:items-center sm:p-4 ${dialogBackdrop}`}
+      className={`fixed inset-0 z-50 flex items-end justify-center bg-scrim/30 sm:items-center sm:p-4 ${dialogBackdrop}`}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) closeSummary()
       }}

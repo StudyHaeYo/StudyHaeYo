@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react"
 import { createPortal } from "react-dom"
 import { Check, Loader2 } from "lucide-react"
 import { openPdf, type PDFDocumentProxy } from "@/lib/pdf"
 import { useFocusTrap } from "@/hooks/use-focus-trap"
+import { PAPER_INK } from "@/lib/drawing"
 import type { AttachmentBlock, DrawingStroke } from "@/lib/study-pages"
 import {
   DrawingToolbar,
@@ -147,7 +148,15 @@ export function PdfAnnotator({
   const annotatedPages = Object.keys(block.annotations ?? {}).length
 
   return createPortal(
-    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`${block.name} 필기`} className="fixed inset-0 z-50 flex flex-col bg-muted">
+    <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${block.name} 필기`}
+      className="fixed inset-0 z-50 flex flex-col bg-muted"
+      // PDF pages are white paper in every theme: the black pen stays black here (D-48).
+      style={{ "--ink-black": PAPER_INK } as CSSProperties}
+    >
       <header className="flex flex-col gap-2 border-b border-border bg-card px-3 py-2 sm:px-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">

@@ -2,14 +2,28 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 
-@custom-variant dark (&:is(.dark *));
+/* 어두운 모드(D-48): <html data-theme> comes from the theme cookie (lib/theme.ts, app/layout.tsx). "dark" is always
+   dark; "system" follows the device. Screen only, so printing a note stays black on white whatever the theme. */
+@custom-variant dark {
+  @media screen {
+    &:where([data-theme="dark"], [data-theme="dark"] *) {
+      @slot;
+    }
+  }
+  @media screen and (prefers-color-scheme: dark) {
+    &:where([data-theme="system"], [data-theme="system"] *) {
+      @slot;
+    }
+  }
+}
 
 /* Role colors (색 PR1, 2026-11-06). Screen code names a role, never a palette color (indigo-600 …):
    action = 주 버튼 · 링크 · 선택됨, attention = 다시 볼 것 · 헷갈린 점 · 경고, danger = 틀림 · 오류,
    success = 맞음 · 통과. Each role is a 50–900 scale plus a foreground for text on its solid fill.
    The values are what the screens showed before: action = Design A navy #1E2B58 (2026-10-24, it used to
    redefine Tailwind's indigo scale), attention · danger · success = Tailwind's amber · red · emerald.
-   PR2 changes only these values and adds dark ones. `pnpm run check:colors` keeps palette names out. */
+   The dark values (D-48) run the other way: 50 is a dim tint for backgrounds, 600–900 are light enough to read on the
+   dark page, and the foreground is dark ink on a light fill. `pnpm run check:colors` keeps palette names out. */
 :root {
   --action-50: #f3f5fa;
   --action-100: #e4e8f2;
@@ -53,6 +67,57 @@
   --success-700: oklch(50.8% 0.118 165.612);
   --success-800: oklch(43.2% 0.095 166.913);
   --success-900: oklch(37.8% 0.077 168.94);
+  /* The black pen of drawings (lib/drawing.ts): stays this color on paper, turns light on the dark page. */
+  --ink-black: #1f2937;
+  /* Behind dialogs and drawers (bg-scrim/30): the page dims toward black in both themes. */
+  --scrim: oklch(0.145 0 0);
+
+  @variant dark {
+    --action-50: #1a2033;
+    --action-100: #1f2741;
+    --action-200: #28324f;
+    --action-300: #3a4670;
+    --action-400: #5b69a1;
+    --action-500: #7d8bc6;
+    --action-600: #a3b1e6;
+    --action-700: #b9c4ee;
+    --action-800: #cdd5f4;
+    --action-900: #e1e6fa;
+    --action-foreground: #121a33;
+    --attention-50: #272011;
+    --attention-100: #33290f;
+    --attention-200: #4a3a12;
+    --attention-300: #6b5214;
+    --attention-400: #946f12;
+    --attention-500: #c99418;
+    --attention-600: #e6b13d;
+    --attention-700: #f0c564;
+    --attention-800: #f6d88f;
+    --attention-900: #fae8b8;
+    --attention-foreground: #241a05;
+    --danger-50: #2b1618;
+    --danger-100: #3a1c1f;
+    --danger-200: #522528;
+    --danger-300: #7a3236;
+    --danger-400: #a8434a;
+    --danger-500: #d65a61;
+    --danger-600: #ef7c82;
+    --danger-700: #f59a9e;
+    --danger-800: #f9bcbf;
+    --danger-900: #fcdadb;
+    --success-50: #10241d;
+    --success-100: #143027;
+    --success-200: #1b4536;
+    --success-300: #23624b;
+    --success-400: #2c8463;
+    --success-500: #36a87f;
+    --success-600: #55c69b;
+    --success-700: #7dd6b4;
+    --success-800: #a6e5cc;
+    --success-900: #cff2e4;
+    --ink-black: #e5e7eb;
+    --scrim: #000000;
+  }
 }
 
 @theme inline {
@@ -98,6 +163,7 @@
   --color-success-700: var(--success-700);
   --color-success-800: var(--success-800);
   --color-success-900: var(--success-900);
+  --color-scrim: var(--scrim);
 }
 
 @theme inline {
@@ -182,75 +248,42 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-.dark {
-  color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: #3987e5;
-  --chart-2: #d95926;
-  --chart-3: #199e70;
-  --chart-4: #c98500;
-  --chart-5: #6b7080;
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
+/* 어두운 모드(D-48): a navy-tinted dark gray keeps design A's navy (D-25). Checked: body and muted text ≥ 4.5:1 on the
+   page, cards and the sidebar; form borders (--input) ≥ 3:1; chart colors with the dataviz validator on the card. */
+:root {
+  @variant dark {
     color-scheme: dark;
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
+    --background: #13151b;
+    --foreground: #e7e9ef;
+    --card: #191c24;
+    --card-foreground: #e7e9ef;
+    --popover: #1d212a;
+    --popover-foreground: #e7e9ef;
+    --primary: #a3b1e6; /* = dark --action-600 */
+    --primary-foreground: #121a33;
+    --secondary: #232733;
+    --secondary-foreground: #e7e9ef;
+    --muted: #232733;
+    --muted-foreground: #9ba2b4;
+    --accent: #262b38;
+    --accent-foreground: #e7e9ef;
+    --destructive: #ef7c82;
+    --border: #2c3140;
+    --input: #646b80;
+    --ring: #7d8bc6;
     --chart-1: #3987e5;
     --chart-2: #d95926;
     --chart-3: #199e70;
     --chart-4: #c98500;
     --chart-5: #6b7080;
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --sidebar: #171a22;
+    --sidebar-foreground: #e7e9ef;
+    --sidebar-primary: #a3b1e6;
+    --sidebar-primary-foreground: #121a33;
+    --sidebar-accent: #232733;
+    --sidebar-accent-foreground: #e7e9ef;
+    --sidebar-border: #2a2e3a;
+    --sidebar-ring: #7d8bc6;
   }
 }
 

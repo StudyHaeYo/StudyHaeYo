@@ -169,7 +169,7 @@ export function Sidebar(_props: SidebarProps = {}) {
       <SearchDialog />
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-foreground/30 md:hidden" aria-hidden="true" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 z-40 bg-scrim/30 md:hidden" aria-hidden="true" onClick={() => setMobileOpen(false)} />
       )}
 
     <aside
