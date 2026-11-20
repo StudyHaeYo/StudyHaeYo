@@ -52,6 +52,8 @@ import {
   isTextBlock,
   newBlockId,
   newTableBlock,
+  problemSolved,
+  withAttempt,
   type Block,
   type BlockType,
   type TextBlock,
@@ -152,6 +154,7 @@ function withType(block: TextBlock, type: BlockType, checked = false): TextBlock
     if (block.type === "toggle") {
       if (block.result) base.result = block.result
       if (block.triedOn) base.triedOn = block.triedOn
+      if (block.attempts?.length) base.attempts = block.attempts
       if (block.myAnswer) base.myAnswer = block.myAnswer
       if (block.reasons?.length) base.reasons = block.reasons
     }
@@ -881,7 +884,7 @@ export function BlockEditor({
           // 오답 노트 problem: a number column and marks around the toggle, so its inner rows start further in.
           const isProblem = !!problemMode && block.type === "toggle"
           const inner = isProblem ? "ml-[4.5rem] w-[calc(100%-4.5rem)]" : "ml-7 w-[calc(100%-1.75rem)]"
-          const solved = isProblem && block.result === "right"
+          const solved = isProblem && problemSolved(block)
           // A 핵심 개념 or a paragraph under review shows its cue and covers the rest (no editing while covered).
           const coveredText = reviewItem && (reviewEntry?.type === "concept" || reviewEntry?.type === "paragraph")
           const slashOpen = slash?.blockId === block.id && block.text.startsWith("/")
@@ -982,7 +985,7 @@ export function BlockEditor({
                     {block.checked && <Check className="size-3" />}
                   </button>
                 )}
-                {isProblem && <ProblemNumber n={problemNumbers.get(block.id) ?? 0} result={block.result} marked={block.text.trim() !== ""} />}
+                {isProblem && <ProblemNumber n={problemNumbers.get(block.id) ?? 0} block={block} marked={block.text.trim() !== ""} />}
                 {block.type === "toggle" && (
                   <button
                     type="button"
@@ -1080,9 +1083,7 @@ export function BlockEditor({
                           onClick={() => {
                             onChange(
                               blocks.map((b) =>
-                                b.id === block.id
-                                  ? { ...block, result: r, ...(problemMode.today ? { triedOn: problemMode.today } : {}) }
-                                  : b,
+                                b.id === block.id ? withAttempt(block, r, problemMode.today ?? null) : b,
                               ),
                             )
                             reviewItem?.onMark(block.id, r)
