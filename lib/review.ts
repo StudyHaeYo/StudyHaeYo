@@ -129,6 +129,14 @@ function ladder(rows: JudgedItem[]) {
   return passed(high, isRightWritten) ? 5 : 4
 }
 
+// Left before marking every place (D-51): it counts as a review only when at least half the places were marked, and
+// by the ladder alone. "Never lower" (above) is for a whole review: a partial one does not keep a higher earlier value,
+// so the note comes back sooner instead of being pushed off by a few places. null: not enough to judge, no record.
+export function partialUnderstanding(rows: JudgedItem[], total: number): number | null {
+  if (rows.length === 0 || rows.length * 2 < total) return null
+  return reviewUnderstanding(rows, null)
+}
+
 // What the marks say: "떠올릴 곳 5개 중 4개 알았음" (a 오답 노트: "틀린 문제 2개 중 1개 맞힘").
 export function reviewSummary(rows: JudgedItem[], value: number) {
   const problems = rows.filter((r) => r.item.type === "problem")
@@ -143,13 +151,15 @@ export function reviewSummary(rows: JudgedItem[], value: number) {
   return { line: parts.join(" · "), hint }
 }
 
-// One line for the record (학습 기록): what was reviewed and how it went.
-export function reviewRecordText(rows: JudgedItem[]) {
+// One line for the record (학습 기록): what was reviewed and how it went. `total`: the places the review had, when the
+// user left before marking them all (D-51: "복습: 12곳 중 5곳 확인 …").
+export function reviewRecordText(rows: JudgedItem[], total = rows.length) {
   if (rows.length === 0) return { studyContent: "복습: 노트를 다시 읽고 이해도 선택", difficulties: "" }
   const count = (j: Judgment) => rows.filter((r) => r.judgment === j).length
   const missed = rows.filter((r) => r.judgment !== "right").map((r) => r.item.label)
+  const scope = total > rows.length ? `${total}곳 중 ${rows.length}곳` : `${rows.length}곳`
   return {
-    studyContent: `복습: ${rows.length}곳 확인 (알았음 ${count("right")} · 헷갈림 ${count("unsure")} · 몰랐음 ${count("wrong")})`,
+    studyContent: `복습: ${scope} 확인 (알았음 ${count("right")} · 헷갈림 ${count("unsure")} · 몰랐음 ${count("wrong")})`,
     difficulties: missed.length > 0 ? `다시 볼 것: ${missed.join(", ")}`.slice(0, 300) : "",
   }
 }

@@ -13,7 +13,6 @@ import {
 } from "@/lib/study-pages"
 import { recordCreatedAt } from "@/lib/study-session"
 import { descendantGroups, descendantPages, nearestSubject, NO_SUBJECT, type WorkspaceState } from "@/lib/workspace"
-import { WEEKLY_GOAL_MINUTES } from "@/lib/goals"
 import type { LearningPlan } from "@/lib/plans"
 
 
@@ -128,11 +127,8 @@ export function weekStart(today: string) {
 export interface WeeklyStats {
   subjects: { subject: string; minutes: number }[]
   totalMinutes: number
-  goalMinutes: number
   // Monday to Sunday of this week; days after today are `future`.
   days: { date: string; minutes: number; isToday: boolean; future: boolean }[]
-  // Minutes per day (today included) still needed to reach the goal; 0 once it is reached.
-  perDayToGoal: number
 }
 
 // Monday through today, by record `date`.
@@ -156,16 +152,7 @@ export function weeklyStats(workspace: WorkspaceState, today: string): WeeklySta
     const date = addDays(from, i)
     return { date, minutes: byDay.get(date) ?? 0, isToday: date === today, future: date > today }
   })
-  const todayIndex = days.findIndex((d) => d.isToday)
-  const daysLeft = todayIndex === -1 ? 1 : 7 - todayIndex // today included
-  const remaining = Math.max(0, WEEKLY_GOAL_MINUTES - totalMinutes)
-  return {
-    subjects,
-    totalMinutes,
-    goalMinutes: WEEKLY_GOAL_MINUTES,
-    days,
-    perDayToGoal: remaining === 0 ? 0 : Math.ceil(remaining / Math.max(1, daysLeft)),
-  }
+  return { subjects, totalMinutes, days }
 }
 
 // Minutes recorded today across all pages.

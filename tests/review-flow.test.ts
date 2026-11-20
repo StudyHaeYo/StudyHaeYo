@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { addDays, computePageStats, studyPages, type PageStudyRecord, type StudyPage } from "@/lib/study-pages"
-import { reviewItems, reviewUnderstanding, type JudgedItem, type Judgment } from "@/lib/review"
+import { partialUnderstanding, reviewItems, reviewRecordText, reviewUnderstanding, type JudgedItem, type Judgment } from "@/lib/review"
 import { msToMinutes } from "@/lib/study-session"
 
 // 노트 → 복습 → 기록 → 다음 복습일, the loop the app is built around, run through the same functions the screens call
@@ -61,6 +61,20 @@ describe("복습 흐름: 노트 → 복습 → 기록 → 다음 복습일", () 
     expect(after).toBe(1)
     const next = computePageStats(withRecords(lecture, [{ date: "2026-11-01", understanding: 5 }, { date: today, understanding: after }]), today)
     expect(next.nextReviewAt).toBe(addDays(today, 1))
+  })
+
+  it("다 고르기 전에 나가면: 절반 넘게 골랐으면 고른 곳만으로 기록, 덜 골랐으면 기록 없음 (D-51)", () => {
+    const all = judge(before, () => "right")
+    const half = Math.ceil(all.length / 2)
+    // fewer than half marked: nothing to judge by
+    expect(partialUnderstanding(all.slice(0, half - 1), all.length)).toBeNull()
+    // half marked, all known: the ladder (3), not the earlier 5 — the note comes back sooner, not 14 days later
+    const marked = all.slice(0, half)
+    const after = partialUnderstanding(marked, all.length)!
+    expect(after).toBe(3)
+    expect(reviewRecordText(marked, all.length).studyContent).toBe(`복습: ${all.length}곳 중 ${half}곳 확인 (알았음 ${half} · 헷갈림 0 · 몰랐음 0)`)
+    const next = computePageStats(withRecords(lecture, [{ date: "2026-11-01", understanding: 5 }, { date: today, understanding: after }]), today)
+    expect(next.nextReviewAt).toBe(addDays(today, 4))
   })
 })
 
